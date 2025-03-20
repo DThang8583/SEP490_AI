@@ -58,12 +58,11 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 }));
 
 const LessonExport = ({ sidebarOpen }) => {
-    const [lessonsByGrade, setLessonsByGrade] = useState([]); // Danh sách bài học theo khối lớp
-    const [selectedGrade, setSelectedGrade] = useState(null); // Khối lớp được chọn
+    const [lessonsByGrade, setLessonsByGrade] = useState([]);
+    const [selectedGrade, setSelectedGrade] = useState(null);
 
-    const sidebarWidth = sidebarOpen ? 240 : 0; // Chiều rộng của Sidebar khi mở/đóng
+    const sidebarWidth = sidebarOpen ? 60 : 240; // sidebarOpen = true: thu nhỏ, false: mở rộng
 
-    // Danh sách các khối lớp (Grade 1 đến Grade 5)
     const grades = [
         { id: 1, label: 'Grade 1' },
         { id: 2, label: 'Grade 2' },
@@ -72,20 +71,16 @@ const LessonExport = ({ sidebarOpen }) => {
         { id: 5, label: 'Grade 5' },
     ];
 
-    // Lấy danh sách bài học đã được approved theo khối lớp
     useEffect(() => {
         const fetchLessons = async () => {
             try {
                 const fetchedLessons = await Promise.all(
                     grades.map(async (grade) => {
-                        // Giả sử API hỗ trợ lấy lessons theo grade
                         const res = await api.getLessons({ grade: grade.id });
-                        // Chỉ lấy các bài học có trạng thái approved
                         return { gradeId: grade.id, lessons: res.data.filter((lesson) => lesson.status === 'approved') };
                     })
                 );
                 setLessonsByGrade(fetchedLessons);
-                // Mặc định chọn khối lớp 1
                 setSelectedGrade(grades[0].id);
             } catch (error) {
                 console.error('Error fetching lessons:', error);
@@ -123,7 +118,6 @@ const LessonExport = ({ sidebarOpen }) => {
         link.click();
     };
 
-    // Lấy danh sách bài học cho khối lớp được chọn
     const selectedGradeLessons = lessonsByGrade.find((g) => g.gradeId === selectedGrade)?.lessons || [];
 
     return (
@@ -131,145 +125,156 @@ const LessonExport = ({ sidebarOpen }) => {
             sx={{
                 minHeight: '100vh',
                 background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-                py: 4,
-                ml: `${sidebarWidth}px`,
-                transition: 'margin-left 0.3s ease',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1100,
             }}
         >
-            <Container maxWidth="lg">
-                <Paper
-                    elevation={0}
-                    sx={{
-                        p: 4,
-                        borderRadius: 3,
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        backdropFilter: 'blur(10px)',
-                    }}
-                >
-                    <Typography
-                        variant="h4"
-                        gutterBottom
-                        sx={{
-                            fontWeight: 700,
-                            mb: 4,
-                            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                        }}
-                    >
-                        Lesson Export
-                    </Typography>
-
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
-                        <Tabs
-                            value={selectedGrade}
-                            onChange={handleGradeChange}
-                            variant="scrollable"
-                            scrollButtons="auto"
-                            sx={{
-                                '& .MuiTabs-scrollButtons': {
-                                    '&.Mui-disabled': { opacity: 0.3 },
-                                },
-                            }}
-                        >
-                            {grades.map((grade) => (
-                                <StyledTab key={grade.id} label={grade.label} value={grade.id} />
-                            ))}
-                        </Tabs>
-                    </Box>
-
+            <Box
+                sx={{
+                    py: 4,
+                    ml: `${sidebarWidth}px`,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                <Container maxWidth="lg">
                     <Paper
-                        elevation={3}
+                        elevation={0}
                         sx={{
-                            p: 3,
+                            p: 4,
                             borderRadius: 3,
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            backdropFilter: 'blur(10px)',
                         }}
                     >
                         <Typography
-                            variant="h6"
+                            variant="h4"
+                            gutterBottom
                             sx={{
-                                p: 2,
                                 fontWeight: 700,
-                                color: (theme) => theme.palette.primary.main,
+                                mb: 4,
+                                background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
                             }}
                         >
-                            Approved Lessons - Grade {selectedGrade}
+                            Lesson Export
                         </Typography>
-                        <Divider sx={{ mb: 3 }} />
-                        {selectedGradeLessons.length === 0 ? (
-                            <Box
+
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
+                            <Tabs
+                                value={selectedGrade}
+                                onChange={handleGradeChange}
+                                variant="scrollable"
+                                scrollButtons="auto"
                                 sx={{
-                                    p: 4,
-                                    textAlign: 'center',
-                                    backgroundColor: (theme) => theme.palette.grey[50],
-                                    borderRadius: 2,
+                                    '& .MuiTabs-scrollButtons': {
+                                        '&.Mui-disabled': { opacity: 0.3 },
+                                    },
                                 }}
                             >
-                                <Typography variant="body1" color="text.secondary">
-                                    No approved lessons available for Grade {selectedGrade}.
-                                </Typography>
-                            </Box>
-                        ) : (
-                            <List>
-                                {selectedGradeLessons.map((lesson) => (
-                                    <StyledListItem key={lesson.id}>
-                                        <Grid container alignItems="center" spacing={3}>
-                                            <Grid item xs={12} md={6}>
-                                                <Typography
-                                                    variant="h6"
-                                                    sx={{
-                                                        fontWeight: 600,
-                                                        mb: 1
-                                                    }}
-                                                >
-                                                    {lesson.title}
-                                                </Typography>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        color: (theme) => theme.palette.text.secondary,
-                                                        display: 'flex',
-                                                        gap: 2,
-                                                    }}
-                                                >
-                                                    <span>👤 Teacher: {lesson.teacherName || 'Unknown'}</span>
-                                                    <span>📚 Class: {lesson.className || 'N/A'}</span>
-                                                    <span>📝 Grade: {lesson.grade}</span>
-                                                </Typography>
-                                            </Grid>
-                                            <Grid item xs={12} md={6}>
-                                                <Box sx={{
-                                                    display: 'flex',
-                                                    justifyContent: 'flex-end',
-                                                    gap: 2
-                                                }}>
-                                                    <ExportButton
-                                                        variant="contained"
-                                                        color="primary"
-                                                        startIcon={<PictureAsPdfIcon />}
-                                                        onClick={() => exportToPDF(lesson)}
-                                                    >
-                                                        Export PDF
-                                                    </ExportButton>
-                                                    <ExportButton
-                                                        variant="outlined"
-                                                        color="primary"
-                                                        startIcon={<DescriptionIcon />}
-                                                        onClick={() => exportToWord(lesson)}
-                                                    >
-                                                        Export Word
-                                                    </ExportButton>
-                                                </Box>
-                                            </Grid>
-                                        </Grid>
-                                    </StyledListItem>
+                                {grades.map((grade) => (
+                                    <StyledTab key={grade.id} label={grade.label} value={grade.id} />
                                 ))}
-                            </List>
-                        )}
+                            </Tabs>
+                        </Box>
+
+                        <Paper
+                            elevation={3}
+                            sx={{
+                                p: 3,
+                                borderRadius: 3,
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            }}
+                        >
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    p: 2,
+                                    fontWeight: 700,
+                                    color: (theme) => theme.palette.primary.main,
+                                }}
+                            >
+                                Approved Lessons - Grade {selectedGrade}
+                            </Typography>
+                            <Divider sx={{ mb: 3 }} />
+                            {selectedGradeLessons.length === 0 ? (
+                                <Box
+                                    sx={{
+                                        p: 4,
+                                        textAlign: 'center',
+                                        backgroundColor: (theme) => theme.palette.grey[50],
+                                        borderRadius: 2,
+                                    }}
+                                >
+                                    <Typography variant="body1" color="text.secondary">
+                                        No approved lessons available for Grade {selectedGrade}.
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <List>
+                                    {selectedGradeLessons.map((lesson) => (
+                                        <StyledListItem key={lesson.id}>
+                                            <Grid container alignItems="center" spacing={3}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography
+                                                        variant="h6"
+                                                        sx={{
+                                                            fontWeight: 600,
+                                                            mb: 1,
+                                                        }}
+                                                    >
+                                                        {lesson.title}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            color: (theme) => theme.palette.text.secondary,
+                                                            display: 'flex',
+                                                            gap: 2,
+                                                        }}
+                                                    >
+                                                        <span>👤 Teacher: {lesson.teacherName || 'Unknown'}</span>
+                                                        <span>📚 Class: {lesson.className || 'N/A'}</span>
+                                                        <span>📝 Grade: {lesson.grade}</span>
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Box sx={{
+                                                        display: 'flex',
+                                                        justifyContent: 'flex-end',
+                                                        gap: 2,
+                                                    }}>
+                                                        <ExportButton
+                                                            variant="contained"
+                                                            color="primary"
+                                                            startIcon={<PictureAsPdfIcon />}
+                                                            onClick={() => exportToPDF(lesson)}
+                                                        >
+                                                            Export PDF
+                                                        </ExportButton>
+                                                        <ExportButton
+                                                            variant="outlined"
+                                                            color="primary"
+                                                            startIcon={<DescriptionIcon />}
+                                                            onClick={() => exportToWord(lesson)}
+                                                        >
+                                                            Export Word
+                                                        </ExportButton>
+                                                    </Box>
+                                                </Grid>
+                                            </Grid>
+                                        </StyledListItem>
+                                    ))}
+                                </List>
+                            )}
+                        </Paper>
                     </Paper>
-                </Paper>
-            </Container>
+                </Container>
+            </Box>
         </Box>
     );
 };
