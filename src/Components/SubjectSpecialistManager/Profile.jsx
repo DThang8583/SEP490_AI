@@ -1,194 +1,112 @@
 // src/Components/SubjectSpecialistManager/Profile.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../api';
-import { Box, Typography, TextField, Button, Divider } from '@mui/material';
+import {
+    Container,
+    Typography,
+    Button,
+    Divider,
+    Paper,
+    Box,
+} from '@mui/material';
 
-const Profile = () => {
-    const [profile, setProfile] = useState({ name: '', email: '' });
-    const [password, setPassword] = useState({ current: '', new: '' });
+const Profile = ({ sidebarOpen }) => {
+    const [profile, setProfile] = useState(null);
+    const navigate = useNavigate();
+
+    const sidebarWidth = sidebarOpen ? 60 : 240; // sidebarOpen = true: thu nhỏ, false: mở rộng
 
     useEffect(() => {
         api.getProfile().then((res) => setProfile(res.data));
     }, []);
 
-    const handleProfileChange = (e) => {
-        setProfile({ ...profile, [e.target.name]: e.target.value });
-    };
-
-    const handlePasswordChange = (e) => {
-        setPassword({ ...password, [e.target.name]: e.target.value });
-    };
-
-    const handleUpdateProfile = () => {
-        api.updateProfile(profile).then(() => alert('Profile updated successfully!'));
-    };
-
-    const handleChangePassword = () => {
-        api.changePassword(password).then(() => {
-            alert('Password changed successfully!');
-            setPassword({ current: '', new: '' });
-        });
-    };
+    if (!profile) return <Typography>Loading...</Typography>;
 
     return (
-        <Box sx={{
-            p: 4,
-            maxWidth: '800px',
-            margin: '0 auto',
-            minHeight: '100vh',
-            backgroundColor: '#f5f5f5'
-        }}>
-            <Box sx={{
-                backgroundColor: '#fff',
-                borderRadius: '16px',
-                padding: '40px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                transition: 'all 0.3s ease'
-            }}>
-                <Typography variant="h4" sx={{
-                    mb: 4,
-                    fontWeight: 700,
-                    color: '#2c3e50',
-                    borderBottom: '3px solid #06A9AE',
-                    paddingBottom: '10px',
-                    display: 'inline-block'
-                }}>
-                    Thông tin cá nhân
-                </Typography>
+        <Box
+            sx={{
+                minHeight: '100vh',
+                background: 'linear-gradient(to right bottom, #f8f9fa, #e9ecef)',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1100,
+            }}
+        >
+            <Box
+                sx={{
+                    py: 4,
+                    ml: `${sidebarWidth}px`,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                <Container maxWidth="md">
+                    <Paper elevation={3} sx={{ p: 4, borderRadius: 2, textAlign: 'center' }}>
+                        <Typography
+                            variant="h4"
+                            sx={{
+                                mb: 4,
+                                fontWeight: 700,
+                                color: '#2c3e50',
+                                borderBottom: '3px solid #06A9AE',
+                                pb: '10px',
+                                textAlign: 'center',
+                            }}
+                        >
+                            Thông tin cá nhân
+                        </Typography>
 
-                <Box sx={{ mb: 4 }}>
-                    <TextField
-                        label="Họ và tên"
-                        name="name"
-                        value={profile.name}
-                        onChange={handleProfileChange}
-                        fullWidth
-                        sx={{
-                            mb: 3,
-                            '& .MuiOutlinedInput-root': {
-                                '&:hover fieldset': {
-                                    borderColor: '#06A9AE',
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: '#06A9AE',
-                                }
-                            }
-                        }}
-                        variant="outlined"
-                    />
-                    <TextField
-                        label="Email"
-                        name="email"
-                        value={profile.email}
-                        onChange={handleProfileChange}
-                        fullWidth
-                        sx={{
-                            mb: 3,
-                            '& .MuiOutlinedInput-root': {
-                                '&:hover fieldset': {
-                                    borderColor: '#06A9AE',
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: '#06A9AE',
-                                }
-                            }
-                        }}
-                        variant="outlined"
-                    />
-                    <Button
-                        onClick={handleUpdateProfile}
-                        variant="contained"
-                        sx={{
-                            backgroundColor: '#06A9AE',
-                            '&:hover': {
-                                backgroundColor: '#058286',
-                                transform: 'translateY(-2px)',
-                                boxShadow: '0 4px 12px rgba(6, 169, 174, 0.3)'
-                            },
-                            px: 4,
-                            py: 1.5,
-                            borderRadius: '8px',
-                            transition: 'all 0.3s ease',
-                            textTransform: 'none',
-                            fontSize: '16px'
-                        }}
-                    >
-                        Cập nhật thông tin
-                    </Button>
-                </Box>
+                        <Typography sx={{ textAlign: 'left', mb: 1 }}>
+                            <strong>Họ và tên:</strong> {profile.name}
+                        </Typography>
+                        <Typography sx={{ textAlign: 'left', mb: 1 }}>
+                            <strong>Email:</strong> {profile.email}
+                        </Typography>
+                        <Typography sx={{ textAlign: 'left', mb: 1 }}>
+                            <strong>Số điện thoại:</strong> {profile.phone}
+                        </Typography>
+                        <Typography sx={{ textAlign: 'left', mb: 1 }}>
+                            <strong>Ngày sinh:</strong> {profile.dateOfBirth}
+                        </Typography>
+                        <Typography sx={{ textAlign: 'left', mb: 1 }}>
+                            <strong>Giới tính:</strong> {profile.gender}
+                        </Typography>
+                        <Typography sx={{ textAlign: 'left', mb: 1 }}>
+                            <strong>Địa chỉ:</strong> {profile.address}
+                        </Typography>
+                        <Typography sx={{ textAlign: 'left', mb: 1 }}>
+                            <strong>Vai trò:</strong> {profile.role}
+                        </Typography>
+                        <Typography sx={{ textAlign: 'left', mb: 1 }}>
+                            <strong>Trường:</strong> {profile.school}
+                        </Typography>
+                        <Typography sx={{ textAlign: 'left', mb: 1 }}>
+                            <strong>Quận:</strong> {profile.ward}
+                        </Typography>
 
-                <Divider sx={{ my: 4, borderColor: '#e0e0e0' }} />
+                        <Divider sx={{ my: 4, borderColor: '#e0e0e0' }} />
 
-                <Typography variant="h5" sx={{
-                    mb: 3,
-                    fontWeight: 700,
-                    color: '#2c3e50',
-                    borderBottom: '3px solid #06A9AE',
-                    paddingBottom: '10px',
-                    display: 'inline-block'
-                }}>
-                    Đổi mật khẩu
-                </Typography>
-                <TextField
-                    label="Mật khẩu hiện tại"
-                    name="current"
-                    type="password"
-                    value={password.current}
-                    onChange={handlePasswordChange}
-                    fullWidth
-                    sx={{
-                        mb: 3,
-                        '& .MuiOutlinedInput-root': {
-                            '&:hover fieldset': {
-                                borderColor: '#06A9AE',
-                            },
-                            '&.Mui-focused fieldset': {
-                                borderColor: '#06A9AE',
-                            }
-                        }
-                    }}
-                    variant="outlined"
-                />
-                <TextField
-                    label="Mật khẩu mới"
-                    name="new"
-                    type="password"
-                    value={password.new}
-                    onChange={handlePasswordChange}
-                    fullWidth
-                    sx={{
-                        mb: 3,
-                        '& .MuiOutlinedInput-root': {
-                            '&:hover fieldset': {
-                                borderColor: '#06A9AE',
-                            },
-                            '&.Mui-focused fieldset': {
-                                borderColor: '#06A9AE',
-                            }
-                        }
-                    }}
-                    variant="outlined"
-                />
-                <Button
-                    onClick={handleChangePassword}
-                    variant="contained"
-                    sx={{
-                        backgroundColor: '#06A9AE',
-                        '&:hover': {
-                            backgroundColor: '#058286',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 12px rgba(6, 169, 174, 0.3)'
-                        },
-                        px: 4,
-                        py: 1.5,
-                        borderRadius: '8px',
-                        transition: 'all 0.3s ease',
-                        textTransform: 'none',
-                        fontSize: '16px'
-                    }}
-                >
-                    Đổi mật khẩu
-                </Button>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+                            <Button
+                                onClick={() => navigate('/manager/edit-profile')}
+                                variant="contained"
+                                sx={{ backgroundColor: '#06A9AE', m: 1 }}
+                            >
+                                Chỉnh sửa thông tin
+                            </Button>
+                            <Button
+                                onClick={() => navigate('/manager/change-password')}
+                                variant="contained"
+                                sx={{ backgroundColor: '#f39c12', m: 1 }}
+                            >
+                                Đổi mật khẩu
+                            </Button>
+                        </Box>
+                    </Paper>
+                </Container>
             </Box>
         </Box>
     );

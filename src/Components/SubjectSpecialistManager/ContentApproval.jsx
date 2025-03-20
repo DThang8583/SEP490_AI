@@ -60,13 +60,12 @@ const ActionButton = styled(Button)(({ theme }) => ({
 }));
 
 const ContentApproval = ({ sidebarOpen }) => {
-    const [contentsByGrade, setContentsByGrade] = useState([]); // Danh sách nội dung theo khối lớp
-    const [selectedGrade, setSelectedGrade] = useState(null); // Khối lớp được chọn
+    const [contentsByGrade, setContentsByGrade] = useState([]);
+    const [selectedGrade, setSelectedGrade] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const sidebarWidth = sidebarOpen ? 240 : 0; // Chiều rộng của Sidebar khi mở/đóng
+    const sidebarWidth = sidebarOpen ? 60 : 240; // sidebarOpen = true: thu nhỏ, false: mở rộng
 
-    // Danh sách các khối lớp (Grade 1 đến Grade 5)
     const grades = [
         { id: 1, label: 'Grade 1' },
         { id: 2, label: 'Grade 2' },
@@ -75,20 +74,17 @@ const ContentApproval = ({ sidebarOpen }) => {
         { id: 5, label: 'Grade 5' },
     ];
 
-    // Lấy danh sách nội dung theo khối lớp
     useEffect(() => {
         const fetchContents = async () => {
             try {
                 setLoading(true);
                 const fetchedContents = await Promise.all(
                     grades.map(async (grade) => {
-                        // Giả sử API hỗ trợ lấy contents theo grade và chỉ lấy trạng thái pending
                         const res = await api.getContents({ grade: grade.id });
                         return { gradeId: grade.id, contents: res.data.filter((c) => c.status === 'pending') };
                     })
                 );
                 setContentsByGrade(fetchedContents);
-                // Mặc định chọn khối lớp 1
                 setSelectedGrade(grades[0].id);
             } catch (error) {
                 console.error('Error fetching contents:', error);
@@ -149,7 +145,6 @@ const ContentApproval = ({ sidebarOpen }) => {
         }
     };
 
-    // Lấy danh sách nội dung cho khối lớp được chọn
     const selectedGradeContents = contentsByGrade.find((g) => g.gradeId === selectedGrade)?.contents || [];
 
     if (loading) {
@@ -158,11 +153,15 @@ const ContentApproval = ({ sidebarOpen }) => {
                 sx={{
                     minHeight: '100vh',
                     background: 'linear-gradient(to right bottom, #f8f9fa, #e9ecef)',
-                    py: 4,
-                    ml: `${sidebarWidth}px`,
-                    transition: 'margin-left 0.3s ease',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 1100,
                     display: 'flex',
                     justifyContent: 'center',
+                    alignItems: 'center',
                 }}
             >
                 <CircularProgress />
@@ -175,131 +174,142 @@ const ContentApproval = ({ sidebarOpen }) => {
             sx={{
                 minHeight: '100vh',
                 background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%)',
-                py: 4,
-                px: 3,
-                ml: `${sidebarWidth}px`,
-                transition: 'all 0.3s ease',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1100,
             }}
         >
-            <Typography
-                variant="h4"
+            <Box
                 sx={{
-                    mb: 4,
-                    fontWeight: 800,
-                    color: '#1a237e',
-                    textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-                    letterSpacing: '-0.5px'
+                    py: 4,
+                    px: 3,
+                    ml: `${sidebarWidth}px`,
+                    transition: 'margin-left 0.3s ease',
                 }}
             >
-                Content Approval
-            </Typography>
-
-            <Paper
-                elevation={0}
-                sx={{
-                    mb: 4,
-                    borderRadius: 3,
-                    backgroundColor: 'rgba(255,255,255,0.8)',
-                    backdropFilter: 'blur(10px)',
-                }}
-            >
-                <Tabs
-                    value={selectedGrade}
-                    onChange={handleGradeChange}
+                <Typography
+                    variant="h4"
                     sx={{
-                        mb: 2,
-                        p: 2,
-                        '& .MuiTabs-indicator': {
-                            display: 'none',
-                        },
+                        mb: 4,
+                        fontWeight: 800,
+                        color: '#1a237e',
+                        textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
+                        letterSpacing: '-0.5px',
                     }}
-                    variant="scrollable"
-                    scrollButtons="auto"
                 >
-                    {grades.map((grade) => (
-                        <StyledTab key={grade.id} label={grade.label} value={grade.id} />
-                    ))}
-                </Tabs>
+                    Content Approval
+                </Typography>
 
-                <Box sx={{ p: 3 }}>
-                    <Typography
-                        variant="h6"
+                <Paper
+                    elevation={0}
+                    sx={{
+                        mb: 4,
+                        borderRadius: 3,
+                        backgroundColor: 'rgba(255,255,255,0.8)',
+                        backdropFilter: 'blur(10px)',
+                    }}
+                >
+                    <Tabs
+                        value={selectedGrade}
+                        onChange={handleGradeChange}
                         sx={{
-                            mb: 3,
-                            fontWeight: 700,
-                            color: '#1a237e',
+                            mb: 2,
+                            p: 2,
+                            '& .MuiTabs-indicator': {
+                                display: 'none',
+                            },
                         }}
+                        variant="scrollable"
+                        scrollButtons="auto"
                     >
-                        Content Approval List - Grade {selectedGrade}
-                    </Typography>
+                        {grades.map((grade) => (
+                            <StyledTab key={grade.id} label={grade.label} value={grade.id} />
+                        ))}
+                    </Tabs>
 
-                    {selectedGradeContents.length === 0 ? (
-                        <Box
+                    <Box sx={{ p: 3 }}>
+                        <Typography
+                            variant="h6"
                             sx={{
-                                textAlign: 'center',
-                                py: 6,
-                                color: 'text.secondary',
+                                mb: 3,
+                                fontWeight: 700,
+                                color: '#1a237e',
                             }}
                         >
-                            <Typography variant="h6" sx={{ mb: 1, fontWeight: 500 }}>
-                                No Pending Contents
-                            </Typography>
-                            <Typography variant="body2">
-                                All contents for Grade {selectedGrade} have been reviewed.
-                            </Typography>
-                        </Box>
-                    ) : (
-                        <List sx={{ p: 0 }}>
-                            {selectedGradeContents.map((content) => (
-                                <StyledListItem key={content.id}>
-                                    <Box sx={{ flex: 1, mr: 3 }}>
-                                        <Typography
-                                            variant="h6"
-                                            sx={{
-                                                mb: 1,
-                                                fontWeight: 600,
-                                                color: '#1a237e',
-                                            }}
-                                        >
-                                            {content.title}
-                                        </Typography>
-                                        {content.description && (
+                            Content Approval List - Grade {selectedGrade}
+                        </Typography>
+
+                        {selectedGradeContents.length === 0 ? (
+                            <Box
+                                sx={{
+                                    textAlign: 'center',
+                                    py: 6,
+                                    color: 'text.secondary',
+                                }}
+                            >
+                                <Typography variant="h6" sx={{ mb: 1, fontWeight: 500 }}>
+                                    No Pending Contents
+                                </Typography>
+                                <Typography variant="body2">
+                                    All contents for Grade {selectedGrade} have been reviewed.
+                                </Typography>
+                            </Box>
+                        ) : (
+                            <List sx={{ p: 0 }}>
+                                {selectedGradeContents.map((content) => (
+                                    <StyledListItem key={content.id}>
+                                        <Box sx={{ flex: 1, mr: 3 }}>
                                             <Typography
-                                                variant="body2"
-                                                color="text.secondary"
+                                                variant="h6"
                                                 sx={{
-                                                    lineHeight: 1.6,
-                                                    maxWidth: '80ch',
+                                                    mb: 1,
+                                                    fontWeight: 600,
+                                                    color: '#1a237e',
                                                 }}
                                             >
-                                                {content.description}
+                                                {content.title}
                                             </Typography>
-                                        )}
-                                    </Box>
-                                    <Box sx={{ display: 'flex', gap: 2 }}>
-                                        <ActionButton
-                                            onClick={() => handleApprove(content.id)}
-                                            variant="contained"
-                                            color="primary"
-                                            startIcon={<CheckIcon />}
-                                        >
-                                            Approve
-                                        </ActionButton>
-                                        <ActionButton
-                                            onClick={() => handleReject(content.id)}
-                                            variant="outlined"
-                                            color="error"
-                                            startIcon={<CloseIcon />}
-                                        >
-                                            Reject
-                                        </ActionButton>
-                                    </Box>
-                                </StyledListItem>
-                            ))}
-                        </List>
-                    )}
-                </Box>
-            </Paper>
+                                            {content.description && (
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{
+                                                        lineHeight: 1.6,
+                                                        maxWidth: '80ch',
+                                                    }}
+                                                >
+                                                    {content.description}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                        <Box sx={{ display: 'flex', gap: 2 }}>
+                                            <ActionButton
+                                                onClick={() => handleApprove(content.id)}
+                                                variant="contained"
+                                                color="primary"
+                                                startIcon={<CheckIcon />}
+                                            >
+                                                Approve
+                                            </ActionButton>
+                                            <ActionButton
+                                                onClick={() => handleReject(content.id)}
+                                                variant="outlined"
+                                                color="error"
+                                                startIcon={<CloseIcon />}
+                                            >
+                                                Reject
+                                            </ActionButton>
+                                        </Box>
+                                    </StyledListItem>
+                                ))}
+                            </List>
+                        )}
+                    </Box>
+                </Paper>
+            </Box>
         </Box>
     );
 };
