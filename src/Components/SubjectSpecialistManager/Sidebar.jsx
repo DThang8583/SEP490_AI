@@ -57,13 +57,13 @@ const Sidebar = ({ open }) => {
     };
 
     const menuItems = [
-        { text: 'Dashboard', path: '/manager/dashboard', icon: <DashboardIcon /> },
-        { text: 'Lesson Review', path: '/manager/lesson-review', icon: <LibraryBooksIcon /> },
-        { text: 'Content Approval', path: '/manager/content-approval', icon: <CheckCircleIcon /> },
-        { text: 'Curriculum Analysis', path: '/manager/curriculum-analysis', icon: <AnalyticsIcon /> },
-        { text: 'Curriculum Framework', path: '/manager/curriculum-framework', icon: <AccountTreeIcon /> },
-        { text: 'Lesson Export', path: '/manager/lesson-export', icon: <FileDownloadIcon /> },
-        { text: 'Profile', path: '/manager/profile', icon: <PersonIcon /> },
+        { text: 'Tổng quan', path: '/manager/dashboard', icon: <DashboardIcon /> },
+        { text: 'Xem xét bài giảng', path: '/manager/lesson-review', icon: <LibraryBooksIcon /> },
+        { text: 'Phê duyệt nội dung', path: '/manager/content-approval', icon: <CheckCircleIcon /> },
+        { text: 'Phân tích chương trình', path: '/manager/curriculum-analysis', icon: <AnalyticsIcon /> },
+        { text: 'Khung chương trình', path: '/manager/curriculum-framework', icon: <AccountTreeIcon /> },
+        { text: 'Xuất bài giảng', path: '/manager/lesson-export', icon: <FileDownloadIcon /> },
+        { text: 'Trang cá nhân', path: '/manager/profile', icon: <PersonIcon /> },
         {
             text: 'Notifications',
             path: '/manager/notifications',

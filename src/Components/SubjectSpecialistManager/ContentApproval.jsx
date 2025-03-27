@@ -67,11 +67,11 @@ const ContentApproval = ({ sidebarOpen }) => {
     const sidebarWidth = sidebarOpen ? 60 : 240; // sidebarOpen = true: thu nhỏ, false: mở rộng
 
     const grades = [
-        { id: 1, label: 'Grade 1' },
-        { id: 2, label: 'Grade 2' },
-        { id: 3, label: 'Grade 3' },
-        { id: 4, label: 'Grade 4' },
-        { id: 5, label: 'Grade 5' },
+        { id: 1, label: 'Khối 1' },
+        { id: 2, label: 'Khối 2' },
+        { id: 3, label: 'Khối 3' },
+        { id: 4, label: 'Khối 4' },
+        { id: 5, label: 'Khối 5' },
     ];
 
     useEffect(() => {
@@ -87,7 +87,7 @@ const ContentApproval = ({ sidebarOpen }) => {
                 setContentsByGrade(fetchedContents);
                 setSelectedGrade(grades[0].id);
             } catch (error) {
-                console.error('Error fetching contents:', error);
+                console.error('Lỗi khi lấy danh sách nội dung:', error);
             } finally {
                 setLoading(false);
             }
@@ -113,12 +113,12 @@ const ContentApproval = ({ sidebarOpen }) => {
             });
             setContentsByGrade(updatedContents);
             await api.sendNotification({
-                message: `Your content has been approved.`,
+                message: `Nội dung của bạn đã được phê duyệt.`,
                 recipient: contentsByGrade.find((g) => g.gradeId === selectedGrade)?.contents.find((c) => c.id === id)?.authorEmail,
             });
-            alert('Content approved successfully!');
+            alert('Nội dung đã được phê duyệt thành công!');
         } catch (error) {
-            console.error('Error approving content:', error);
+            console.error('Lỗi khi phê duyệt nội dung:', error);
         }
     };
 
@@ -136,12 +136,12 @@ const ContentApproval = ({ sidebarOpen }) => {
             });
             setContentsByGrade(updatedContents);
             await api.sendNotification({
-                message: `Your content has been rejected. Please revise and resubmit.`,
+                message: `Nội dung của bạn đã bị từ chối. Vui lòng chỉnh sửa và gửi lại.`,
                 recipient: contentsByGrade.find((g) => g.gradeId === selectedGrade)?.contents.find((c) => c.id === id)?.authorEmail,
             });
-            alert('Content rejected. Notification sent to author.');
+            alert('Nội dung đã bị từ chối. Thông báo đã được gửi đến tác giả.');
         } catch (error) {
-            console.error('Error rejecting content:', error);
+            console.error('Lỗi khi từ chối nội dung:', error);
         }
     };
 
@@ -200,7 +200,7 @@ const ContentApproval = ({ sidebarOpen }) => {
                         letterSpacing: '-0.5px',
                     }}
                 >
-                    Content Approval
+                    Phê duyệt nội dung
                 </Typography>
 
                 <Paper
@@ -239,7 +239,7 @@ const ContentApproval = ({ sidebarOpen }) => {
                                 color: '#1a237e',
                             }}
                         >
-                            Content Approval List - Grade {selectedGrade}
+                            Danh sách nội dung cần phê duyệt - Khối {selectedGrade}
                         </Typography>
 
                         {selectedGradeContents.length === 0 ? (
@@ -251,10 +251,10 @@ const ContentApproval = ({ sidebarOpen }) => {
                                 }}
                             >
                                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 500 }}>
-                                    No Pending Contents
+                                    Không có nội dung đang chờ phê duyệt
                                 </Typography>
                                 <Typography variant="body2">
-                                    All contents for Grade {selectedGrade} have been reviewed.
+                                    Tất cả nội dung của Khối {selectedGrade} đã được xem xét.
                                 </Typography>
                             </Box>
                         ) : (
@@ -292,7 +292,7 @@ const ContentApproval = ({ sidebarOpen }) => {
                                                 color="primary"
                                                 startIcon={<CheckIcon />}
                                             >
-                                                Approve
+                                                Phê duyệt
                                             </ActionButton>
                                             <ActionButton
                                                 onClick={() => handleReject(content.id)}
@@ -300,7 +300,7 @@ const ContentApproval = ({ sidebarOpen }) => {
                                                 color="error"
                                                 startIcon={<CloseIcon />}
                                             >
-                                                Reject
+                                                Từ chối
                                             </ActionButton>
                                         </Box>
                                     </StyledListItem>
