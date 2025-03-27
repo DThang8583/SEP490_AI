@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Box, Snackbar, Alert } from '@mui/material';
+// src/Components/SubjectSpecialistManager/Sidebar.jsx
+import React, { useState, useEffect } from 'react';
+import { Drawer, MenuItem, Toolbar, Box, Snackbar, Alert, Typography, Badge } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../api';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -15,8 +16,23 @@ import LogoutIcon from '@mui/icons-material/Logout';
 const Sidebar = ({ open }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0); // State để lưu số lượng thông báo chưa đọc
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Lấy số lượng thông báo chưa đọc khi component mount
+    useEffect(() => {
+        const fetchUnreadCount = async () => {
+            try {
+                const res = await api.getNotifications();
+                const unread = res.data.filter((notification) => !notification.isRead).length;
+                setUnreadCount(unread);
+            } catch (error) {
+                console.error('Error fetching unread notifications:', error);
+            }
+        };
+        fetchUnreadCount();
+    }, []);
 
     const handleNavigation = (path, action) => {
         if (action) {
@@ -48,7 +64,15 @@ const Sidebar = ({ open }) => {
         { text: 'Curriculum Framework', path: '/manager/curriculum-framework', icon: <AccountTreeIcon /> },
         { text: 'Lesson Export', path: '/manager/lesson-export', icon: <FileDownloadIcon /> },
         { text: 'Profile', path: '/manager/profile', icon: <PersonIcon /> },
-        { text: 'Notifications', path: '/manager/notifications', icon: <NotificationsIcon /> },
+        {
+            text: 'Notifications',
+            path: '/manager/notifications',
+            icon: (
+                <Badge badgeContent={unreadCount} color="error">
+                    <NotificationsIcon />
+                </Badge>
+            ),
+        },
         { text: 'Log out', path: '/login', icon: <LogoutIcon />, action: handleLogout },
     ];
 
@@ -116,10 +140,15 @@ const Sidebar = ({ open }) => {
                         },
                     }}
                 >
-                    <List>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            width: '100%',
+                        }}
+                    >
                         {menuItems.map((item) => (
-                            <ListItem
-                                button
+                            <MenuItem
                                 key={item.text}
                                 onClick={() => handleNavigation(item.path, item.action)}
                                 sx={{
@@ -132,12 +161,12 @@ const Sidebar = ({ open }) => {
                                     position: 'relative',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    minHeight: '48px', // Cố định chiều cao để icon không dịch chuyển
+                                    minHeight: '48px',
                                     '&:hover': {
                                         backgroundColor: 'rgba(25, 118, 210, 0.08)',
                                         color: '#1976d2',
                                         transform: isCollapsed ? 'none' : 'translateX(4px)',
-                                        '& .MuiListItemIcon-root': {
+                                        '& .icon-container': {
                                             color: '#1976d2',
                                         },
                                     },
@@ -154,32 +183,37 @@ const Sidebar = ({ open }) => {
                                     } : {},
                                 }}
                             >
-                                <ListItemIcon
+                                <Box
+                                    className="icon-container"
                                     sx={{
                                         color: location.pathname === item.path ? '#1976d2' : '#666',
-                                        minWidth: '40px', // Cố định chiều rộng để icon không dịch chuyển
+                                        minWidth: '40px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                         transition: 'color 0.2s ease-in-out',
                                     }}
                                 >
                                     {item.icon}
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary={item.text}
+                                </Box>
+                                <Typography
                                     sx={{
+                                        position: 'absolute',
+                                        left: '56px',
                                         opacity: isCollapsed ? 0 : 1,
                                         visibility: isCollapsed ? 'hidden' : 'visible',
                                         width: isCollapsed ? 0 : 'auto',
                                         transition: 'opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, width 0.3s ease-in-out',
-                                        transitionDelay: isCollapsed ? '0s' : '0.001s', // Delay khi mở để mượt hơn
-                                        '& .MuiTypography-root': {
-                                            fontSize: '0.9rem',
-                                            fontWeight: location.pathname === item.path ? 600 : 500,
-                                        },
+                                        transitionDelay: isCollapsed ? '0s' : '0.1s',
+                                        fontSize: '0.9rem',
+                                        fontWeight: location.pathname === item.path ? 600 : 500,
                                     }}
-                                />
-                            </ListItem>
+                                >
+                                    {item.text}
+                                </Typography>
+                            </MenuItem>
                         ))}
-                    </List>
+                    </Box>
                 </Box>
             </Drawer>
 
