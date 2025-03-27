@@ -1,3 +1,90 @@
+// import React, { useState } from 'react';
+// import { Box, TextField, Button, Typography, Link } from '@mui/material';
+// import { useNavigate } from 'react-router-dom';
+
+// const Login = () => {
+//   const [email, setEmail] = useState('');
+//   const [password, setPassword] = useState('');
+//   const navigate = useNavigate(); // Điều hướng sang trang khác
+
+//   // Xử lý đăng nhập (giả lập)
+//   const handleLogin = () => {
+//     if (email && password) {
+//       // Giả sử đăng nhập thành công, chuyển sang trang dashboard hoặc trang chính
+//       navigate('/home'); // Đổi '/home' thành trang bạn muốn điều hướng sau khi login
+//     } else {
+//       alert('Vui lòng điền đầy đủ email và mật khẩu');
+//     }
+//   };
+
+//   return (
+//     <Box
+//       sx={{
+//         display: 'flex',
+//         flexDirection: 'column',
+//         alignItems: 'center',
+//         justifyContent: 'center',
+//         height: '100vh',
+//         backgroundColor: '#f4f6f8',
+//       }}
+//     >
+//       <Typography variant="h5" sx={{ marginBottom: 3, fontWeight: 'bold' }}>
+//         Đăng nhập
+//       </Typography>
+
+//       {/* Form Login */}
+//       <Box sx={{ width: '100%', maxWidth: 400, padding: 3, backgroundColor: 'white', borderRadius: 2, boxShadow: 3 }}>
+//         {/* Email */}
+//         <TextField
+//           label="Email"
+//           variant="outlined"
+//           type="email"
+//           fullWidth
+//           value={email}
+//           onChange={(e) => setEmail(e.target.value)}
+//           sx={{ marginBottom: 2 }}
+//         />
+
+//         {/* Password */}
+//         <TextField
+//           label="Mật khẩu"
+//           variant="outlined"
+//           type="password"
+//           fullWidth
+//           value={password}
+//           onChange={(e) => setPassword(e.target.value)}
+//           sx={{ marginBottom: 2 }}
+//         />
+
+//         {/* Button Đăng nhập */}
+//         <Button
+//           variant="contained"
+//           color="primary"
+//           fullWidth
+//           onClick={handleLogin}
+//           sx={{ marginBottom: 2, backgroundColor: '#06A9AE', '&:hover': { backgroundColor: '#048C87' } }}
+//         >
+//           Đăng nhập
+//         </Button>
+
+//         {/* Liên kết Quên mật khẩu và Đăng ký */}
+//         <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+//           <Link href="/forgot-password" sx={{ color: 'gray', textDecoration: 'none' }}>
+//             Quên mật khẩu?
+//           </Link>
+//           <Link href="/Signup" sx={{ color: 'gray', textDecoration: 'none' }}>
+//             Đăng ký
+//           </Link>
+//         </Box>
+//       </Box>
+//     </Box>
+//   );
+// };
+
+// export default Login;
+
+
+// src/page/Login.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 import { 
@@ -55,25 +142,34 @@ const Login = () => {
 
         // Extract user information from the token
         const userInfo = {
-          id: decodedToken.id,
-          email: decodedToken.email,
-          roleId: decodedToken.roleId,
-          fullName: decodedToken.fullName,
+          id: decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"],
+          email: decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"],
+          fullName: decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"],
+          role: decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
         };
         console.log("User Info:", userInfo);
+
+        // Store tokens and user info
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('userInfo', JSON.stringify(userInfo));
 
         // Use the login function from AuthContext
         login(accessToken, userInfo);
 
         // Navigate based on role
-        if (decodedToken.roleId === 2) {
-          navigate("/admin/dashboard");
-        } else if (decodedToken.roleId === 3) {
-          navigate("/");
-        } else if (decodedToken.roleId === 1) {
-          navigate("/manager/dashboard");
-        } else {
-          navigate("/");
+        switch (userInfo.role) {
+          case "Subject Specialist Manager":
+            navigate("/manager/dashboard", { replace: true });
+            break;
+          case "Administrator":
+            navigate("/admin/dashboard", { replace: true });
+            break;
+          case "Teacher":
+            navigate("/", { replace: true });
+            break;
+          default:
+            navigate("/", { replace: true });
         }
       } else {
         throw new Error("Invalid response format");

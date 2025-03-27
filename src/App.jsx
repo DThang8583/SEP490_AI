@@ -1,5 +1,5 @@
 import './App.css';
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
@@ -22,8 +22,70 @@ import ExamList from './Components/ExamPrep/ExamList';
 import ExamDetail from './Components/ExamPrep/ExamDetail';
 import Support from './Components/Support/Support';
 import SignUpManager from './page/SignUpManager';
+import Sidebar from './Components/SubjectSpecialistManager/Sidebar';
+import Dashboard from './Components/SubjectSpecialistManager/Dashboard';
+import LessonReview from './Components/SubjectSpecialistManager/LessonReview';
+import ContentApproval from './Components/SubjectSpecialistManager/ContentApproval';
+import CurriculumAnalysis from './Components/SubjectSpecialistManager/CurriculumAnalysis';
+import CurriculumFramework from './Components/SubjectSpecialistManager/CurriculumFramework';
+import LessonExport from './Components/SubjectSpecialistManager/LessonExport';
+import Profile from './Components/SubjectSpecialistManager/Profile';
+import EditProfile from './Components/SubjectSpecialistManager/EditProfile';
+import ChangePassword from './Components/SubjectSpecialistManager/ChangePassword';
+import ForgotPassword from './Components/SubjectSpecialistManager/ForgotPassword';
+import Notification from './Components/SubjectSpecialistManager/Notification';
+import { IconButton } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import PrivateRoute from './Components/PrivateRoute';
+
+const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
+  return (
+    <>
+      {!sidebarOpen && (
+        <IconButton
+          onClick={toggleSidebar}
+          sx={{
+            position: 'fixed',
+            top: 10,
+            left: 10,
+            zIndex: 1400,
+            color: '#666',
+            bgcolor: 'white',
+            '&:hover': {
+              bgcolor: '#e0e0e0',
+            },
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
+      )}
+
+      <Sidebar open={sidebarOpen} toggleSidebar={toggleSidebar} />
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard sidebarOpen={sidebarOpen} />} />
+        <Route path="/lesson-review" element={<LessonReview sidebarOpen={sidebarOpen} />} />
+        <Route path="/content-approval" element={<ContentApproval sidebarOpen={sidebarOpen} />} />
+        <Route path="/curriculum-analysis" element={<CurriculumAnalysis sidebarOpen={sidebarOpen} />} />
+        <Route path="/curriculum-framework" element={<CurriculumFramework sidebarOpen={sidebarOpen} />} />
+        <Route path="/lesson-export" element={<LessonExport sidebarOpen={sidebarOpen} />} />
+        <Route path="/profile" element={<Profile sidebarOpen={sidebarOpen} />} />
+        <Route path="/edit-profile" element={<EditProfile sidebarOpen={sidebarOpen} />} />
+        <Route path="/change-password" element={<ChangePassword sidebarOpen={sidebarOpen} />} />
+        <Route path="/forgot-password" element={<ForgotPassword sidebarOpen={sidebarOpen} />} />
+        <Route path="/notifications" element={<Notification sidebarOpen={sidebarOpen} />} />
+      </Routes>
+    </>
+  );
+};
 
 function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const toggleSidebar = (value) => {
+    const newState = value !== undefined ? value : !sidebarOpen;
+    setSidebarOpen(newState);
+  };
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -49,6 +111,11 @@ function App() {
                 <Route path="/de-on-thi" element={<ExamList />} />
                 <Route path="/de-on-thi/:id" element={<ExamDetail />} />
                 <Route path="/support" element={<Support />} />
+                <Route path="/manager/*" element={
+                  <PrivateRoute>
+                    <ManagerRoutes sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+                  </PrivateRoute>
+                } />
               </Routes>
             </main>
             <Footer />

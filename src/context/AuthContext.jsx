@@ -7,26 +7,25 @@ export const AuthProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
 
   useEffect(() => {
-    // Kiểm tra trạng thái đăng nhập khi component mount
+    // Check for existing token on mount
     const token = localStorage.getItem('accessToken');
-    const userInfoStr = localStorage.getItem('userInfo');
+    const storedUserInfo = localStorage.getItem('userInfo');
     
-    if (token && userInfoStr) {
+    if (token && storedUserInfo) {
       setIsLoggedIn(true);
-      setUserInfo(JSON.parse(userInfoStr));
+      setUserInfo(JSON.parse(storedUserInfo));
     }
   }, []);
 
-  const login = (token, userData) => {
+  const login = (token, user) => {
     localStorage.setItem('accessToken', token);
-    localStorage.setItem('userInfo', JSON.stringify(userData));
+    localStorage.setItem('userInfo', JSON.stringify(user));
     setIsLoggedIn(true);
-    setUserInfo(userData);
+    setUserInfo(user);
   };
 
   const logout = () => {
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('userInfo');
     setIsLoggedIn(false);
     setUserInfo(null);
