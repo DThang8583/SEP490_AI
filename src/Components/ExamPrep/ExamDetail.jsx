@@ -1,210 +1,216 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Container,
   Box,
   Typography,
   Card,
   CardContent,
-  useTheme,
+  CircularProgress,
+  Alert,
+  Button,
   Divider,
-  Button
+  List,
+  ListItem,
+  ListItemText,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  Paper,
+  Chip,
+  Stack,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
-import { CheckCircle, ArrowBack } from '@mui/icons-material';
-import { keyframes } from '@mui/system';
-import { useNavigate, useParams } from 'react-router-dom';
-
-const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
+import {
+  ArrowBack as ArrowBackIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  Quiz as QuizIcon,
+  Help as HelpIcon
+} from '@mui/icons-material';
+import { useTheme as useCustomTheme } from '../../context/ThemeContext';
 
 const ExamDetail = () => {
-  const theme = useTheme();
-  const navigate = useNavigate();
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { isDarkMode } = useCustomTheme();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Mock data - trong thực tế sẽ lấy từ API
-  const examData = {
-    id: 1,
-    title: "Đề ôn tập Toán 5 - Phân số",
-    grade: "Lớp 5",
-    duration: "45 phút",
-    subject: "Toán",
-    topic: "Phân số",
-    questions: [
-      {
-        id: 1,
-        question: "Một hình chữ nhật có chiều dài 8cm và chiều rộng bằng 3/4 chiều dài. Tính diện tích hình chữ nhật đó.",
-        options: [
-          "48 cm²",
-          "24 cm²",
-          "32 cm²",
-          "64 cm²"
-        ],
-        correctAnswer: "48 cm²",
-        explanation: "Chiều rộng = 8 × 3/4 = 6cm. Diện tích = 8 × 6 = 48 cm²"
-      },
-      {
-        id: 2,
-        question: "Một cửa hàng có 120kg gạo, đã bán 2/3 số gạo đó. Hỏi cửa hàng còn lại bao nhiêu kg gạo?",
-        options: [
-          "80kg",
-          "40kg",
-          "30kg",
-          "60kg"
-        ],
-        correctAnswer: "40kg",
-        explanation: "Số gạo đã bán = 120 × 2/3 = 80kg. Số gạo còn lại = 120 - 80 = 40kg"
-      },
-      {
-        id: 3,
-        question: "Một học sinh làm bài tập trong 45 phút. Thời gian học sinh đó làm đúng bài chiếm 4/5 thời gian. Hỏi học sinh đó làm đúng bài trong bao nhiêu phút?",
-        options: [
-          "36 phút",
-          "9 phút",
-          "30 phút",
-          "15 phút"
-        ],
-        correctAnswer: "36 phút",
-        explanation: "Thời gian làm đúng = 45 × 4/5 = 36 phút"
-      },
-      {
-        id: 4,
-        question: "Một miếng vải dài 24m, đã cắt đi 1/3 số vải. Hỏi còn lại bao nhiêu mét vải?",
-        options: [
-          "8m",
-          "16m",
-          "12m",
-          "20m"
-        ],
-        correctAnswer: "16m",
-        explanation: "Số vải đã cắt = 24 × 1/3 = 8m. Số vải còn lại = 24 - 8 = 16m"
-      },
-      {
-        id: 5,
-        question: "Một thùng chứa 60 lít dầu, đã dùng 3/5 số dầu đó. Hỏi còn lại bao nhiêu lít dầu?",
-        options: [
-          "24 lít",
-          "36 lít",
-          "40 lít",
-          "20 lít"
-        ],
-        correctAnswer: "24 lít",
-        explanation: "Số dầu đã dùng = 60 × 3/5 = 36 lít. Số dầu còn lại = 60 - 36 = 24 lít"
+  const [quizData, setQuizData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchQuizDetail = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/quizzes/${id}`);
+        console.log("API Quiz Detail response:", response.data);
+        
+        if (response.data && response.data.code === 0 && response.data.data) {
+          setQuizData(response.data.data);
+          console.log("Chi tiết bài kiểm tra:", response.data.data);
+        } else {
+          setError('Không thể tải thông tin bài kiểm tra');
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải thông tin bài kiểm tra:', err);
+        setError('Lỗi khi tải thông tin bài kiểm tra');
+      } finally {
+        setLoading(false);
       }
-    ]
+    };
+
+    if (id) {
+      fetchQuizDetail();
+    }
+  }, [id]);
+
+  const handleBack = () => {
+    navigate('/de-on');
   };
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ pt: 12, pb: 8 }}>
+    <Box
+      sx={{
+        py: 4,
+        minHeight: 'calc(100vh - 64px)',
+        background: isDarkMode
+          ? 'linear-gradient(135deg, rgb(18, 18, 18) 0%, rgb(30, 30, 30) 100%)'
+          : 'linear-gradient(135deg, rgb(245, 247, 250) 0%, rgb(255, 255, 255) 100%)',
+      }}
+    >
+      <Container maxWidth="lg">
         <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate('/de-on-thi')}
-          sx={{ mb: 4 }}
+          startIcon={<ArrowBackIcon />}
+          onClick={handleBack}
+          sx={{ mb: 3 }}
         >
           Quay lại danh sách
         </Button>
 
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            mb: 4,
-            textAlign: 'center',
-            background: 'linear-gradient(45deg, #FF6B6B, #FF8E53)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          {examData.title}
-        </Typography>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress size={60} />
+          </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        ) : !quizData ? (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Không tìm thấy thông tin bài kiểm tra
+          </Alert>
+        ) : (
+          <>
+            <Card
+              sx={{
+                mb: 4,
+                borderRadius: '16px',
+                backgroundColor: isDarkMode ? 'rgba(40, 40, 40, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+                backdropFilter: 'blur(12px)',
+                border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
+                boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.2)' : '0 8px 32px rgba(0,0,0,0.05)',
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+                  <QuizIcon color="primary" />
+                  <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
+                    {quizData.quizName}
+                  </Typography>
+                </Stack>
+                
+                <Divider sx={{ mb: 2 }} />
+                
+                <Stack spacing={2}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      ID: {quizData.quizId}
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      Số câu hỏi: {quizData.quizQuestions?.length || 0}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
 
-        {examData.questions.map((question, index) => (
-          <Card
-            key={question.id}
-            sx={{
-              mb: 3,
-              borderRadius: 3,
-              border: `1px solid ${theme.palette.divider}`,
-              animation: `${fadeIn} 0.8s ease-out`,
-              animationDelay: `${index * 0.1}s`,
-            }}
-          >
-            <CardContent sx={{ p: 4 }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  mb: 3,
-                  fontWeight: 600,
-                  display: 'flex',
-                  gap: 2,
-                }}
-              >
-                <span style={{ color: '#FF6B6B' }}>Câu {question.id}:</span>
-                {question.question}
-              </Typography>
-
-              <Box sx={{ mb: 3 }}>
-                {question.options.map((option, optionIndex) => (
-                  <Typography
-                    key={optionIndex}
+            {quizData.quizQuestions && quizData.quizQuestions.length > 0 ? (
+              <>
+                {quizData.quizQuestions.map((question, index) => (
+                  <Card
+                    key={question.questionId}
                     sx={{
-                      p: 1.5,
-                      mb: 1,
-                      borderRadius: 2,
-                      backgroundColor: option === question.correctAnswer 
-                        ? 'rgba(76, 175, 80, 0.1)'
-                        : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
+                      mb: 3,
+                      borderRadius: '16px',
+                      backgroundColor: isDarkMode ? 'rgba(40, 40, 40, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+                      backdropFilter: 'blur(12px)',
+                      border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
+                      boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.2)' : '0 8px 32px rgba(0,0,0,0.05)',
                     }}
                   >
-                    {option === question.correctAnswer && (
-                      <CheckCircle sx={{ color: 'success.main' }} />
-                    )}
-                    {option}
-                  </Typography>
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                        Câu {index + 1}: {question.questionName}
+                      </Typography>
+                      
+                      <Box sx={{ mt: 2 }}>
+                        {question.quizAnswers.map((answer) => (
+                          <Box
+                            key={answer.answerId}
+                            sx={{
+                              p: 2,
+                              mb: 1,
+                              borderRadius: 1,
+                              backgroundColor: answer.isCorrect
+                                ? 'rgba(76, 175, 80, 0.1)'
+                                : 'transparent',
+                              border: `1px solid ${answer.isCorrect ? 'rgba(76, 175, 80, 0.3)' : 'rgba(0, 0, 0, 0.1)'}`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            {answer.isCorrect ? (
+                              <CheckCircleIcon color="success" />
+                            ) : (
+                              <CancelIcon color="error" />
+                            )}
+                            <Typography variant="body1">
+                              {answer.answer}
+                            </Typography>
+                            {answer.isCorrect && (
+                              <Chip
+                                label="Đáp án đúng"
+                                color="success"
+                                size="small"
+                                sx={{ ml: 'auto' }}
+                              />
+                            )}
+                          </Box>
+                        ))}
+                      </Box>
+                    </CardContent>
+                  </Card>
                 ))}
-              </Box>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Box sx={{ mt: 2 }}>
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    color: 'success.main',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    mb: 1,
-                  }}
-                >
-                  <CheckCircle />
-                  Đáp án đúng: {question.correctAnswer}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ color: 'text.secondary' }}
-                >
-                  Giải thích: {question.explanation}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
-    </Container>
+              </>
+            ) : (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Không có câu hỏi nào trong bài kiểm tra này
+              </Alert>
+            )}
+          </>
+        )}
+      </Container>
+    </Box>
   );
 };
 

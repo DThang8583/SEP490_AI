@@ -1,94 +1,7 @@
-// import React, { useState } from 'react';
-// import { Box, TextField, Button, Typography, Link } from '@mui/material';
-// import { useNavigate } from 'react-router-dom';
-
-// const Login = () => {
-//   const [email, setEmail] = useState('');
-//   const [password, setPassword] = useState('');
-//   const navigate = useNavigate(); // Điều hướng sang trang khác
-
-//   // Xử lý đăng nhập (giả lập)
-//   const handleLogin = () => {
-//     if (email && password) {
-//       // Giả sử đăng nhập thành công, chuyển sang trang dashboard hoặc trang chính
-//       navigate('/home'); // Đổi '/home' thành trang bạn muốn điều hướng sau khi login
-//     } else {
-//       alert('Vui lòng điền đầy đủ email và mật khẩu');
-//     }
-//   };
-
-//   return (
-//     <Box
-//       sx={{
-//         display: 'flex',
-//         flexDirection: 'column',
-//         alignItems: 'center',
-//         justifyContent: 'center',
-//         height: '100vh',
-//         backgroundColor: '#f4f6f8',
-//       }}
-//     >
-//       <Typography variant="h5" sx={{ marginBottom: 3, fontWeight: 'bold' }}>
-//         Đăng nhập
-//       </Typography>
-
-//       {/* Form Login */}
-//       <Box sx={{ width: '100%', maxWidth: 400, padding: 3, backgroundColor: 'white', borderRadius: 2, boxShadow: 3 }}>
-//         {/* Email */}
-//         <TextField
-//           label="Email"
-//           variant="outlined"
-//           type="email"
-//           fullWidth
-//           value={email}
-//           onChange={(e) => setEmail(e.target.value)}
-//           sx={{ marginBottom: 2 }}
-//         />
-
-//         {/* Password */}
-//         <TextField
-//           label="Mật khẩu"
-//           variant="outlined"
-//           type="password"
-//           fullWidth
-//           value={password}
-//           onChange={(e) => setPassword(e.target.value)}
-//           sx={{ marginBottom: 2 }}
-//         />
-
-//         {/* Button Đăng nhập */}
-//         <Button
-//           variant="contained"
-//           color="primary"
-//           fullWidth
-//           onClick={handleLogin}
-//           sx={{ marginBottom: 2, backgroundColor: '#06A9AE', '&:hover': { backgroundColor: '#048C87' } }}
-//         >
-//           Đăng nhập
-//         </Button>
-
-//         {/* Liên kết Quên mật khẩu và Đăng ký */}
-//         <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-//           <Link href="/forgot-password" sx={{ color: 'gray', textDecoration: 'none' }}>
-//             Quên mật khẩu?
-//           </Link>
-//           <Link href="/Signup" sx={{ color: 'gray', textDecoration: 'none' }}>
-//             Đăng ký
-//           </Link>
-//         </Box>
-//       </Box>
-//     </Box>
-//   );
-// };
-
-// export default Login;
-
-
-// src/page/Login.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 import { 
-  Box, Container, Paper, Typography, TextField, Button, Link, InputAdornment, IconButton, Alert, Snackbar 
+  Box, Container, Paper, Typography, TextField, Button, Link, InputAdornment, IconButton, Alert, Snackbar, CircularProgress
 } from '@mui/material';
 import { Visibility, VisibilityOff, Email, Lock, School } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -105,7 +18,7 @@ const float = keyframes`
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -119,53 +32,54 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log("Sending login request with:", { email, password });
-      const response = await axios.post(
+      // Tạo instance axios với timeout
+      const axiosInstance = axios.create({
+        timeout: 10000, // 10 giây timeout
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const response = await axiosInstance.post(
         "https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/auth/login",
         {
-          email,
+          username,
           password,
         }
       );
 
-      console.log("API Response:", response);
-      console.log("Response data:", response.data);
-
       if (response.data && response.data.data) {
         const { accessToken, refreshToken } = response.data.data;
-        console.log("Access Token:", accessToken);
-        console.log("Refresh Token:", refreshToken);
 
-        // Decode the JWT token to get user information
+        // Decode token và lấy thông tin user
         const decodedToken = jwtDecode(accessToken);
-        console.log("Decoded Token:", decodedToken);
-
-        // Extract user information from the token
         const userInfo = {
           id: decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"],
           email: decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"],
           fullName: decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"],
           role: decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
         };
-        console.log("User Info:", userInfo);
 
-        // Store tokens and user info
+        // Lưu token và thông tin user
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
         localStorage.setItem('userInfo', JSON.stringify(userInfo));
 
-        // Use the login function from AuthContext
+        // Gọi hàm login từ AuthContext
         login(accessToken, userInfo);
 
-        // Navigate based on role
+        // Chuyển hướng dựa trên role
         switch (userInfo.role) {
-          case "Subject Specialist Manager":
+          case "Tổ trưởng chuyên môn":
+            navigate("/manager/dashboard", { replace: true });
+            break;
+            case "Tổ phó":
             navigate("/manager/dashboard", { replace: true });
             break;
           case "Administrator":
             navigate("/admin/dashboard", { replace: true });
             break;
-          case "Teacher":
+          case "Giáo viên":
             navigate("/", { replace: true });
             break;
           default:
@@ -175,9 +89,9 @@ const Login = () => {
         throw new Error("Invalid response format");
       }
     } catch (error) {
-      console.error("Login error:", error);
-      if (error.response) {
-        console.error("Error response:", error.response.data);
+      if (error.code === 'ECONNABORTED') {
+        setError("Kết nối quá thời gian. Vui lòng kiểm tra kết nối mạng và thử lại.");
+      } else if (error.response) {
         setError(error.response.data.message || "Đăng nhập thất bại");
       } else {
         setError("Đăng nhập thất bại. Vui lòng thử lại.");
@@ -198,28 +112,102 @@ const Login = () => {
             </Typography>
           </Box>
           <form onSubmit={handleSubmit}>
-            <TextField fullWidth label="Email" variant="outlined" value={email} onChange={(e) => setEmail(e.target.value)} required sx={{ mb: 3 }}
-              InputProps={{ startAdornment: (<InputAdornment position="start"><Email /></InputAdornment>) }}
+            <TextField 
+              fullWidth 
+              label="Username" 
+              variant="outlined" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)} 
+              required 
+              sx={{ mb: 3 }}
+              disabled={loading}
+              InputProps={{ 
+                startAdornment: (<InputAdornment position="start"><Email /></InputAdornment>) 
+              }}
             />
-            <TextField fullWidth label="Mật khẩu" type={showPassword ? 'text' : 'password'} variant="outlined" value={password} 
-              onChange={(e) => setPassword(e.target.value)} required sx={{ mb: 3 }}
+            <TextField 
+              fullWidth 
+              label="Mật khẩu" 
+              type={showPassword ? 'text' : 'password'} 
+              variant="outlined" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+              sx={{ mb: 3 }}
+              disabled={loading}
               InputProps={{
                 startAdornment: (<InputAdornment position="start"><Lock /></InputAdornment>),
                 endAdornment: (<InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)}>
+                  <IconButton onClick={() => setShowPassword(!showPassword)} disabled={loading}>
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>),
               }}
             />
-            <Button type="submit" fullWidth variant="contained" sx={{ py: 1.5, borderRadius: '12px', backgroundColor: '#FF6B6B', color: '#ffffff' }}>
-              Đăng nhập
+            <Button 
+              type="submit" 
+              fullWidth 
+              variant="contained" 
+              sx={{ 
+                py: 1.5, 
+                borderRadius: '12px', 
+                backgroundColor: '#FF6B6B', 
+                color: '#ffffff',
+                position: 'relative',
+                '&:hover': {
+                  backgroundColor: '#FF5252',
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <CircularProgress 
+                  size={24} 
+                  sx={{ 
+                    color: 'white',
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    marginTop: '-12px',
+                    marginLeft: '-12px',
+                  }} 
+                />
+              ) : (
+                'Đăng nhập'
+              )}
             </Button>
           </form>
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Link 
+              component={RouterLink} 
+              to="/forgot-password" 
+              sx={{ 
+                color: '#FF6B6B', 
+                textDecoration: 'none',
+                '&:hover': {
+                  textDecoration: 'underline',
+                }
+              }}
+            >
+              Quên mật khẩu?
+            </Link>
+          </Box>
         </Paper>
       </Container>
-      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <Alert onClose={() => setError('')} severity="error" sx={{ width: '100%' }}>{error}</Alert>
+      <Snackbar 
+        open={!!error} 
+        autoHideDuration={6000} 
+        onClose={() => setError('')} 
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setError('')} 
+          severity="error" 
+          sx={{ width: '100%' }}
+          variant="filled"
+        >
+          {error}
+        </Alert>
       </Snackbar>
     </Box>
   );

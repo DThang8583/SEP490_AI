@@ -12,12 +12,14 @@ import {
   InputAdornment,
   useTheme,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  Pagination,
+  Stack,
+  Chip
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { Search } from '@mui/icons-material';
 import { keyframes } from '@mui/system';
-import LessonDetail from './LessonDetail';
 
 // Animation keyframes
 const fadeIn = keyframes`
@@ -35,23 +37,51 @@ const LessonList = () => {
   const [lessons, setLessons] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGrade, setSelectedGrade] = useState('all');
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortColumn, setSortColumn] = useState("");
+  const [sortDir, setSortDir] = useState("1");
+  const [totalPages, setTotalPages] = useState(0);
   const theme = useTheme();
 
   useEffect(() => {
     const fetchLessons = async () => {
       try {
-        const response = await axios.get('https://67c0f8e861d8935867e1970b.mockapi.io/AITools');
-        setLessons(response.data);
+        const response = await axios.get(
+          `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons`,
+          {
+            params: {
+              IsApproved: "true",
+              PageNumber: pageNumber,
+              PageSize: pageSize,
+              SortColumn: sortColumn,
+              SortDir: sortDir
+            }
+          }
+        );
+        console.log('API Response:', response.data);
+        if (response.data.data) {
+          setLessons(response.data.data.items);
+          setTotalPages(response.data.data.totalPage);
+        }
       } catch (error) {
         console.error('Error fetching lessons:', error);
+        if (error.response) {
+          console.log('Error response:', error.response.data);
+        }
       }
     };
 
     fetchLessons();
-  }, []);
+  }, [pageNumber, pageSize, sortColumn, sortDir]);
 
   const handleGradeChange = (event, newGrade) => {
     setSelectedGrade(newGrade || 'all');
+  };
+
+  const handlePageChange = (event, value) => {
+    setPageNumber(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const filteredLessons = lessons.filter(lesson => {
@@ -176,19 +206,22 @@ const LessonList = () => {
 
         {/* Lessons Grid */}
         <Grid container spacing={4}>
-          {filteredLessons.map((lesson, index) => (
+          {lessons.map((lesson, index) => (
             <Grid 
               item 
               xs={12} 
               sm={6} 
               md={4} 
-              key={lesson.id}
+              key={lesson.lessonId}
               sx={{
                 animation: `${fadeIn} 0.8s ease-out forwards`,
                 animationDelay: `${index * 0.1}s`,
               }}
             >
-              <Link to={`/LessonDetail/${lesson.id}`} style={{ textDecoration: 'none' }}>
+              <Link 
+                to={`/thong-tin-bai-hoc/${lesson.lessonId}`} 
+                style={{ textDecoration: 'none' }}
+              >
                 <Card
                   sx={{
                     height: '100%',
@@ -204,22 +237,6 @@ const LessonList = () => {
                     },
                   }}
                 >
-                  <Box sx={{ position: 'relative', paddingTop: '60%' }}>
-                    <CardMedia
-                      component="img"
-                      image={lesson.image}
-                      alt={lesson.name}
-                      sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        transition: 'transform 0.3s ease',
-                      }}
-                    />
-                  </Box>
                   <CardContent 
                     sx={{ 
                       flexGrow: 1,
@@ -247,6 +264,7 @@ const LessonList = () => {
                       variant="body2"
                       color="text.secondary"
                       sx={{
+                        mb: 2,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         display: '-webkit-box',
@@ -254,7 +272,42 @@ const LessonList = () => {
                         WebkitBoxOrient: 'vertical',
                       }}
                     >
-                      {lesson.description || 'Khám phá bài học thú vị này ngay hôm nay!'}
+                      {lesson.description}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                      <Chip
+                        label={lesson.lessonType}
+                        size="small"
+                        sx={{
+                          backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                          color: '#FF6B6B',
+                          fontWeight: 500,
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 107, 107, 0.2)',
+                          },
+                        }}
+                      />
+                      <Chip
+                        label={lesson.module}
+                        size="small"
+                        sx={{
+                          backgroundColor: 'rgba(255, 142, 83, 0.1)',
+                          color: '#FF8E53',
+                          fontWeight: 500,
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 142, 83, 0.2)',
+                          },
+                        }}
+                      />
+                    </Box>
+                    <Typography
+                      variant="body2"
+                      color="primary"
+                      sx={{
+                        fontWeight: 500,
+                      }}
+                    >
+                      Số tiết: {lesson.totalPeriods}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -263,8 +316,38 @@ const LessonList = () => {
           ))}
         </Grid>
 
+        {/* Pagination */}
+        {totalPages > 0 && (
+          <Stack spacing={2} alignItems="center" sx={{ mt: 4, mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Trang {pageNumber} / {totalPages}
+              </Typography>
+              <Pagination 
+                count={totalPages}
+                page={pageNumber}
+                onChange={handlePageChange}
+                color="primary"
+                size="large"
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    borderRadius: 2,
+                    '&.Mui-selected': {
+                      backgroundColor: '#FF6B6B',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: '#FF5252',
+                      },
+                    },
+                  },
+                }}
+              />
+            </Box>
+          </Stack>
+        )}
+
         {/* Empty State */}
-        {filteredLessons.length === 0 && (
+        {lessons.length === 0 && (
           <Box
             sx={{
               textAlign: 'center',
