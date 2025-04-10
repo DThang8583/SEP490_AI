@@ -14,7 +14,12 @@ const PrivateRoute = ({ children }) => {
   // Kiểm tra role và điều hướng phù hợp
   if (userInfo) {
     switch (userInfo.role) {
-      case "Subject Specialist Manager":
+      case "Tổ trưởng chuyên môn":
+        if (!location.pathname.startsWith('/manager')) {
+          return <Navigate to="/manager/dashboard" replace />;
+        }
+        break;
+      case "Tổ phó":
         if (!location.pathname.startsWith('/manager')) {
           return <Navigate to="/manager/dashboard" replace />;
         }
