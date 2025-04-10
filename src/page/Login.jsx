@@ -3,7 +3,7 @@
 // import { useNavigate } from 'react-router-dom';
 
 // const Login = () => {
-//   const [email, setEmail] = useState('');
+//   const [email, setUsername] = useState('');
 //   const [password, setPassword] = useState('');
 //   const navigate = useNavigate(); // Điều hướng sang trang khác
 
@@ -41,7 +41,7 @@
 //           type="email"
 //           fullWidth
 //           value={email}
-//           onChange={(e) => setEmail(e.target.value)}
+//           onChange={(e) => setUsername(e.target.value)}
 //           sx={{ marginBottom: 2 }}
 //         />
 
@@ -87,8 +87,8 @@
 // src/page/Login.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
-import { 
-  Box, Container, Paper, Typography, TextField, Button, Link, InputAdornment, IconButton, Alert, Snackbar 
+import {
+  Box, Container, Paper, Typography, TextField, Button, Link, InputAdornment, IconButton, Alert, Snackbar
 } from '@mui/material';
 import { Visibility, VisibilityOff, Email, Lock, School } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -105,7 +105,7 @@ const float = keyframes`
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -119,11 +119,11 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log("Sending login request with:", { email, password });
+      console.log("Sending login request with:", { username, password });
       const response = await axios.post(
         "https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/auth/login",
         {
-          email,
+          username,
           password,
         }
       );
@@ -159,7 +159,10 @@ const Login = () => {
 
         // Navigate based on role
         switch (userInfo.role) {
-          case "Subject Specialist Manager":
+          case "Tổ trưởng chuyên môn":
+            navigate("/manager/dashboard", { replace: true });
+            break;
+          case "Tổ phó":
             navigate("/manager/dashboard", { replace: true });
             break;
           case "Administrator":
@@ -198,10 +201,10 @@ const Login = () => {
             </Typography>
           </Box>
           <form onSubmit={handleSubmit}>
-            <TextField fullWidth label="Email" variant="outlined" value={email} onChange={(e) => setEmail(e.target.value)} required sx={{ mb: 3 }}
+            <TextField fullWidth label="Tên người dùng" variant="outlined" value={username} onChange={(e) => setUsername(e.target.value)} required sx={{ mb: 3 }}
               InputProps={{ startAdornment: (<InputAdornment position="start"><Email /></InputAdornment>) }}
             />
-            <TextField fullWidth label="Mật khẩu" type={showPassword ? 'text' : 'password'} variant="outlined" value={password} 
+            <TextField fullWidth label="Mật khẩu" type={showPassword ? 'text' : 'password'} variant="outlined" value={password}
               onChange={(e) => setPassword(e.target.value)} required sx={{ mb: 3 }}
               InputProps={{
                 startAdornment: (<InputAdornment position="start"><Lock /></InputAdornment>),
