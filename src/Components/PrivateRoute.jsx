@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -5,8 +6,6 @@ import { useAuth } from '../context/AuthContext';
 const PrivateRoute = ({ children }) => {
   const { isLoggedIn, userInfo } = useAuth();
   const location = useLocation();
-
-  // Nếu chưa đăng nhập, chuyển hướng về trang login
   if (!isLoggedIn) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

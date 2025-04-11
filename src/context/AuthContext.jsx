@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
 
   useEffect(() => {
-    // Check for existing token on mount
+    // Kiểm tra và khôi phục trạng thái đăng nhập từ localStorage
     const token = localStorage.getItem('accessToken');
     const storedUserInfo = localStorage.getItem('userInfo');
     

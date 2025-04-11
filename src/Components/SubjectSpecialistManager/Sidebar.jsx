@@ -13,6 +13,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SchoolIcon from '@mui/icons-material/School';
+import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = ({ open }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
@@ -20,6 +21,7 @@ const Sidebar = ({ open }) => {
     const [unreadCount, setUnreadCount] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
+    const { logout } = useAuth();
 
     useEffect(() => {
         const fetchUnreadCount = async () => {
@@ -38,16 +40,10 @@ const Sidebar = ({ open }) => {
         action ? action() : navigate(path);
     };
 
-    const handleLogout = async () => {
-        try {
-            const response = await api.logout();
-            if (response.success) {
-                setSnackbarOpen(true);
-                setTimeout(() => navigate('/login'), 1000);
-            }
-        } catch (error) {
-            console.error('Error logging out:', error);
-        }
+    const handleLogout = () => {
+        logout();
+        setSnackbarOpen(true);
+        setTimeout(() => navigate('/login'), 1000);
     };
 
     const menuItems = [

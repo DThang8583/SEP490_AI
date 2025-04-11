@@ -36,10 +36,15 @@ import {
   Timeline,
   KeyboardArrowDown,
   ExitToApp,
+  Cancel,
+  CheckCircleOutline,
+  EditNote,
+  HourglassTop,
 } from "@mui/icons-material";
 import { useTheme as useCustomTheme } from "../../context/ThemeContext";
 import { keyframes } from "@mui/system";
 import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
 
 const float = keyframes`
   0% { transform: translateY(0px); }
@@ -48,19 +53,41 @@ const float = keyframes`
 `;
 
 const lessonCategories = [
-  { text: "Toán số", path: "/toan-so", icon: <Calculate /> },
-  { text: "Toán hình", path: "/lessons/geometry", icon: <Timeline /> },
+  { text: "Các bài giảng", path: "/các-bài-giảng", icon: <Calculate /> },
+  { 
+    text: "Bài giảng đang chờ duyệt", 
+    path: "/pending-lessons",
+    icon: <HourglassTop />, 
+    requiresTeacher: true 
+  },
+  { 
+    text: "Bài giảng đã chấp nhận", 
+    path: "/approved-lessons",
+    icon: <CheckCircleOutline />, 
+    requiresTeacher: true 
+  },
+  { 
+    text: "Bài giảng bị từ chối", 
+    path: "/rejected-lessons",
+    icon: <Cancel />,
+    requiresTeacher: true 
+  },
+  { 
+    text: "Bài giảng nháp", 
+    path: "/draft-lessons",
+    icon: <EditNote />, 
+    requiresTeacher: true 
+  }
 ];
 
 const menuItems = [
   { text: "Bài học", path: "/lessons" },
-  { text: "Đề ôn thi", path: "/de-on-thi" },
+  { text: "Đề ôn", path: "/de-on" },
   { text: "Hỗ trợ", path: "/support" },
 ];
 
 const settings = [
-  { name: "Hồ sơ", icon: <Person />, path: "/profile" },
-  { name: "Cài đặt", icon: <Settings />, path: "/settings" },
+  { name: "Hồ sơ", icon: <Person />, path: "/teacher/profile" },
   { name: "Đăng xuất", icon: <Logout />, path: "/logout" },
 ];
 
@@ -69,11 +96,65 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [anchorElUser, setAnchorElUser] = useState(null);
   const { isLoggedIn, userInfo, logout } = useAuth();
+  const [userProfile, setUserProfile] = useState(null);
+  
+  // Add console.log for user role
+  useEffect(() => {
+    console.log('User Info:', userInfo);
+    console.log('User Role:', userInfo?.role);
+    console.log('Is Logged In:', isLoggedIn);
+  }, [userInfo, isLoggedIn]);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { isDarkMode, toggleTheme } = useCustomTheme();
   const navigate = useNavigate();
   const location = useLocation();
+ 
+      useEffect(() => {
+        const fetchUserProfile = async () => {
+          console.log("Fetching user profile..."); // Kiểm tra xem hàm có chạy không
+    
+          if (!isLoggedIn) {
+            console.warn("User is not logged in");
+            return;
+          }
+    
+          if (!userInfo?.id) {
+            console.warn("User ID is missing");
+            return;
+          }
+    
+          try {
+            const token = localStorage.getItem("accessToken");
+            console.log("Token:", token);
+            if (!token) {
+              console.warn("No access token found");
+              return;
+            }
+    
+            const response = await axios.get(
+              `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/${userInfo.id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+    
+            console.log("API Response:", response.data);
+            if (response.data?.data?.imgURL) {
+              setUserProfile(response.data.data);
+            } else {
+              console.warn("No image URL found in response");
+            }
+          } catch (error) {
+            console.error("Error fetching user profile:", error.response?.data || error.message);
+          }
+        };
+    
+        fetchUserProfile();
+      }, [isLoggedIn, userInfo?.userId]);
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget.parentElement);
@@ -108,6 +189,9 @@ const Navbar = () => {
   };
 
   const isActive = (path) => location.pathname === path
+
+  const isTeacher = userInfo?.role === 'Giáo viên';
+  console.log('Is Teacher:', isTeacher);
 
   const NavButton = ({ text, path, icon, isDropdown }) => (
     <React.Fragment>
@@ -181,6 +265,7 @@ const Navbar = () => {
               sx={{
                 color: theme.palette.text.primary,
                 py: 1.5,
+                display: category.requiresTeacher && (!isLoggedIn || userInfo?.role !== 'Giáo viên') ? 'none' : 'flex',
                 "&:hover": {
                   backgroundColor: "rgba(255, 107, 107, 0.1)",
                 },
@@ -228,49 +313,40 @@ const Navbar = () => {
                 animation: `${float} 3s ease-in-out infinite`,
               }}
             />
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: "bold",
-                color: theme.palette.text.primary,
-                textDecoration: "none",
-                "&:hover": {
-                  color: "#FF6B6B",
-                },
-              }}
-            >
-              AI Math Tool
-            </Typography>
+            
           </Box>
 
           {/* Desktop Navigation */}
           {!isMobile && (
             <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
               {menuItems.map((item) => (
-                <NavButton
-                  key={item.text}
-                  text={item.text}
-                  path={item.path}
-                  icon={item.icon}
-                  isDropdown={item.text === "Bài học"}
-                />
+                (!item.requiresTeacher || (isLoggedIn && isTeacher)) && (
+                  <NavButton
+                    key={item.text}
+                    text={item.text}
+                    path={item.path}
+                    icon={item.icon}
+                    isDropdown={item.text === "Bài học"}
+                  />
+                )
+                
               ))}
-              <Button
-                component={Link}
-                to="/ChoiceChatorClick"
-                startIcon={<AutoAwesome />}
-                variant="contained"
-                sx={{
-                  backgroundColor: "#FF6B6B",
-                  color: "white",
-                  mx: 1,
-                  "&:hover": {
-                    backgroundColor: "#FF5252",
-                  },
-                }}
-              >
-                Tạo bài giảng AI
-              </Button>
+              {isLoggedIn && isTeacher && (
+            <Button
+              variant="contained"
+              startIcon={<AutoAwesome />}
+              onClick={() => handleNavigation('/CreateLesson')}
+              sx={{
+                ml: 2,
+                backgroundColor: '#FF6B6B',
+                '&:hover': {
+                  backgroundColor: '#FF5252',
+                }
+              }}
+            >
+              Tạo bài giảng bằng AI
+            </Button>
+          )}
             </Box>
           )}
 
@@ -294,8 +370,8 @@ const Navbar = () => {
                   <Tooltip title="Mở cài đặt">
                     <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                       <Avatar
-                        alt={userInfo?.fullName || "User"}
-                        src="/static/images/avatar/1.jpg"
+                        alt={userProfile?.fullname || "User"}
+                        src={userProfile?.imgURL}
                         sx={{
                           width: 40,
                           height: 40,
@@ -330,28 +406,6 @@ const Navbar = () => {
                       }}
                     >
                       Đăng nhập
-                    </Button>
-                    <Button
-                      variant="contained"
-                      onClick={() => navigate("/Register")}
-                      sx={{
-                        backgroundColor: "#FF6B6B",
-                        color: "#ffffff",
-                        "&:hover": {
-                          backgroundColor: "#FF5252",
-                          transform: "translateY(-2px)",
-                        },
-                        textTransform: "none",
-                        px: 3,
-                        py: 1,
-                        borderRadius: "12px",
-                        fontWeight: 500,
-                        fontSize: "0.95rem",
-                        boxShadow: "0 4px 20px rgba(255, 107, 107, 0.3)",
-                        transition: "all 0.2s ease",
-                      }}
-                    >
-                      Đăng ký
                     </Button>
                   </>
                 )}
@@ -466,22 +520,6 @@ const Navbar = () => {
                 </ListItem>
               )
             )}
-            <ListItem
-              button
-              onClick={() => handleNavigation("/ChoiceChatorClick")}
-              sx={{
-                color: "#FF6B6B",
-                backgroundColor: "rgba(255, 107, 107, 0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(255, 107, 107, 0.2)",
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: "#FF6B6B" }}>
-                <AutoAwesome />
-              </ListItemIcon>
-              <ListItemText primary="Tạo bài giảng AI" />
-            </ListItem>
             <Divider sx={{ my: 1 }} />
             <ListItem
               button
@@ -514,9 +552,21 @@ const Navbar = () => {
                   }}
                 >
                   <ListItemIcon sx={{ color: theme.palette.text.primary }}>
-                    {setting.icon}
+                    {setting.name === "Hồ sơ" ? (
+                      <Avatar
+                        alt={userProfile?.fullname || "User"}
+                        src={userProfile?.imgURL}
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          border: `1px solid ${isDarkMode ? "#ffffff" : "#2D3436"}`,
+                        }}
+                      />
+                    ) : (
+                      setting.icon
+                    )}
                   </ListItemIcon>
-                  <ListItemText primary={setting.name} />
+                  <Typography textAlign="center">{setting.name}</Typography>
                 </ListItem>
               ))
             ) : (
@@ -601,7 +651,19 @@ const Navbar = () => {
             }}
           >
             <ListItemIcon sx={{ color: isDarkMode ? "#ffffff" : "#2D3436" }}>
-              {setting.icon}
+              {setting.name === "Hồ sơ" ? (
+                <Avatar
+                  alt={userProfile?.fullname || "User"}
+                  src={userProfile?.imgURL}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    border: `1px solid ${isDarkMode ? "#ffffff" : "#2D3436"}`,
+                  }}
+                />
+              ) : (
+                setting.icon
+              )}
             </ListItemIcon>
             <Typography textAlign="center">{setting.name}</Typography>
           </MenuItem>

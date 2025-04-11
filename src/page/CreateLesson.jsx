@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import axios from "axios";
 import {
   Box,
   Button,
@@ -75,58 +76,186 @@ const CreateLesson = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [grade, setGrade] = useState("");
-  const [semester, setSemester] = useState("");
-  const [topic, setTopic] = useState("");
+  const [module, setModule] = useState("");
   const [lesson, setLesson] = useState("");
+  
+  // New state for API data
+  const [grades, setGrades] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [lessons, setLessons] = useState([]);
+  const [loadingGrades, setLoadingGrades] = useState(false);
+  const [loadingModules, setLoadingModules] = useState(false);
+  const [loadingLessons, setLoadingLessons] = useState(false);
+  const [loadingPrompt, setLoadingPrompt] = useState(false);
+  const [promptData, setPromptData] = useState(null);
 
-  const topics = {
-    "1": {
-      "Học kỳ 1": ["Các số từ 0 đến 10", "Làm quen với một số hình phẳng"],
-      "Học kỳ 2": ["Phép cộng, phép trừ trong phạm vi 10", "Làm quen với một số hình khối"],
-    },
+  // Fetch grades on component mount
+  useEffect(() => {
+    const fetchGrades = async () => {
+      setLoadingGrades(true);
+      try {
+        const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades');
+        if (response.data.code === 0) {
+          setGrades(response.data.data);
+        } else {
+          setError("Không thể tải danh sách lớp học");
+        }
+      } catch (error) {
+        console.error("Error fetching grades:", error);
+        setError("Có lỗi xảy ra khi tải danh sách lớp học");
+      } finally {
+        setLoadingGrades(false);
+      }
+    };
+
+    fetchGrades();
+  }, []);
+
+  // Fetch modules when grade changes
+  useEffect(() => {
+    const fetchModules = async () => {
+      if (!grade) {
+        setModules([]);
+        return;
+      }
+
+      setLoadingModules(true);
+      try {
+        const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades/${grade}/modules`);
+        if (response.data.code === 0) {
+          setModules(response.data.data.modules);
+        } else {
+          setError("Không thể tải danh sách chủ đề");
+        }
+      } catch (error) {
+        console.error("Error fetching modules:", error);
+        setError("Có lỗi xảy ra khi tải danh sách chủ đề");
+      } finally {
+        setLoadingModules(false);
+      }
+    };
+
+    fetchModules();
+  }, [grade]);
+
+  // New useEffect for fetching lessons
+  useEffect(() => {
+    const fetchLessons = async () => {
+      if (!module) {
+        setLessons([]);
+        return;
+      }
+
+      setLoadingLessons(true);
+      try {
+        const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${module}/lessons`);
+        if (response.data.code === 0) {
+          setLessons(response.data.data.lessons);
+        } else {
+          setError("Không thể tải danh sách bài học");
+        }
+      } catch (error) {
+        console.error("Error fetching lessons:", error);
+        setError("Có lỗi xảy ra khi tải danh sách bài học");
+      } finally {
+        setLoadingLessons(false);
+      }
+    };
+
+    fetchLessons();
+  }, [module]);
+
+  const handleLessonChange = (e) => {
+    const selectedLesson = lessons.find(l => l.lessonId === e.target.value);
+    if (selectedLesson) {
+      setLesson(e.target.value);
+      // Store lessonId in localStorage
+      localStorage.setItem('selectedLessonId', selectedLesson.lessonId);
+      
+      // Fetch prompt data when lesson is selected
+      fetchPromptData(selectedLesson.lessonId);
+    }
   };
 
-  const lessons = {
-    "Các số từ 0 đến 10": [
-      "Các số 0, 1, 2, 3, 4, 5",
-      "Các số 6, 7, 8, 9, 10",
-      "Nhiều hơn, ít hơn, bằng nhau",
-      "So sánh số",
-      "Mấy và mấy",
-      "Luyện tập chung",
-    ],
-    "Làm quen với một số hình phẳng": [
-      "Hình vuông, hình tròn, hình tam giác, hình chữ nhật",
-      "Thực hành lắp ghép, xếp hình",
-      "Luyện tập chung",
-    ],
-    "Phép cộng, phép trừ trong phạm vi 10": [
-      "Phép cộng trong phạm vi 10",
-      "Phép trừ trong phạm vi 10",
-      "Bảng cộng, bảng trừ trong phạm vi 10",
-      "Luyện tập chung",
-    ],
-    "Làm quen với một số hình khối": [
-      "Khối lập phương, khối hộp chữ nhật",
-      "Vị trí, định hướng trong không gian",
-      "Luyện tập chung",
-    ],
+  // New function to fetch prompt data
+  const fetchPromptData = async (lessonId) => {
+    setLoadingPrompt(true);
+    try {
+      const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}/prompt`);
+      if (response.data.code === 0) {
+        setPromptData(response.data.data);
+        console.log("Prompt data fetched:", response.data.data);
+      } else {
+        setError("Không thể tải dữ liệu prompt");
+      }
+    } catch (error) {
+      console.error("Error fetching prompt data:", error);
+      setError("Có lỗi xảy ra khi tải dữ liệu prompt");
+    } finally {
+      setLoadingPrompt(false);
+    }
   };
 
   const generateLesson = async () => {
-    if (!grade || !semester || !topic || !lesson) return;
+    if (!grade || !module || !lesson || !promptData) return;
     
     setLoading(true);
     setError("");
 
-    const prompt = `Hãy tạo một bài giảng toán bằng tiếng Việt cho lớp ${grade}, ${semester} về chủ đề "${topic}" với bài học "${lesson}" theo cấu trúc sau:\n\n1. **Trải nghiệm**:\n- Mục đích của hoạt động này là tạo tâm thế, giúp học sinh ý thức được nhiệm vụ học tập. Giáo viên không nên thông báo ngay các kiến thức có sẵn mà cần tạo ra các tình huống gợi vấn đề để học sinh huy động kiến thức, kinh nghiệm của bản thân và suy nghĩ để tìm hướng giải quyết.\n\n2. **Hình thành kiến thức mới**:\n- Mục đích của hoạt động này nhằm giúp học sinh phát hiện, chiếm lĩnh được kiến thức và kỹ năng mới. Giáo viên sẽ giúp học sinh huy động kiến thức, chia sẻ và hợp tác trong học tập để xây dựng kiến thức mới.\n\n3. **Thực hành, Luyện tập**:\n- Mục đích của hoạt động này nhằm giúp học sinh củng cố và hoàn thiện kiến thức, kỹ năng vừa lĩnh hội và huy động, liên kết với kiến thức đã có để áp dụng vào giải quyết vấn đề.\n\n4. **Vận dụng**:\n- Mục đích của hoạt động này là giúp học sinh vận dụng các kiến thức và kỹ năng đã học vào giải quyết các vấn đề có tính chất thực tiễn. Bạn có thể đưa ra các câu hỏi hoặc dự án học tập nhỏ để học sinh thực hiện theo hoạt động cá nhân hoặc nhóm. Hoạt động này có thể được tổ chức ngoài giờ học chính khóa. Giáo viên cũng nên khuyến khích học sinh tiếp tục tìm tòi và mở rộng kiến thức sau khi kết thúc bài học.`;
+    const selectedGrade = grades.find(g => g.gradeId === grade);
+    const selectedModule = modules.find(m => m.moduleId === module);
+    const selectedLesson = lessons.find(l => l.lessonId === lesson);
+
+    // Combine API description with fixed prompt structure
+    const prompt = `${promptData.description}
+
+Hãy tạo bài giảng theo đúng cấu trúc sau:
+
+1. Mục tiêu:
+   a) Năng lực đặc thù:
+   - Năng lực tư duy và lập luận toán học
+   - Năng lực mô hình hóa toán học
+   - Năng lực giải quyết vấn đề toán học
+
+   b) Năng lực chung:
+   - Năng lực tự chủ và tự học
+   - Năng lực giao tiếp và hợp tác
+   - Năng lực giải quyết vấn đề và sáng tạo
+
+   c) Phẩm chất:
+    -học sinh chăm chỉ, trung thực, trách nhiệm trong học tập
+2.Giáo viên chuẩn bị
+   - Đồ dùng dạy học
+   - Học liệu
+  - Phương tiện dạy học
+   - Công cụ đánh giá
+
+3. Tiến trình bài giảng:
+   a) Hoạt động 1: Hoạt động khởi động (5 phút)
+   - Mục tiêu:
+   - Cách tiến hành: (Hoạt động của giáo viên và học sinh)
+
+   b) Hoạt động 2: Hoạt động hình thành kiến thức mới (12 phút)
+   - Mục tiêu:
+   - Cách tiến hành: (Hoạt động của giáo viên và học sinh. Nếu bài học này chủ yếu về tính toán, hãy đưa ra 1 ví dụ bài toán kèm giải thích từng bước.)
+
+   c) Hoạt động 3: Hoạt động luyện tập thực hành (15 phút)
+   - Mục tiêu:
+   - Cách tiến hành: (Hoạt động của giáo viên và học sinh. Nếu bài học này chủ yếu về tính toán, hãy đưa ra 1-2 bài toán luyện tập kèm đáp án.)
+
+   d) Hoạt động 4: Hoạt động vận dụng (3 phút)
+   - Mục tiêu:
+   - Cách tiến hành: (Hoạt động của giáo viên và học sinh. Nếu bài học này chủ yếu về tính toán, hãy đưa ra 1 bài toán vận dụng thực tế kèm đáp án.)
+
+Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không được thay đổi hoặc bỏ qua bất kỳ phần nào.`;
 
     try {
       const result = await model.generateContent(prompt);
       let text = result.response.text();
       text = text.replace(/[#*]+/g, "");
 
-      navigate("/AIRender", { state: { content: text } });
+      // Pass promptId along with content in navigation state
+      navigate("/AIRender", { state: { content: text, promptId: promptData.promptId } });
     } catch (error) {
       console.error("API Error:", error);
       setError("Có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại.");
@@ -269,11 +398,11 @@ const CreateLesson = () => {
                     value={grade}
                     onChange={(e) => {
                       setGrade(e.target.value);
-                      setSemester("");
-                      setTopic("");
+                      setModule("");
                       setLesson("");
                     }}
                     label="Chọn lớp"
+                    disabled={loadingGrades}
                     sx={{
                       backgroundColor: isDarkMode
                         ? "rgba(255, 255, 255, 0.05)"
@@ -290,7 +419,11 @@ const CreateLesson = () => {
                       },
                     }}
                   >
-                    <MenuItem value="1">Lớp 1</MenuItem>
+                    {grades.map((g) => (
+                      <MenuItem key={g.gradeId} value={g.gradeId}>
+                        Lớp {g.gradeNumber}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -298,52 +431,15 @@ const CreateLesson = () => {
               {grade && (
                 <Grid item xs={12}>
                   <FormControl fullWidth>
-                    <InputLabel>Chọn học kỳ</InputLabel>
-                    <Select
-                      value={semester}
-                      onChange={(e) => {
-                        setSemester(e.target.value);
-                        setTopic("");
-                        setLesson("");
-                      }}
-                      label="Chọn học kỳ"
-                      sx={{
-                        backgroundColor: isDarkMode
-                          ? "rgba(255, 255, 255, 0.05)"
-                          : "rgba(0, 0, 0, 0.02)",
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: isDarkMode
-                            ? "rgba(255, 255, 255, 0.1)"
-                            : "rgba(0, 0, 0, 0.1)",
-                        },
-                        "&:hover .MuiOutlinedInput-notchedOutline": {
-                          borderColor: isDarkMode
-                            ? "rgba(255, 255, 255, 0.2)"
-                            : "rgba(0, 0, 0, 0.2)",
-                        },
-                      }}
-                    >
-                      {Object.keys(topics[grade]).map((sem) => (
-                        <MenuItem key={sem} value={sem}>
-                          {sem}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              )}
-
-              {semester && (
-                <Grid item xs={12}>
-                  <FormControl fullWidth>
                     <InputLabel>Chọn chủ đề</InputLabel>
                     <Select
-                      value={topic}
+                      value={module}
                       onChange={(e) => {
-                        setTopic(e.target.value);
+                        setModule(e.target.value);
                         setLesson("");
                       }}
                       label="Chọn chủ đề"
+                      disabled={loadingModules}
                       sx={{
                         backgroundColor: isDarkMode
                           ? "rgba(255, 255, 255, 0.05)"
@@ -360,9 +456,9 @@ const CreateLesson = () => {
                         },
                       }}
                     >
-                      {topics[grade][semester].map((t) => (
-                        <MenuItem key={t} value={t}>
-                          {t}
+                      {modules.map((m) => (
+                        <MenuItem key={m.moduleId} value={m.moduleId}>
+                          {m.name}
                         </MenuItem>
                       ))}
                     </Select>
@@ -370,14 +466,15 @@ const CreateLesson = () => {
                 </Grid>
               )}
 
-              {topic && (
+              {module && (
                 <Grid item xs={12}>
                   <FormControl fullWidth>
                     <InputLabel>Chọn bài học</InputLabel>
                     <Select
                       value={lesson}
-                      onChange={(e) => setLesson(e.target.value)}
+                      onChange={handleLessonChange}
                       label="Chọn bài học"
+                      disabled={loadingLessons}
                       sx={{
                         backgroundColor: isDarkMode
                           ? "rgba(255, 255, 255, 0.05)"
@@ -394,16 +491,27 @@ const CreateLesson = () => {
                         },
                       }}
                     >
-                      {lessons[topic].map((l) => (
-                        <MenuItem key={l} value={l}>
-                          {l}
+                      {lessons.map((l) => (
+                        <MenuItem key={l.lessonId} value={l.lessonId}>
+                          {l.name}
                         </MenuItem>
                       ))}
                     </Select>
+                    {loadingLessons && (
+                      <CircularProgress
+                        size={24}
+                        sx={{
+                          position: "absolute",
+                          top: "50%",
+                          right: 16,
+                          marginTop: "-12px",
+                          color: isDarkMode ? "#ffffff" : "#2D3436",
+                        }}
+                      />
+                    )}
                   </FormControl>
                 </Grid>
               )}
-
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Lightbulb sx={{ color: "#3498DB", mr: 1 }} />
@@ -420,7 +528,7 @@ const CreateLesson = () => {
                   fullWidth
                   variant="contained"
                   onClick={generateLesson}
-                  disabled={loading || !grade || !semester || !topic || !lesson}
+                  disabled={loading || !grade || !module || !lesson || !promptData || loadingPrompt}
                   startIcon={loading ? <CircularProgress size={20} /> : <AutoAwesome />}
                   sx={{
                     backgroundColor: "#3498DB",
