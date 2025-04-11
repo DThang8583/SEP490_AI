@@ -58,9 +58,9 @@ const VerifyOTP = () => {
       const response = await axios.post(
         "https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/auth/reset-password",
         {
-          email,
           otp,
-          newPassword
+          newPassword,
+          confirmedPassword: confirmPassword
         }
       );
 
