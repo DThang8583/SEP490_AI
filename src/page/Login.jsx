@@ -70,13 +70,16 @@ const Login = () => {
 
         // Chuyển hướng dựa trên role
         switch (userInfo.role) {
-          case "Subject Specialist Manager":
+          case "Tổ trưởng chuyên môn":
+            navigate("/manager/dashboard", { replace: true });
+            break;
+            case "Tổ phó":
             navigate("/manager/dashboard", { replace: true });
             break;
           case "Administrator":
             navigate("/admin/dashboard", { replace: true });
             break;
-          case "Teacher":
+          case "Giáo viên":
             navigate("/", { replace: true });
             break;
           default:
