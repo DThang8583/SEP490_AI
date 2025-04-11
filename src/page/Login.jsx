@@ -44,7 +44,6 @@ const Login = () => {
         "https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/auth/login",
         {
           username,
-          username,
           password,
         }
       );
@@ -71,16 +70,13 @@ const Login = () => {
 
         // Chuyển hướng dựa trên role
         switch (userInfo.role) {
-          case "Tổ trưởng chuyên môn":
-            navigate("/manager/dashboard", { replace: true });
-            break;
-            case "Tổ phó":
+          case "Subject Specialist Manager":
             navigate("/manager/dashboard", { replace: true });
             break;
           case "Administrator":
             navigate("/admin/dashboard", { replace: true });
             break;
-          case "Giáo viên":
+          case "Teacher":
             navigate("/", { replace: true });
             break;
           default:
@@ -178,21 +174,6 @@ const Login = () => {
               )}
             </Button>
           </form>
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Link 
-              component={RouterLink} 
-              to="/forgot-password" 
-              sx={{ 
-                color: '#FF6B6B', 
-                textDecoration: 'none',
-                '&:hover': {
-                  textDecoration: 'underline',
-                }
-              }}
-            >
-              Quên mật khẩu?
-            </Link>
-          </Box>
         </Paper>
       </Container>
       <Snackbar 

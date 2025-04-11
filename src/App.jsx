@@ -48,6 +48,7 @@ import PendingLessonDetail from './page/PendingLessonDetail';
 import ApprovedLessonDetail from './page/ApprovedLessonDetail';
 import RejectedLessonDetail from './page/RejectedLessonDetail';
 import DraftLessonDetail from './page/DraftLessonDetail';
+import BlogLessonDetail from './page/BlogLessonDetail';
 import LessonUpload from './page/LessonUpload';
 import CreateAccount from './pages/Admin/Dashboard/CreateAccount';
 const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
@@ -164,6 +165,7 @@ function App() {
                 <Route path="/ChoiceChatorClick" element={<ChoiceChatorClick />} />
                 <Route path="/cac-bai-hoc" element={<LessonList />}/>
                 <Route path="/các-bài-giảng" element={<PrivateRoute><AllLessons /></PrivateRoute>} />
+                <Route path="/blog-lesson/:lessonId" element={<PrivateRoute><BlogLessonDetail /></PrivateRoute>} />
                 <Route path="/Đăng-bài-giảng" element={<PrivateRoute><LessonUpload /></PrivateRoute>} />
                 <Route path="/rejected-lessons" element={<PrivateRoute><RejectedLessons /></PrivateRoute>} />
                 <Route path="/pending-lessons" element={<PrivateRoute><PendingLessons /></PrivateRoute>} />

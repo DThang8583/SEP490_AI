@@ -24,7 +24,7 @@ import { format } from 'date-fns';
 const AllLessons = () => {
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
-  const [lessons, setLessons] = useState([]);
+  const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pagination, setPagination] = useState({
@@ -36,7 +36,7 @@ const AllLessons = () => {
     hasPreviousPage: false
   });
 
-  const fetchLessons = async (page = 1, pageSize = 10) => {
+  const fetchBlogs = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
@@ -45,7 +45,7 @@ const AllLessons = () => {
       }
 
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons?Page=${page}&PageSize=${pageSize}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs?Page=${page}&PageSize=${pageSize}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -54,7 +54,7 @@ const AllLessons = () => {
       );
 
       if (response.data && response.data.code === 0) {
-        setLessons(response.data.data.items);
+        setBlogs(response.data.data.items);
         setPagination({
           currentPage: response.data.data.currentPage,
           pageSize: response.data.data.pageSize,
@@ -67,23 +67,23 @@ const AllLessons = () => {
         throw new Error(response.data?.message || 'Có lỗi xảy ra khi tải dữ liệu');
       }
     } catch (err) {
-      console.error('Lỗi khi tải danh sách bài giảng:', err);
-      setError(err.message || 'Không thể tải danh sách bài giảng');
+      console.error('Lỗi khi tải danh sách bài viết:', err);
+      setError(err.message || 'Không thể tải danh sách bài viết');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLessons();
+    fetchBlogs();
   }, []);
 
   const handlePageChange = (event, newPage) => {
-    fetchLessons(newPage, pagination.pageSize);
+    fetchBlogs(newPage, pagination.pageSize);
   };
 
-  const handleViewLesson = (lessonId) => {
-    navigate(`/lesson/${lessonId}`);
+  const handleViewLesson = (teacherLessonId) => {
+    navigate(`/blog-lesson/${teacherLessonId}`);
   };
 
   if (loading) {
@@ -116,13 +116,13 @@ const AllLessons = () => {
         <Stack direction="row" alignItems="center" spacing={2} mb={4}>
           <SchoolIcon sx={{ fontSize: 32, color: 'primary.main' }} />
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Danh sách bài giảng
+            Danh sách bài viết
           </Typography>
         </Stack>
 
         <Grid container spacing={2}>
-          {lessons.map((lesson) => (
-            <Grid item xs={12} sm={6} md={4} key={lesson.id}>
+          {blogs.map((blog) => (
+            <Grid item xs={12} sm={6} md={4} key={blog.blogId}>
               <Card
                 elevation={0}
                 sx={{
@@ -135,34 +135,28 @@ const AllLessons = () => {
                   transition: 'transform 0.2s ease-in-out',
                   '&:hover': {
                     transform: 'translateY(-4px)',
+                    cursor: 'pointer',
                   },
                 }}
+                onClick={() => handleViewLesson(blog.teacherLessonId)}
               >
                 <CardContent>
                   <Stack spacing={2}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <Typography 
-                        variant="h6" 
-                        component="h2" 
-                        sx={{ 
-                          fontWeight: 600,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          lineHeight: 1.3,
-                        }}
-                      >
-                        {lesson.lesson}
-                      </Typography>
-                      <Chip
-                        label={lesson.status === 0 ? 'Nháp' : lesson.status === 1 ? 'Chờ duyệt' : 'Đã duyệt'}
-                        color={lesson.status === 0 ? 'default' : lesson.status === 1 ? 'warning' : 'success'}
-                        size="small"
-                        sx={{ borderRadius: '8px' }}
-                      />
-                    </Box>
+                    <Typography 
+                      variant="h6" 
+                      component="h2" 
+                      sx={{ 
+                        fontWeight: 600,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {blog.title}
+                    </Typography>
                     
                     <Typography 
                       variant="body2" 
@@ -176,17 +170,20 @@ const AllLessons = () => {
                         minHeight: '4.5em',
                       }}
                     >
-                      {lesson.module}
+                      {blog.body}
                     </Typography>
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="caption" color="text.secondary">
-                        {format(new Date(lesson.createdAt), 'dd/MM/yyyy')}
+                        {blog.publicationDate}
                       </Typography>
                       <Button
                         variant="outlined"
                         size="small"
-                        onClick={() => handleViewLesson(lesson.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewLesson(blog.teacherLessonId);
+                        }}
                         sx={{ 
                           borderRadius: '8px',
                           textTransform: 'none',
@@ -227,7 +224,7 @@ const AllLessons = () => {
 
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            Tổng số bài giảng: {pagination.totalRecords} | Trang {pagination.currentPage} / {pagination.totalPages}
+            Tổng số bài viết: {pagination.totalRecords} | Trang {pagination.currentPage} / {pagination.totalPages}
           </Typography>
         </Box>
       </Container>
