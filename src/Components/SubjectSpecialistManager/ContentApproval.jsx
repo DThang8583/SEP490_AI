@@ -749,7 +749,6 @@ const ContentApproval = () => {
                                                 <TableCell sx={{ fontWeight: 600, color: COLORS.text.primary }}>Chủ đề</TableCell>
                                                 <TableCell sx={{ fontWeight: 600, color: COLORS.text.primary }}>Trạng thái</TableCell>
                                                 <TableCell sx={{ fontWeight: 600, color: COLORS.text.primary }}>Ngày tạo</TableCell>
-                                                <TableCell align="center" sx={{ fontWeight: 600, color: COLORS.text.primary }}>Thao tác</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -776,44 +775,6 @@ const ContentApproval = () => {
                                                         />
                                                     </TableCell>
                                                     <TableCell>{lesson.createdAt}</TableCell>
-                                                    <TableCell align="center" onClick={(e) => e.stopPropagation()}>
-                                                        <Stack direction="row" spacing={1} justifyContent="center">
-                                                            <IconButton
-                                                                color="primary"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleLessonSelect(lesson.teacherLessonId);
-                                                                }}
-                                                                sx={{ mr: 1 }}
-                                                            >
-                                                                <ArticleIcon fontSize="small" />
-                                                            </IconButton>
-                                                            <ActionButton
-                                                                variant="contained"
-                                                                color="success"
-                                                                startIcon={<CheckIcon />}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleApprove(lesson.teacherLessonId);
-                                                                }}
-                                                                disabled={lesson.status === "Approved"}
-                                                            >
-                                                                Duyệt
-                                                            </ActionButton>
-                                                            <ActionButton
-                                                                variant="contained"
-                                                                color="error"
-                                                                startIcon={<CloseIcon />}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleReject(lesson.teacherLessonId, "");
-                                                                }}
-                                                                disabled={lesson.status === "Rejected"}
-                                                            >
-                                                                Từ chối
-                                                            </ActionButton>
-                                                        </Stack>
-                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -855,3 +816,4 @@ const ContentApproval = () => {
 };
 
 export default ContentApproval;
+

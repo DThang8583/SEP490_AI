@@ -12,15 +12,19 @@ import {
   Alert,
   Chip,
   Stack,
-  Divider
+  Divider,
+  Button
 } from '@mui/material';
+import { School as SchoolIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 const AllLessons = () => {
   const { isDarkMode } = useTheme();
-  const [blogs, setBlogs] = useState([]);
+  const navigate = useNavigate();
+  const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pagination, setPagination] = useState({
@@ -32,7 +36,7 @@ const AllLessons = () => {
     hasPreviousPage: false
   });
 
-  const fetchBlogs = async (page = 1, pageSize = 10) => {
+  const fetchLessons = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
@@ -41,7 +45,7 @@ const AllLessons = () => {
       }
 
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs?Page=${page}&PageSize=${pageSize}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons?Page=${page}&PageSize=${pageSize}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -50,7 +54,7 @@ const AllLessons = () => {
       );
 
       if (response.data && response.data.code === 0) {
-        setBlogs(response.data.data.items);
+        setLessons(response.data.data.items);
         setPagination({
           currentPage: response.data.data.currentPage,
           pageSize: response.data.data.pageSize,
@@ -63,19 +67,23 @@ const AllLessons = () => {
         throw new Error(response.data?.message || 'Có lỗi xảy ra khi tải dữ liệu');
       }
     } catch (err) {
-      console.error('Lỗi khi tải danh sách bài viết:', err);
-      setError(err.message || 'Không thể tải danh sách bài viết');
+      console.error('Lỗi khi tải danh sách bài giảng:', err);
+      setError(err.message || 'Không thể tải danh sách bài giảng');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBlogs();
+    fetchLessons();
   }, []);
 
   const handlePageChange = (event, newPage) => {
-    fetchBlogs(newPage, pagination.pageSize);
+    fetchLessons(newPage, pagination.pageSize);
+  };
+
+  const handleViewLesson = (lessonId) => {
+    navigate(`/lesson/${lessonId}`);
   };
 
   if (loading) {
@@ -105,47 +113,88 @@ const AllLessons = () => {
       }}
     >
       <Container maxWidth="lg">
-        <Typography variant="h4" component="h1" sx={{ mb: 4, fontWeight: 700 }}>
-          Danh sách bài viết
-        </Typography>
+        <Stack direction="row" alignItems="center" spacing={2} mb={4}>
+          <SchoolIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+            Danh sách bài giảng
+          </Typography>
+        </Stack>
 
-        <Grid container spacing={3}>
-          {blogs.map((blog) => (
-            <Grid item xs={12} key={blog.blogId}>
+        <Grid container spacing={2}>
+          {lessons.map((lesson) => (
+            <Grid item xs={12} sm={6} md={4} key={lesson.id}>
               <Card
                 elevation={0}
                 sx={{
-                  borderRadius: '16px',
+                  height: '100%',
+                  borderRadius: '12px',
                   backgroundColor: isDarkMode ? 'rgba(40, 40, 40, 0.85)' : 'rgba(255, 255, 255, 0.85)',
                   backdropFilter: 'blur(12px)',
                   border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
                   boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.2)' : '0 8px 32px rgba(0,0,0,0.05)',
+                  transition: 'transform 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
                 }}
               >
                 <CardContent>
                   <Stack spacing={2}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-                        {blog.title}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Typography 
+                        variant="h6" 
+                        component="h2" 
+                        sx={{ 
+                          fontWeight: 600,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {lesson.lesson}
                       </Typography>
                       <Chip
-                        label={blog.category}
-                        color="primary"
+                        label={lesson.status === 0 ? 'Nháp' : lesson.status === 1 ? 'Chờ duyệt' : 'Đã duyệt'}
+                        color={lesson.status === 0 ? 'default' : lesson.status === 1 ? 'warning' : 'success'}
                         size="small"
                         sx={{ borderRadius: '8px' }}
                       />
                     </Box>
-                    <Typography variant="body1" color="text.secondary">
-                      {blog.body}
+                    
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        minHeight: '4.5em',
+                      }}
+                    >
+                      {lesson.module}
                     </Typography>
-                    <Divider />
+
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Ngày đăng: {blog.publicationDate}
+                      <Typography variant="caption" color="text.secondary">
+                        {format(new Date(lesson.createdAt), 'dd/MM/yyyy')}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        ID bài giảng: {blog.teacherLessonId}
-                      </Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleViewLesson(lesson.id)}
+                        sx={{ 
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          minWidth: '100px'
+                        }}
+                      >
+                        Xem chi tiết
+                      </Button>
                     </Box>
                   </Stack>
                 </CardContent>
@@ -178,7 +227,7 @@ const AllLessons = () => {
 
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            Tổng số bài viết: {pagination.totalRecords} | Trang {pagination.currentPage} / {pagination.totalPages}
+            Tổng số bài giảng: {pagination.totalRecords} | Trang {pagination.currentPage} / {pagination.totalPages}
           </Typography>
         </Box>
       </Container>
