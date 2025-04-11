@@ -18,7 +18,7 @@ import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import { format } from 'date-fns';
 
-const AllLessons = () => {
+const AllBlogs = () => {
   const { isDarkMode } = useTheme();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -186,4 +186,4 @@ const AllLessons = () => {
   );
 };
 
-export default AllLessons;
+export default AllBlogs; 

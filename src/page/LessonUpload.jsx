@@ -149,6 +149,17 @@ const LessonUpload = () => {
         setTimeout(() => {
           navigate(-1);
         }, 2000);
+      } else if (response.data.message === 'Created successfully!') {
+        setSnackbar({
+          open: true,
+          message: 'Đăng bài viết thành công!',
+          severity: 'success'
+        });
+        
+        // Quay lại trang trước sau khi đăng thành công
+        setTimeout(() => {
+          navigate(-1);
+        }, 2000);
       } else {
         throw new Error(response.data.message || 'Lỗi khi đăng bài viết');
       }

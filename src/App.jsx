@@ -50,7 +50,6 @@ import RejectedLessonDetail from './page/RejectedLessonDetail';
 import DraftLessonDetail from './page/DraftLessonDetail';
 import LessonUpload from './page/LessonUpload';
 import CreateAccount from './pages/Admin/Dashboard/CreateAccount';
-import VerifyOTP from './page/VerifyOTP';
 const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
   return (
     <>
@@ -75,13 +74,13 @@ const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
 
       <Sidebar open={sidebarOpen} toggleSidebar={toggleSidebar} />
       <Routes>
-        <Route path="/profile" element={<Profile sidebarOpen={sidebarOpen} />} />
         <Route path="/dashboard" element={<Dashboard sidebarOpen={sidebarOpen} />} />
         <Route path="/lesson-review" element={<LessonReview sidebarOpen={sidebarOpen} />} />
         <Route path="/content-approval" element={<ContentApproval sidebarOpen={sidebarOpen} />} />
-        <Route path="/lesson-export" element={<LessonExport sidebarOpen={sidebarOpen} />} />
         <Route path="/curriculum-analysis" element={<CurriculumAnalysis sidebarOpen={sidebarOpen} />} />
         <Route path="/curriculum-framework" element={<CurriculumFramework sidebarOpen={sidebarOpen} />} />
+        <Route path="/lesson-export" element={<LessonExport sidebarOpen={sidebarOpen} />} />
+        <Route path="/profile" element={<Profile sidebarOpen={sidebarOpen} />} />
         <Route path="/edit-profile" element={<EditProfile sidebarOpen={sidebarOpen} />} />
         <Route path="/change-password" element={<ChangePassword sidebarOpen={sidebarOpen} />} />
         <Route path="/forgot-password" element={<ForgotPassword sidebarOpen={sidebarOpen} />} />
@@ -209,7 +208,6 @@ function App() {
                   }
                 />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/verify-otp" element={<VerifyOTP />} />
               </Routes>
             </main>
             <Footer />
