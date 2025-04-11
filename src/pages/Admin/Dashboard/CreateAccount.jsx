@@ -91,9 +91,9 @@ const CreateAccount = () => {
           username: '',
           password: '',
           email: '',
-          roleId: '',
-          schoolId: '',
-          gradeId: '',
+          roleId: 0,
+          schoolId: 0,
+          gradeId: 0,
         });
       } else {
         setError('Có lỗi xảy ra khi tạo tài khoản.');
