@@ -6,8 +6,6 @@ import { useAuth } from '../context/AuthContext';
 const PrivateRoute = ({ children }) => {
   const { isLoggedIn, userInfo } = useAuth();
   const location = useLocation();
-
-  // Nếu chưa đăng nhập, chuyển hướng về trang login
   if (!isLoggedIn) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -45,5 +43,4 @@ const PrivateRoute = ({ children }) => {
   return children;
 };
 
->>>>>>> 9974e705fae5eff2d724e2f5bc388f7e29abd7b5
 export default PrivateRoute; 
