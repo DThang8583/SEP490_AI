@@ -16,7 +16,8 @@ import {
   IconButton,
   Tooltip,
   Chip,
-  Snackbar
+  Snackbar,
+  TextField
 } from '@mui/material';
 import { 
   ArrowBack, 
@@ -85,6 +86,15 @@ const DraftLessonDetail = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [isSendingToPending, setIsSendingToPending] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState({
+    startUp: '',
+    knowledge: '',
+    goal: '',
+    schoolSupply: '',
+    practice: '',
+    apply: ''
+  });
 
   const fetchLessonDetail = useCallback(async () => {
     if (!lessonId) {
@@ -295,6 +305,78 @@ const DraftLessonDetail = () => {
     }
   };
 
+  const handleEdit = () => {
+    setEditedData({
+      startUp: lessonDetail.startUp || '',
+      knowledge: lessonDetail.knowledge || '',
+      goal: lessonDetail.goal || '',
+      schoolSupply: lessonDetail.schoolSupply || '',
+      practice: lessonDetail.practice || '',
+      apply: lessonDetail.apply || ''
+    });
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error("Authentication token not found.");
+      }
+
+      const response = await axios.put(
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons/${lessonId}`,
+        editedData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data && (response.data.code === 0 || response.data.message === "Updated successfully!")) {
+        setSnackbar({
+          open: true,
+          message: 'Cập nhật bài giảng thành công!',
+          severity: 'success'
+        });
+        setIsEditing(false);
+        fetchLessonDetail(); // Refresh the data
+      } else {
+        throw new Error(response.data?.message || "Failed to update lesson.");
+      }
+    } catch (err) {
+      console.error("Error updating lesson:", err);
+      setSnackbar({
+        open: true,
+        message: `Lỗi: ${err.message || 'Không thể cập nhật bài giảng.'}`,
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedData({
+      startUp: '',
+      knowledge: '',
+      goal: '',
+      schoolSupply: '',
+      practice: '',
+      apply: ''
+    });
+  };
+
+  const formatDisplayContent = (text) => {
+    if (!text) return <Typography component="span" sx={{ fontStyle: 'italic' }}>N/A</Typography>;
+    return text.split('\n').map((line, index) => 
+      line.startsWith('-') || line.startsWith('*') ? 
+        <Typography key={index} component="p" sx={{ mb: 0.5, pl: 2, position: 'relative', '&::before': { content: '"•"', position: 'absolute', left: 0, color: 'text.primary' } }}>{line.substring(1).trim()}</Typography> : 
+        <Typography key={index} component="p" sx={{ mb: 1 }}>{line}</Typography>
+    );
+  };
+
   const renderDetailSection = (title, content, icon) => {
     let mainContent = content || '';
     let qualityContent = '';
@@ -307,15 +389,6 @@ const DraftLessonDetail = () => {
             qualityContent = content.substring(index + qualityHeader.length).trim();
         }
     }
-
-    const formatDisplayContent = (text) => {
-         if (!text) return <Typography component="span" sx={{ fontStyle: 'italic' }}>N/A</Typography>;
-         return text.split('\n').map((line, index) => 
-              line.startsWith('-') || line.startsWith('*') ? 
-              <Typography key={index} component="p" sx={{ mb: 0.5, pl: 2, position: 'relative', '&::before': { content: '"•"', position: 'absolute', left: 0, color: 'text.primary' } }}>{line.substring(1).trim()}</Typography> : 
-              <Typography key={index} component="p" sx={{ mb: 1 }}>{line}</Typography>
-         );
-    };
 
     return (
         <Box mb={4}> 
@@ -344,6 +417,39 @@ const DraftLessonDetail = () => {
         </Box>
       );
   }
+
+  const renderEditableSection = (title, field, icon) => {
+    return (
+      <Box mb={4}>
+        <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+          {icon}
+          <Typography variant="h6" sx={{ fontWeight: 600, color: isDarkMode ? 'primary.light' : 'primary.dark' }}>
+            {title}
+          </Typography>
+        </Stack>
+        <Divider sx={{ mb: 2 }} />
+        <Box sx={{ pl: 4.5 }}>
+          {isEditing ? (
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              value={editedData[field]}
+              onChange={(e) => setEditedData({ ...editedData, [field]: e.target.value })}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+                }
+              }}
+            />
+          ) : (
+            formatDisplayContent(lessonDetail[field])
+          )}
+        </Box>
+      </Box>
+    );
+  };
 
   const renderSkeletonDetails = () => (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
@@ -447,12 +553,59 @@ const DraftLessonDetail = () => {
               
               <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
 
-              {renderDetailSection("Mục tiêu", lessonDetail.goal, <Assignment color="primary" />)}
-              {renderDetailSection("Giáo viên chuẩn bị", lessonDetail.schoolSupply, <Build color="action"/>)} 
-              {renderDetailSection("Hoạt động Khởi động", lessonDetail.startUp, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>1.</Typography>)}
-              {renderDetailSection("Hoạt động Hình thành Kiến thức", lessonDetail.knowledge, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>2.</Typography>)}
-              {renderDetailSection("Hoạt động Luyện tập", lessonDetail.practice, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>3.</Typography>)}
-              {renderDetailSection("Hoạt động Vận dụng", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
+              <Stack direction="row" spacing={2} mb={3}>
+                {!isEditing ? (
+                  <Button
+                    variant="contained"
+                    startIcon={<Edit />}
+                    onClick={handleEdit}
+                    sx={{ borderRadius: '8px' }}
+                  >
+                    Chỉnh sửa
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      startIcon={<CheckCircle />}
+                      onClick={handleSave}
+                      sx={{ borderRadius: '8px' }}
+                    >
+                      Lưu
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<Cancel />}
+                      onClick={handleCancel}
+                      sx={{ borderRadius: '8px' }}
+                    >
+                      Hủy
+                    </Button>
+                  </>
+                )}
+              </Stack>
+
+              {isEditing ? (
+                <>
+                  {renderEditableSection("Mục tiêu", "goal", <Assignment color="primary" />)}
+                  {renderEditableSection("Giáo viên chuẩn bị", "schoolSupply", <Build color="action"/>)}
+                  {renderEditableSection("Hoạt động Khởi động", "startUp", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>1.</Typography>)}
+                  {renderEditableSection("Hoạt động Hình thành Kiến thức", "knowledge", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>2.</Typography>)}
+                  {renderEditableSection("Hoạt động Luyện tập", "practice", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>3.</Typography>)}
+                  {renderEditableSection("Hoạt động Vận dụng", "apply", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
+                </>
+              ) : (
+                <>
+                  {renderDetailSection("Mục tiêu", lessonDetail.goal, <Assignment color="primary" />)}
+                  {renderDetailSection("Giáo viên chuẩn bị", lessonDetail.schoolSupply, <Build color="action"/>)}
+                  {renderDetailSection("Hoạt động Khởi động", lessonDetail.startUp, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>1.</Typography>)}
+                  {renderDetailSection("Hoạt động Hình thành Kiến thức", lessonDetail.knowledge, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>2.</Typography>)}
+                  {renderDetailSection("Hoạt động Luyện tập", lessonDetail.practice, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>3.</Typography>)}
+                  {renderDetailSection("Hoạt động Vận dụng", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
+                </>
+              )}
               
               {lessonDetail.disapprovedReason && (
                 <Box mb={4}>
