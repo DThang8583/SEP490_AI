@@ -194,6 +194,8 @@ const AIRender = () => {
     } finally {
       setIsSending(false);
     }
+
+    navigate(-1);
   };
 
   const handleSendToManager = async () => {
@@ -272,6 +274,8 @@ const AIRender = () => {
     } finally {
       setIsSending(false);
     }
+
+    navigate(-1);
   };
 
   const handleCopyContent = () => {
