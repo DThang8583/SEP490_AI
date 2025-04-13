@@ -106,21 +106,22 @@ const Profile = ({ sidebarOpen }) => {
                 overflowY: 'auto',
                 display: 'flex',
                 alignItems: 'center',
+                padding: '20px',
             }}
         >
             <Fade in={!loading}>
                 <Box
                     sx={{
-                        py: 4,
+                        py: 2,
                         ml: `${sidebarWidth}px`,
                         transition: 'margin-left 0.3s ease',
                         width: '100%',
                     }}
                 >
-                    <Container maxWidth="md" sx={{ py: 3 }}>
+                    <Container maxWidth="lg" sx={{ py: 2 }}>
                         {loading ? (
-                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-                                <CircularProgress size={60} sx={{ color: '#06A9AE' }} />
+                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+                                <CircularProgress size={50} sx={{ color: '#06A9AE' }} />
                             </Box>
                         ) : error ? (
                             <Alert
@@ -143,12 +144,14 @@ const Profile = ({ sidebarOpen }) => {
                                     background: 'rgba(255, 255, 255, 0.95)',
                                     backdropFilter: 'blur(10px)',
                                     boxShadow: '0 10px 40px rgba(31, 38, 135, 0.15)',
+                                    maxWidth: '1000px',
+                                    margin: '0 auto',
                                 }}
                             >
                                 <Box
                                     sx={{
                                         position: 'relative',
-                                        height: 150,
+                                        height: 120,
                                         background: 'linear-gradient(120deg, #06A9AE 0%, #0089a3 100%)',
                                         overflow: 'hidden',
                                     }}
@@ -198,8 +201,12 @@ const Profile = ({ sidebarOpen }) => {
                                     </Typography>
                                 </Box>
 
-                                <CardContent sx={{ pt: 7, px: { xs: 3, sm: 4 } }}>
-                                    <Box sx={{ mt: { xs: 3, sm: 1 }, mb: 3 }}>
+                                <CardContent sx={{
+                                    pt: 5,
+                                    px: { xs: 2, sm: 3 },
+                                    pb: 2
+                                }}>
+                                    <Box sx={{ mt: { xs: 2, sm: 1 }, mb: 2 }}>
                                         <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
                                             {profile.fullname}
                                         </Typography>
@@ -208,7 +215,7 @@ const Profile = ({ sidebarOpen }) => {
                                         </Typography>
                                     </Box>
 
-                                    <Grid container spacing={3}>
+                                    <Grid container spacing={2}>
                                         <Grid item xs={12} md={6}>
                                             <Box>
                                                 <ProfileItem
@@ -266,7 +273,7 @@ const Profile = ({ sidebarOpen }) => {
                                         </Grid>
                                     </Grid>
 
-                                    <Divider sx={{ my: 4, borderColor: 'rgba(0, 0, 0, 0.08)' }} />
+                                    <Divider sx={{ my: 3 }} />
 
                                     <Box sx={{
                                         display: 'flex',
