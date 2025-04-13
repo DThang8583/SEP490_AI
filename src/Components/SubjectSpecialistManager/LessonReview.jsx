@@ -17,7 +17,6 @@ import {
     Alert,
     Fade,
     Pagination,
-    PaginationItem,
     Chip,
     TextField,
     InputAdornment,
@@ -27,10 +26,6 @@ import {
     Close as CloseIcon,
     FilterList as FilterListIcon,
     Assignment as AssignmentIcon,
-    FirstPage as FirstPageIcon,
-    LastPage as LastPageIcon,
-    NavigateNext as NavigateNextIcon,
-    NavigateBefore as NavigateBeforeIcon,
     School as SchoolIcon,
     Bookmark as BookmarkIcon,
     Person as PersonIcon,
@@ -898,42 +893,33 @@ const LessonReview = () => {
                                                     ))}
                                                 </List>
 
-                                                {/* Pagination - always show */}
-                                                <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                                    <Pagination
-                                                        count={totalPages}
-                                                        page={page}
-                                                        onChange={handlePageChange}
-                                                        renderItem={(item) => (
-                                                            <PaginationItem
-                                                                slots={{
-                                                                    first: FirstPageIcon,
-                                                                    last: LastPageIcon,
-                                                                    next: NavigateNextIcon,
-                                                                    previous: NavigateBeforeIcon
-                                                                }}
-                                                                {...item}
-                                                                sx={{
-                                                                    '&.Mui-selected': {
-                                                                        bgcolor: COLORS.primary,
-                                                                        color: '#fff',
-                                                                        fontWeight: 'bold'
-                                                                    }
-                                                                }}
-                                                            />
-                                                        )}
-                                                        siblingCount={1}
-                                                        boundaryCount={1}
-                                                        showFirstButton
-                                                        showLastButton
-                                                        disabled={totalPages <= 1}
-                                                    />
-
-                                                    <Typography variant="body2" color={COLORS.text.secondary} sx={{ mt: 2 }}>
-                                                        Trang {pagination.currentPage} / {pagination.totalPages}
-                                                        {` (Hiển thị ${lessons.length} / ${pagination.totalRecords} bài học)`}
-                                                    </Typography>
-                                                </Box>
+                                                {/* Pagination */}
+                                                {lessons.length > 0 && (
+                                                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                                        <Pagination
+                                                            count={totalPages}
+                                                            page={page}
+                                                            onChange={handlePageChange}
+                                                            shape="rounded"
+                                                            sx={{
+                                                                '& .MuiPaginationItem-root': {
+                                                                    fontWeight: 600,
+                                                                    color: COLORS.text.secondary,
+                                                                },
+                                                                '& .Mui-selected': {
+                                                                    backgroundColor: `${COLORS.primary} !important`,
+                                                                    color: '#fff !important',
+                                                                    '&:hover': {
+                                                                        backgroundColor: `${COLORS.primary} !important`,
+                                                                    },
+                                                                },
+                                                                '& .MuiPaginationItem-page:hover': {
+                                                                    backgroundColor: `${COLORS.primary}20`,
+                                                                },
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                )}
                                             </>
                                         )}
                                     </CardContent>

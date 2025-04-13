@@ -55,12 +55,16 @@ const COLORS = {
     background: {
         default: 'linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%)',
         paper: '#FFFFFF',
-        secondary: 'rgba(0, 0, 0, 0.02)',
+        secondary: 'rgba(6, 169, 174, 0.02)',
     },
     text: {
         primary: '#212B36',
         secondary: '#637381',
     },
+    hover: {
+        primary: 'rgba(6, 169, 174, 0.08)',
+        secondary: 'rgba(25, 118, 210, 0.08)',
+    }
 };
 
 // Styled components
@@ -108,6 +112,21 @@ const StyledButton = styled(Button)({
         transform: 'translateY(-2px)',
         boxShadow: '0 6px 16px rgba(0, 0, 0, 0.1)',
     },
+    '&.MuiButton-contained': {
+        backgroundColor: COLORS.primary,
+        color: '#fff',
+        '&:hover': {
+            backgroundColor: COLORS.primary,
+        }
+    },
+    '&.MuiButton-outlined': {
+        borderColor: COLORS.primary,
+        color: COLORS.primary,
+        '&:hover': {
+            backgroundColor: 'rgba(6, 169, 174, 0.08)',
+            borderColor: COLORS.primary
+        }
+    }
 });
 
 const CurriculumCard = styled(ListItem)({
@@ -127,10 +146,10 @@ const CurriculumCard = styled(ListItem)({
 const InfoChip = styled(Chip)({
     margin: '4px 4px 4px 0',
     borderRadius: 12,
-    backgroundColor: 'rgba(25, 118, 210, 0.08)',
-    color: COLORS.secondary,
+    backgroundColor: 'rgba(6, 169, 174, 0.08)',
+    color: COLORS.primary,
     '.MuiChip-icon': {
-        color: COLORS.secondary,
+        color: COLORS.primary,
     }
 });
 
@@ -777,12 +796,14 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                 }}>
                                                     <StyledButton
                                                         variant={currentSemester === 1 ? "contained" : "outlined"}
-                                                        color="primary"
                                                         onClick={() => handleSemesterChange(1)}
                                                         sx={{
                                                             bgcolor: currentSemester === 1 ? COLORS.primary : 'transparent',
+                                                            color: currentSemester === 1 ? '#fff' : COLORS.primary,
+                                                            borderColor: COLORS.primary,
                                                             '&:hover': {
                                                                 bgcolor: currentSemester === 1 ? COLORS.primary : 'rgba(6, 169, 174, 0.08)',
+                                                                borderColor: COLORS.primary
                                                             }
                                                         }}
                                                     >
@@ -790,12 +811,14 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                     </StyledButton>
                                                     <StyledButton
                                                         variant={currentSemester === 2 ? "contained" : "outlined"}
-                                                        color="primary"
                                                         onClick={() => handleSemesterChange(2)}
                                                         sx={{
                                                             bgcolor: currentSemester === 2 ? COLORS.primary : 'transparent',
+                                                            color: currentSemester === 2 ? '#fff' : COLORS.primary,
+                                                            borderColor: COLORS.primary,
                                                             '&:hover': {
                                                                 bgcolor: currentSemester === 2 ? COLORS.primary : 'rgba(6, 169, 174, 0.08)',
+                                                                borderColor: COLORS.primary
                                                             }
                                                         }}
                                                     >
@@ -812,16 +835,29 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                             </Typography>
                                                         </Box>
                                                         <StyledButton
-                                                            variant="contained"
-                                                            startIcon={<AddIcon />}
                                                             onClick={handleOpenAddModuleDialog}
                                                             sx={{
-                                                                bgcolor: 'rgba(255, 255, 255, 0.15)',
+                                                                bgcolor: '#fff',
+                                                                color: COLORS.primary,
+                                                                fontWeight: 600,
+                                                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                                                                 '&:hover': {
-                                                                    bgcolor: 'rgba(255, 255, 255, 0.25)'
-                                                                }
+                                                                    bgcolor: '#fff',
+                                                                    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
+                                                                    transform: 'translateY(-2px)'
+                                                                },
+                                                                transition: 'all 0.2s ease',
+                                                                textTransform: 'none',
+                                                                borderRadius: '8px',
+                                                                padding: '8px 20px',
+                                                                fontSize: '0.95rem',
+                                                                border: `2px solid ${COLORS.primary}`,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '8px'
                                                             }}
                                                         >
+                                                            <AddIcon sx={{ fontSize: 24, color: COLORS.primary }} />
                                                             Thêm Module
                                                         </StyledButton>
                                                     </CardHeader>
@@ -1242,11 +1278,30 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                             />
                         </DialogContent>
                         <DialogActions sx={{ px: 3, pb: 2 }}>
-                            <StyledButton onClick={handleCloseAddLessonDialog} color="inherit">Hủy</StyledButton>
+                            <StyledButton
+                                onClick={handleCloseAddLessonDialog}
+                                sx={{
+                                    color: COLORS.text.primary,
+                                    '&:hover': {
+                                        bgcolor: 'rgba(6, 169, 174, 0.08)',
+                                    }
+                                }}
+                            >
+                                Hủy
+                            </StyledButton>
                             <StyledButton
                                 onClick={handleAddLesson}
                                 variant="contained"
-                                color="primary"
+                                sx={{
+                                    bgcolor: COLORS.primary,
+                                    color: '#fff',
+                                    '&:hover': {
+                                        bgcolor: COLORS.primary,
+                                    },
+                                    '&.Mui-disabled': {
+                                        bgcolor: 'rgba(6, 169, 174, 0.4)',
+                                    }
+                                }}
                                 disabled={!newLessonName.trim()}
                             >
                                 Thêm
@@ -1302,11 +1357,30 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                             />
                         </DialogContent>
                         <DialogActions sx={{ px: 3, pb: 2 }}>
-                            <StyledButton onClick={handleCloseAddModuleDialog} color="inherit">Hủy</StyledButton>
+                            <StyledButton
+                                onClick={handleCloseAddModuleDialog}
+                                sx={{
+                                    color: COLORS.text.primary,
+                                    '&:hover': {
+                                        bgcolor: 'rgba(6, 169, 174, 0.08)',
+                                    }
+                                }}
+                            >
+                                Hủy
+                            </StyledButton>
                             <StyledButton
                                 onClick={handleAddModule}
                                 variant="contained"
-                                color="primary"
+                                sx={{
+                                    bgcolor: COLORS.primary,
+                                    color: '#fff',
+                                    '&:hover': {
+                                        bgcolor: COLORS.primary,
+                                    },
+                                    '&.Mui-disabled': {
+                                        bgcolor: 'rgba(6, 169, 174, 0.4)',
+                                    }
+                                }}
                                 disabled={!newModule.name.trim() || !newModule.book.trim()}
                             >
                                 Thêm

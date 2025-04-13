@@ -265,7 +265,7 @@ const Profile = ({ sidebarOpen }) => {
                                                 {profile.manager !== 'N/A' && (
                                                     <ProfileItem
                                                         icon={<SupervisorAccount />}
-                                                        label="Người quản lý"
+                                                        label="Tổ trưởng"
                                                         value={profile.manager}
                                                     />
                                                 )}

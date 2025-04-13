@@ -20,7 +20,6 @@ import {
     Alert,
     Fade,
     Divider,
-    IconButton,
     Dialog,
     DialogActions,
     DialogContent,
@@ -33,7 +32,6 @@ import {
     Close as CloseIcon,
     School as SchoolIcon,
     ArrowBack as ArrowBackIcon,
-    Article as ArticleIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
@@ -789,7 +787,6 @@ const ContentApproval = () => {
                                         count={totalPages}
                                         page={page}
                                         onChange={handlePageChange}
-                                        color="primary"
                                         shape="rounded"
                                         sx={{
                                             '& .MuiPaginationItem-root': {
@@ -797,11 +794,14 @@ const ContentApproval = () => {
                                                 color: COLORS.text.secondary,
                                             },
                                             '& .Mui-selected': {
-                                                backgroundColor: COLORS.primary,
-                                                color: '#fff',
+                                                backgroundColor: `${COLORS.primary} !important`,
+                                                color: '#fff !important',
                                                 '&:hover': {
-                                                    backgroundColor: COLORS.primary,
+                                                    backgroundColor: `${COLORS.primary} !important`,
                                                 },
+                                            },
+                                            '& .MuiPaginationItem-page:hover': {
+                                                backgroundColor: `${COLORS.primary}20`,
                                             },
                                         }}
                                     />

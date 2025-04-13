@@ -157,7 +157,7 @@ const Sidebar = ({ open }) => {
                     flexDirection: 'column',
                     justifyContent: 'space-between',
                     height: 'calc(100% - 90px)',
-                    px: isCollapsed ? 1 : 2,
+                    px: isCollapsed ? 1 : 1,
                     py: 1,
                     position: 'relative',
                 }}>
@@ -177,7 +177,7 @@ const Sidebar = ({ open }) => {
                                         sx={{
                                             borderRadius: '12px',
                                             mb: 1,
-                                            px: isCollapsed ? 1 : 2,
+                                            px: isCollapsed ? 1 : 1.5,
                                             py: 1.5,
                                             background: isActive ? 'rgba(255,255,255,0.15)' : 'transparent',
                                             backdropFilter: 'blur(10px)',
@@ -211,7 +211,7 @@ const Sidebar = ({ open }) => {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            mr: isCollapsed ? 0 : 2.5,
+                                            mr: isCollapsed ? 0 : 1.5,
                                             transition: 'margin 0.4s',
                                             cursor: 'pointer',
                                         }}>
@@ -223,13 +223,14 @@ const Sidebar = ({ open }) => {
                                                 fontSize: '0.95rem',
                                                 fontWeight: isActive ? 600 : 400,
                                                 opacity: isCollapsed ? 0 : 1,
-                                                maxWidth: isCollapsed ? 0 : '160px',
+                                                maxWidth: isCollapsed ? 0 : '220px',
                                                 overflow: 'hidden',
                                                 whiteSpace: 'nowrap',
-                                                textOverflow: 'ellipsis',
                                                 color: isActive ? '#fff' : 'rgba(255,255,255,0.85)',
                                                 transition: 'opacity 0.4s, max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                                                 cursor: 'pointer',
+                                                marginRight: 0.5,
+                                                pl: 0
                                             }}
                                         >
                                             {item.text}
@@ -289,13 +290,13 @@ const Sidebar = ({ open }) => {
                                                 fontSize: '0.95rem',
                                                 fontWeight: item.text === 'Đăng xuất' ? 600 : (isActive ? 600 : 400),
                                                 opacity: isCollapsed ? 0 : 1,
-                                                maxWidth: isCollapsed ? 0 : '160px',
+                                                maxWidth: isCollapsed ? 0 : '220px',
                                                 overflow: 'hidden',
                                                 whiteSpace: 'nowrap',
-                                                textOverflow: 'ellipsis',
                                                 color: item.text === 'Đăng xuất' ? '#FFFFFF' : (isActive ? '#fff' : 'rgba(255,255,255,0.85)'),
                                                 transition: 'opacity 0.4s, max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s',
                                                 cursor: 'pointer',
+                                                marginRight: 1
                                             }}
                                         >
                                             {item.text}

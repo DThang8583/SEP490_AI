@@ -10,14 +10,16 @@ import {
     Grid,
     CircularProgress,
     Alert,
-    Paper,
     FormControl,
     InputLabel,
     Select,
     MenuItem,
-    Avatar
+    Avatar,
+    Card,
+    CardContent,
+    Fade
 } from '@mui/material';
-import { SaveOutlined, Person } from '@mui/icons-material';
+import { SaveOutlined, Person, Email, Phone, Cake, Class, LocationOn, School } from '@mui/icons-material';
 
 const EditProfile = () => {
     const [profile, setProfile] = useState(null);
@@ -189,146 +191,331 @@ const EditProfile = () => {
     };
 
     return (
-        <Container maxWidth="md" sx={{ py: 4 }}>
-            <Paper elevation={3} sx={{ p: 4, borderRadius: '16px' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-                    <Avatar sx={{ bgcolor: '#06A9AE', mr: 2 }}>
-                        <Person />
-                    </Avatar>
-                    <Typography variant="h5" component="h1">
-                        Chỉnh sửa thông tin cá nhân
-                    </Typography>
-                </Box>
-
-                {loading && !profile ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                        <CircularProgress sx={{ color: '#06A9AE' }} />
-                    </Box>
-                ) : error && !profile ? (
-                    <Alert severity="error" sx={{ my: 2 }}>
-                        {error}
-                    </Alert>
-                ) : (
-                    <form onSubmit={handleSubmit}>
-                        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-                        {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
-
-                        <Grid container spacing={3}>
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Họ và tên"
-                                    name="fullname"
-                                    value={formData.fullname}
-                                    onChange={handleInputChange}
-                                    required
+        <Box
+            sx={{
+                minHeight: '100vh',
+                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1100,
+                overflowY: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '20px',
+            }}
+        >
+            <Fade in={true}>
+                <Box
+                    sx={{
+                        py: 2,
+                        width: '100%',
+                    }}
+                >
+                    <Container maxWidth="lg" sx={{ py: 2 }}>
+                        <Card
+                            elevation={6}
+                            sx={{
+                                borderRadius: '16px',
+                                overflow: 'hidden',
+                                background: 'rgba(255, 255, 255, 0.95)',
+                                backdropFilter: 'blur(10px)',
+                                boxShadow: '0 10px 40px rgba(31, 38, 135, 0.15)',
+                                maxWidth: '1000px',
+                                margin: '0 auto',
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    position: 'relative',
+                                    height: 120,
+                                    background: 'linear-gradient(120deg, #06A9AE 0%, #0089a3 100%)',
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '40%',
+                                        background: 'linear-gradient(transparent, rgba(0,0,0,0.2))',
+                                    }}
                                 />
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Email"
-                                    name="email"
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    required
-                                />
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Số điện thoại"
-                                    name="phoneNumber"
-                                    value={formData.phoneNumber}
-                                    onChange={handleInputChange}
-                                />
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Ngày sinh (DD/MM/YYYY)"
-                                    name="dateOfBirth"
-                                    value={formData.dateOfBirth}
-                                    onChange={handleInputChange}
-                                    placeholder="DD/MM/YYYY"
-                                />
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                                <FormControl fullWidth>
-                                    <InputLabel>Giới tính</InputLabel>
-                                    <Select
-                                        name="gender"
-                                        value={formData.gender}
-                                        onChange={handleInputChange}
-                                        label="Giới tính"
-                                    >
-                                        <MenuItem value={1}>Nam</MenuItem>
-                                        <MenuItem value={2}>Nữ</MenuItem>
-                                        <MenuItem value={0}>Khác</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Lớp"
-                                    name="grade"
-                                    value={formData.grade}
-                                    onChange={handleInputChange}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Số nhà/Tên đường"
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleInputChange}
-                                    multiline
-                                    rows={2}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Trường"
-                                    name="school"
-                                    value={formData.school}
-                                    onChange={handleInputChange}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                                    <Button
-                                        variant="outlined"
-                                        onClick={() => navigate(-1)}
-                                        sx={{ borderRadius: '8px' }}
-                                    >
-                                        Quay lại
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        variant="contained"
-                                        startIcon={<SaveOutlined />}
-                                        disabled={loading}
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        bottom: -50,
+                                        left: { xs: '50%', sm: 40 },
+                                        transform: { xs: 'translateX(-50%)', sm: 'translateX(0)' },
+                                    }}
+                                >
+                                    <Avatar
+                                        src={profile?.imgURL || 'https://via.placeholder.com/150'}
+                                        alt="Ảnh đại diện"
                                         sx={{
-                                            borderRadius: '8px',
-                                            bgcolor: '#06A9AE',
-                                            '&:hover': {
-                                                bgcolor: '#048C87'
-                                            }
+                                            width: 100,
+                                            height: 100,
+                                            border: '4px solid white',
+                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
                                         }}
-                                    >
-                                        {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Lưu thay đổi'}
-                                    </Button>
+                                    />
                                 </Box>
-                            </Grid>
-                        </Grid>
-                    </form>
-                )}
-            </Paper>
-        </Container>
+                                <Typography
+                                    variant="h5"
+                                    sx={{
+                                        position: 'absolute',
+                                        top: { xs: 20, sm: 30 },
+                                        left: { xs: '50%', sm: 40 },
+                                        transform: { xs: 'translateX(-50%)', sm: 'translateX(0)' },
+                                        color: 'white',
+                                        fontWeight: 600,
+                                        textAlign: { xs: 'center', sm: 'left' },
+                                    }}
+                                >
+                                    Chỉnh sửa thông tin cá nhân
+                                </Typography>
+                            </Box>
+
+                            <CardContent sx={{ pt: 5, px: { xs: 2, sm: 3 }, pb: 2 }}>
+                                {loading && !profile ? (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                                        <CircularProgress sx={{ color: '#06A9AE' }} />
+                                    </Box>
+                                ) : error && !profile ? (
+                                    <Alert severity="error" sx={{ my: 2 }}>
+                                        {error}
+                                    </Alert>
+                                ) : (
+                                    <form onSubmit={handleSubmit}>
+                                        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+                                        {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
+
+                                        <Grid container spacing={3}>
+                                            <Grid item xs={12} sm={6}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Họ và tên"
+                                                    name="fullname"
+                                                    value={formData.fullname}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                    InputProps={{
+                                                        startAdornment: <Person sx={{ mr: 1, color: '#06A9AE' }} />,
+                                                    }}
+                                                    sx={{
+                                                        '& .MuiOutlinedInput-root': {
+                                                            borderRadius: '12px',
+                                                            backgroundColor: 'rgba(6, 169, 174, 0.04)',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                            },
+                                                        },
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Email"
+                                                    name="email"
+                                                    type="email"
+                                                    value={formData.email}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                    InputProps={{
+                                                        startAdornment: <Email sx={{ mr: 1, color: '#06A9AE' }} />,
+                                                    }}
+                                                    sx={{
+                                                        '& .MuiOutlinedInput-root': {
+                                                            borderRadius: '12px',
+                                                            backgroundColor: 'rgba(6, 169, 174, 0.04)',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                            },
+                                                        },
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Số điện thoại"
+                                                    name="phoneNumber"
+                                                    value={formData.phoneNumber}
+                                                    onChange={handleInputChange}
+                                                    InputProps={{
+                                                        startAdornment: <Phone sx={{ mr: 1, color: '#06A9AE' }} />,
+                                                    }}
+                                                    sx={{
+                                                        '& .MuiOutlinedInput-root': {
+                                                            borderRadius: '12px',
+                                                            backgroundColor: 'rgba(6, 169, 174, 0.04)',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                            },
+                                                        },
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Ngày sinh (DD/MM/YYYY)"
+                                                    name="dateOfBirth"
+                                                    value={formData.dateOfBirth}
+                                                    onChange={handleInputChange}
+                                                    placeholder="DD/MM/YYYY"
+                                                    InputProps={{
+                                                        startAdornment: <Cake sx={{ mr: 1, color: '#06A9AE' }} />,
+                                                    }}
+                                                    sx={{
+                                                        '& .MuiOutlinedInput-root': {
+                                                            borderRadius: '12px',
+                                                            backgroundColor: 'rgba(6, 169, 174, 0.04)',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                            },
+                                                        },
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <FormControl fullWidth>
+                                                    <InputLabel>Giới tính</InputLabel>
+                                                    <Select
+                                                        name="gender"
+                                                        value={formData.gender}
+                                                        onChange={handleInputChange}
+                                                        label="Giới tính"
+                                                        startAdornment={<Person sx={{ mr: 1, color: '#06A9AE' }} />}
+                                                        sx={{
+                                                            borderRadius: '12px',
+                                                            backgroundColor: 'rgba(6, 169, 174, 0.04)',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                            },
+                                                        }}
+                                                    >
+                                                        <MenuItem value={1}>Nam</MenuItem>
+                                                        <MenuItem value={2}>Nữ</MenuItem>
+                                                        <MenuItem value={0}>Khác</MenuItem>
+                                                    </Select>
+                                                </FormControl>
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Lớp"
+                                                    name="grade"
+                                                    value={formData.grade}
+                                                    onChange={handleInputChange}
+                                                    InputProps={{
+                                                        startAdornment: <Class sx={{ mr: 1, color: '#06A9AE' }} />,
+                                                    }}
+                                                    sx={{
+                                                        '& .MuiOutlinedInput-root': {
+                                                            borderRadius: '12px',
+                                                            backgroundColor: 'rgba(6, 169, 174, 0.04)',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                            },
+                                                        },
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Số nhà/Tên đường"
+                                                    name="address"
+                                                    value={formData.address}
+                                                    onChange={handleInputChange}
+                                                    multiline
+                                                    rows={2}
+                                                    InputProps={{
+                                                        startAdornment: <LocationOn sx={{ mr: 1, color: '#06A9AE' }} />,
+                                                    }}
+                                                    sx={{
+                                                        '& .MuiOutlinedInput-root': {
+                                                            borderRadius: '12px',
+                                                            backgroundColor: 'rgba(6, 169, 174, 0.04)',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                            },
+                                                        },
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Trường"
+                                                    name="school"
+                                                    value={formData.school}
+                                                    onChange={handleInputChange}
+                                                    InputProps={{
+                                                        startAdornment: <School sx={{ mr: 1, color: '#06A9AE' }} />,
+                                                    }}
+                                                    sx={{
+                                                        '& .MuiOutlinedInput-root': {
+                                                            borderRadius: '12px',
+                                                            backgroundColor: 'rgba(6, 169, 174, 0.04)',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                            },
+                                                        },
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                                                    <Button
+                                                        variant="outlined"
+                                                        onClick={() => navigate(-1)}
+                                                        sx={{
+                                                            borderRadius: '8px',
+                                                            borderColor: '#06A9AE',
+                                                            color: '#06A9AE',
+                                                            '&:hover': {
+                                                                borderColor: '#048b8f',
+                                                                backgroundColor: 'rgba(6, 169, 174, 0.04)',
+                                                            },
+                                                        }}
+                                                    >
+                                                        Quay lại
+                                                    </Button>
+                                                    <Button
+                                                        type="submit"
+                                                        variant="contained"
+                                                        startIcon={<SaveOutlined />}
+                                                        disabled={loading}
+                                                        sx={{
+                                                            borderRadius: '8px',
+                                                            backgroundColor: '#06A9AE',
+                                                            boxShadow: '0 4px 12px rgba(6, 169, 174, 0.2)',
+                                                            '&:hover': {
+                                                                backgroundColor: '#048b8f',
+                                                                boxShadow: '0 6px 15px rgba(6, 169, 174, 0.3)',
+                                                            },
+                                                        }}
+                                                    >
+                                                        {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Lưu thay đổi'}
+                                                    </Button>
+                                                </Box>
+                                            </Grid>
+                                        </Grid>
+                                    </form>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </Container>
+                </Box>
+            </Fade>
+        </Box>
     );
 };
 
