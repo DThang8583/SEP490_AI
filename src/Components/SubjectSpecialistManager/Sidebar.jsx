@@ -260,23 +260,25 @@ const Sidebar = ({ open }) => {
                                             mb: 1,
                                             px: 2,
                                             py: 1.5,
-                                            background: isActive ? 'rgba(255,255,255,0.15)' : 'transparent',
+                                            background: item.text === 'Đăng xuất' ? 'rgba(255, 255, 255, 0.1)' : (isActive ? 'rgba(255,255,255,0.15)' : 'transparent'),
                                             backdropFilter: 'blur(10px)',
                                             cursor: 'pointer',
                                             '&:hover': {
-                                                background: 'rgba(255,255,255,0.1)',
+                                                background: item.text === 'Đăng xuất' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255,255,255,0.1)',
+                                                transform: item.text === 'Đăng xuất' ? 'translateY(-2px)' : 'none',
+                                                boxShadow: item.text === 'Đăng xuất' ? '0 4px 8px rgba(0,0,0,0.2)' : 'none',
                                                 transition: 'all 0.3s',
                                             }
                                         }}
                                     >
                                         <Box sx={{
-                                            color: item.text === 'Đăng xuất' ? '#ff5252' : 'white',
+                                            color: item.text === 'Đăng xuất' ? '#FFFFFF' : 'white',
                                             minWidth: 35,
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             mr: isCollapsed ? 0 : 2.5,
-                                            transition: 'margin 0.4s',
+                                            transition: 'margin 0.4s, color 0.3s',
                                             cursor: 'pointer',
                                         }}>
                                             {item.icon}
@@ -285,14 +287,14 @@ const Sidebar = ({ open }) => {
                                         <Typography
                                             sx={{
                                                 fontSize: '0.95rem',
-                                                fontWeight: isActive ? 600 : 400,
+                                                fontWeight: item.text === 'Đăng xuất' ? 600 : (isActive ? 600 : 400),
                                                 opacity: isCollapsed ? 0 : 1,
                                                 maxWidth: isCollapsed ? 0 : '160px',
                                                 overflow: 'hidden',
                                                 whiteSpace: 'nowrap',
                                                 textOverflow: 'ellipsis',
-                                                color: item.text === 'Đăng xuất' ? '#ff5252' : (isActive ? '#fff' : 'rgba(255,255,255,0.85)'),
-                                                transition: 'opacity 0.4s, max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                color: item.text === 'Đăng xuất' ? '#FFFFFF' : (isActive ? '#fff' : 'rgba(255,255,255,0.85)'),
+                                                transition: 'opacity 0.4s, max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s',
                                                 cursor: 'pointer',
                                             }}
                                         >
