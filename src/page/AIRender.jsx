@@ -163,7 +163,7 @@ const AIRender = () => {
       }
 
       const response = await axios.post(
-        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons',
+        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans',
         apiBody,
         {
           headers: {
@@ -240,7 +240,7 @@ const AIRender = () => {
       }
 
       const response = await axios.post(
-        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons/pending',
+        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/pending',
         apiBody,
         {
           headers: {

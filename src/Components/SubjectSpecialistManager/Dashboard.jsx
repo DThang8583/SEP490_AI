@@ -18,7 +18,8 @@ import {
     Cancel,
     HourglassEmpty,
     TrendingUp,
-    Dashboard as DashboardIcon
+    Dashboard as DashboardIcon,
+    Assignment
 } from '@mui/icons-material';
 
 // Styled components with better shadows and interactions
@@ -52,6 +53,11 @@ const Dashboard = ({ sidebarOpen }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [userGradeNumber, setUserGradeNumber] = useState(null);
+    const [allLessonsCount, setAllLessonsCount] = useState(0);
+    const [totalLessonPlans, setTotalLessonPlans] = useState(0);
+    const [pendingLessonPlans, setPendingLessonPlans] = useState(0);
+    const [approvedLessonPlans, setApprovedLessonPlans] = useState(0);
+    const [rejectedLessonPlans, setRejectedLessonPlans] = useState(0);
 
     const sidebarWidth = sidebarOpen ? 60 : 240; // sidebarOpen = true: thu nhỏ, false: mở rộng
 
@@ -87,6 +93,87 @@ const Dashboard = ({ sidebarOpen }) => {
             console.error('Lỗi khi lấy gradeNumber:', err);
             throw new Error(`Lỗi khi lấy gradeNumber: ${err.message}`);
         }
+    }, []);
+
+    const fetchTotalLessons = async () => {
+        try {
+            const response = await axios.get(
+                'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons?PageNumber=1&PageSize=999'
+            );
+            if (response.data && response.data.code === 0) {
+                setAllLessonsCount(response.data.data.totalSize);
+            }
+        } catch (error) {
+            console.error('Error fetching total lessons:', error);
+        }
+    };
+
+    const fetchLessonPlansByStatus = async () => {
+        try {
+            // Fetch pending lessons (status 2)
+            const pendingResponse = await axios.get(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans`,
+                {
+                    params: {
+                        GradeId: userGradeNumber,
+                        Status: 2,
+                        Page: 1,
+                        PageSize: 999
+                    }
+                }
+            );
+
+            // Fetch approved lessons (status 3)
+            const approvedResponse = await axios.get(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans`,
+                {
+                    params: {
+                        GradeId: userGradeNumber,
+                        Status: 3,
+                        Page: 1,
+                        PageSize: 999
+                    }
+                }
+            );
+
+            // Fetch rejected lessons (status 4)
+            const rejectedResponse = await axios.get(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans`,
+                {
+                    params: {
+                        GradeId: userGradeNumber,
+                        Status: 4,
+                        Page: 1,
+                        PageSize: 999
+                    }
+                }
+            );
+
+            if (pendingResponse.data?.code === 0) {
+                setPendingLessonPlans(pendingResponse.data.data.items.length);
+            }
+            if (approvedResponse.data?.code === 0) {
+                setApprovedLessonPlans(approvedResponse.data.data.items.length);
+            }
+            if (rejectedResponse.data?.code === 0) {
+                setRejectedLessonPlans(rejectedResponse.data.data.items.length);
+            }
+
+            // Calculate total
+            const total = 
+                (pendingResponse.data?.data?.items?.length || 0) +
+                (approvedResponse.data?.data?.items?.length || 0) +
+                (rejectedResponse.data?.data?.items?.length || 0);
+            setTotalLessonPlans(total);
+
+        } catch (error) {
+            console.error('Error fetching lesson plans by status:', error);
+            setError('Failed to fetch lesson plans data');
+        }
+    };
+
+    useEffect(() => {
+        fetchTotalLessons();
     }, []);
 
     useEffect(() => {
@@ -190,6 +277,12 @@ const Dashboard = ({ sidebarOpen }) => {
 
         fetchLessonStats();
     }, [getUserGradeNumber]);
+
+    useEffect(() => {
+        if (userGradeNumber) {
+            fetchLessonPlansByStatus();
+        }
+    }, [userGradeNumber]);
 
     if (loading) {
         return (
@@ -321,7 +414,7 @@ const Dashboard = ({ sidebarOpen }) => {
                                         }}
                                     >
                                         <Typography variant="h5" sx={{ color: '#00AB55', fontWeight: 600, mb: 1 }}>
-                                            {totalLessons}
+                                            {allLessonsCount}
                                         </Typography>
                                         <Typography variant="body1" sx={{ color: '#637381' }}>
                                             Tổng số bài học
@@ -394,7 +487,7 @@ const Dashboard = ({ sidebarOpen }) => {
                                                     Đã duyệt
                                                 </Typography>
                                                 <Typography variant="h6" sx={{ fontWeight: 600, color: '#212B36' }}>
-                                                    {approvedLessons}
+                                                    {approvedLessonPlans}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -428,7 +521,7 @@ const Dashboard = ({ sidebarOpen }) => {
                                                     Đã từ chối
                                                 </Typography>
                                                 <Typography variant="h6" sx={{ fontWeight: 600, color: '#212B36' }}>
-                                                    {rejectedLessons}
+                                                    {rejectedLessonPlans}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -459,10 +552,44 @@ const Dashboard = ({ sidebarOpen }) => {
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" sx={{ color: '#637381' }}>
-                                                    Đang chờ
+                                                    Đang chờ duyệt
                                                 </Typography>
                                                 <Typography variant="h6" sx={{ fontWeight: 600, color: '#212B36' }}>
-                                                    {pendingLessons}
+                                                    {pendingLessonPlans}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12} sm={4}>
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                p: 2,
+                                                borderRadius: 1,
+                                                bgcolor: 'rgba(25, 118, 210, 0.08)',
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    borderRadius: '50%',
+                                                    bgcolor: '#1976d2',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    mr: 2,
+                                                }}
+                                            >
+                                                <Assignment sx={{ color: '#fff' }} />
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" sx={{ color: '#637381' }}>
+                                                    Tổng số giáo án
+                                                </Typography>
+                                                <Typography variant="h6" sx={{ fontWeight: 600, color: '#212B36' }}>
+                                                    {totalLessonPlans}
                                                 </Typography>
                                             </Box>
                                         </Box>
