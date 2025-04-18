@@ -1,6 +1,6 @@
 // src/Components/SubjectSpecialistManager/CurriculumAnalysis.jsx
 import React, { useState, useEffect } from 'react';
-import { api } from '../../api';
+import { api } from '../../../api';
 import { Box, Typography, TextField, Button, CircularProgress, Tabs, Tab } from '@mui/material';
 
 const CurriculumAnalysis = ({ sidebarOpen }) => {

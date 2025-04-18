@@ -20,11 +20,12 @@ import ExamDetail from './Components/ExamPrep/ExamDetail';
 import Support from './Components/Support/Support';
 import Sidebar from './Components/SubjectSpecialistManager/Sidebar';
 import Dashboard from './Components/SubjectSpecialistManager/Dashboard';
-import LessonReview from './Components/SubjectSpecialistManager/LessonReview';
-import ContentApproval from './Components/SubjectSpecialistManager/ContentApproval';
-import CurriculumAnalysis from './Components/SubjectSpecialistManager/CurriculumAnalysis';
-import CurriculumFramework from './Components/SubjectSpecialistManager/CurriculumFramework';
-import LessonExport from './Components/SubjectSpecialistManager/LessonExport';
+import LessonReview from './Components/SubjectSpecialistManager/Lesson/LessonReview';
+import ContentApproval from './Components/SubjectSpecialistManager/Lesson/ContentApproval';
+import CurriculumAnalysis from './Components/SubjectSpecialistManager/Curriculum/CurriculumAnalysis';
+import CurriculumFramework from './Components/SubjectSpecialistManager/Curriculum/CurriculumFramework';
+import CurriculumDetail from './Components/SubjectSpecialistManager/Curriculum/CurriculumDetail';
+import LessonExport from './Components/SubjectSpecialistManager/Lesson/LessonExport';
 import Profile from './Components/SubjectSpecialistManager/Profile';
 import EditProfile from './Components/SubjectSpecialistManager/EditProfile';
 import ChangePassword from './Components/SubjectSpecialistManager/ChangePassword';
@@ -80,6 +81,8 @@ const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
         <Route path="/content-approval" element={<ContentApproval sidebarOpen={sidebarOpen} />} />
         <Route path="/curriculum-analysis" element={<CurriculumAnalysis sidebarOpen={sidebarOpen} />} />
         <Route path="/curriculum-framework" element={<CurriculumFramework sidebarOpen={sidebarOpen} />} />
+        <Route path="/curriculum" element={<CurriculumFramework sidebarOpen={sidebarOpen} />} />
+        <Route path="/manager/curriculum-detail/:curriculumId" element={<CurriculumDetail sidebarOpen={sidebarOpen} />} />
         <Route path="/lesson-export" element={<LessonExport sidebarOpen={sidebarOpen} />} />
         <Route path="/profile" element={<Profile sidebarOpen={sidebarOpen} />} />
         <Route path="/edit-profile" element={<EditProfile sidebarOpen={sidebarOpen} />} />
@@ -163,7 +166,7 @@ function App() {
                 <Route path="/CreateLessonByChat" element={<CreateLessonByChat />} />
                 <Route path="/AIRender" element={<AIRender />} />
                 <Route path="/ChoiceChatorClick" element={<ChoiceChatorClick />} />
-                <Route path="/cac-bai-hoc" element={<LessonList />}/>
+                <Route path="/cac-bai-hoc" element={<LessonList />} />
                 <Route path="/các-bài-giảng" element={<PrivateRoute><AllLessons /></PrivateRoute>} />
                 <Route path="/blog-lesson/:lessonId" element={<PrivateRoute><BlogLessonDetail /></PrivateRoute>} />
                 <Route path="/Đăng-bài-giảng" element={<PrivateRoute><LessonUpload /></PrivateRoute>} />
@@ -171,10 +174,10 @@ function App() {
                 <Route path="/pending-lessons" element={<PrivateRoute><PendingLessons /></PrivateRoute>} />
                 <Route path="/approved-lessons" element={<PrivateRoute><ApprovedLessons /></PrivateRoute>} />
                 <Route path="/draft-lessons" element={<PrivateRoute><DraftLessons /></PrivateRoute>} />
-                <Route path="/Bài-giảng-đang-chờ/:lessonId" element={<PrivateRoute><PendingLessonDetail/></PrivateRoute>} />
-                <Route path="/Bài-giảng-đã-chấp-nhận/:lessonId" element={<PrivateRoute><ApprovedLessonDetail/></PrivateRoute>} />
-                <Route path="/Bài-giảng-đã-từ-chối/:lessonId" element={<PrivateRoute><RejectedLessonDetail/></PrivateRoute>} />
-                <Route path="/Bài-giảng-nháp/:lessonId" element={<PrivateRoute><DraftLessonDetail/></PrivateRoute>} />
+                <Route path="/Bài-giảng-đang-chờ/:lessonId" element={<PrivateRoute><PendingLessonDetail /></PrivateRoute>} />
+                <Route path="/Bài-giảng-đã-chấp-nhận/:lessonId" element={<PrivateRoute><ApprovedLessonDetail /></PrivateRoute>} />
+                <Route path="/Bài-giảng-đã-từ-chối/:lessonId" element={<PrivateRoute><RejectedLessonDetail /></PrivateRoute>} />
+                <Route path="/Bài-giảng-nháp/:lessonId" element={<PrivateRoute><DraftLessonDetail /></PrivateRoute>} />
                 <Route path="/de-on" element={<ExamList />} />
                 <Route path="/de-on-thi/:id" element={<ExamDetail />} />
                 <Route path="/support" element={<Support />} />
@@ -197,10 +200,10 @@ function App() {
                 <Route path="/pending-lessons" element={<PrivateRoute><PendingLessons /></PrivateRoute>} />
                 <Route path="/approved-lessons" element={<PrivateRoute><ApprovedLessons /></PrivateRoute>} />
                 <Route path="/draft-lessons" element={<PrivateRoute><DraftLessons /></PrivateRoute>} />
-                <Route path="/Bài-giảng-đang-chờ/:lessonId" element={<PrivateRoute><PendingLessonDetail/></PrivateRoute>} />
-                <Route path="/Bài-giảng-đã-chấp-nhận/:lessonId" element={<PrivateRoute><ApprovedLessonDetail/></PrivateRoute>} />
-                <Route path="/Bài-giảng-đã-từ-chối/:lessonId" element={<PrivateRoute><RejectedLessonDetail/></PrivateRoute>} />
-                <Route path="/Bài-giảng-nháp/:lessonId" element={<PrivateRoute><DraftLessonDetail/></PrivateRoute>} />
+                <Route path="/Bài-giảng-đang-chờ/:lessonId" element={<PrivateRoute><PendingLessonDetail /></PrivateRoute>} />
+                <Route path="/Bài-giảng-đã-chấp-nhận/:lessonId" element={<PrivateRoute><ApprovedLessonDetail /></PrivateRoute>} />
+                <Route path="/Bài-giảng-đã-từ-chối/:lessonId" element={<PrivateRoute><RejectedLessonDetail /></PrivateRoute>} />
+                <Route path="/Bài-giảng-nháp/:lessonId" element={<PrivateRoute><DraftLessonDetail /></PrivateRoute>} />
                 <Route
                   path="/admin/*"
                   element={

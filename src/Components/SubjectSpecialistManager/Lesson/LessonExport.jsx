@@ -1,6 +1,5 @@
-// src/Components/SubjectSpecialistManager/LessonExport.jsx
+// src/Components/SubjectSpecialistManager/Lesson/LessonExport.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { api } from '../../api';
 import {
     Box,
     Typography,
@@ -28,8 +27,6 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import { styled } from '@mui/material/styles';
 import axios from 'axios';
 import {
-    FirstPage as FirstPageIcon,
-    LastPage as LastPageIcon,
     NavigateNext as NavigateNextIcon,
     NavigateBefore as NavigateBeforeIcon,
     Person as PersonIcon,
@@ -109,9 +106,24 @@ const ExportButton = styled(Button)({
     textTransform: 'none',
     fontWeight: 600,
     transition: 'all 0.2s ease',
-    '&:hover': {
-        transform: 'translateY(-2px)',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+    '&.MuiButton-contained': {
+        backgroundColor: COLORS.primary,
+        color: '#fff',
+        '&:hover': {
+            backgroundColor: '#058e93',
+            transform: 'translateY(-2px)',
+            boxShadow: '0 4px 8px rgba(6, 169, 174, 0.25)',
+        },
+    },
+    '&.MuiButton-outlined': {
+        color: COLORS.primary,
+        borderColor: COLORS.primary,
+        '&:hover': {
+            borderColor: COLORS.primary,
+            backgroundColor: 'rgba(6, 169, 174, 0.08)',
+            transform: 'translateY(-2px)',
+            boxShadow: '0 4px 8px rgba(6, 169, 174, 0.15)',
+        },
     },
 });
 
@@ -139,6 +151,8 @@ const SearchTextField = styled(TextField)({
         },
     },
 });
+
+const LESSON_PLANS_API = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans';
 
 const LessonExport = ({ sidebarOpen }) => {
     const [approvedLessons, setApprovedLessons] = useState([]);
@@ -190,23 +204,44 @@ const LessonExport = ({ sidebarOpen }) => {
                 setUserGradeNumber(gradeNumber);
 
                 if (gradeNumber) {
-                    const res = await api.getLessons({ gradeNumber: gradeNumber, Status: 1 });
-                    const lessons = res.data?.items || res.data || [];
-                    if (!Array.isArray(lessons)) {
-                        console.error("API response not an array:", res.data);
-                        throw new Error("Dữ liệu bài học không hợp lệ.");
+                    const response = await axios.get(LESSON_PLANS_API, {
+                        params: {
+                            Status: 3,
+                            Grade: gradeNumber,
+                            Page: page,
+                            PageSize: itemsPerPage
+                        },
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                        }
+                    });
+
+                    if (response.data.code === 0) {
+                        const lessons = response.data.data?.items || [];
+                        const formattedLessons = lessons.map(item => ({
+                            lessonId: item.lessonPlanId,
+                            name: item.lesson,
+                            user: item.fullname,
+                            module: item.module,
+                            gradeNumber: item.grade,
+                            status: item.status,
+                            createdAt: item.createdAt,
+                            description: item.description || ''
+                        }));
+                        setApprovedLessons(formattedLessons);
+                    } else {
+                        throw new Error("Lỗi khi tải dữ liệu giáo án");
                     }
-                    setApprovedLessons(lessons);
                 }
             } catch (err) {
                 console.error('Error fetching lessons:', err);
-                setError(err.message || 'Lỗi tải danh sách bài giảng.');
+                setError(err.message || 'Lỗi tải danh sách giáo án.');
             } finally {
                 setLoading(false);
             }
         };
         fetchLessons();
-    }, [getUserGradeNumber]);
+    }, [getUserGradeNumber, page, itemsPerPage]);
 
     // Handle page change
     const handlePageChange = (event, newPage) => {
@@ -261,22 +296,31 @@ const LessonExport = ({ sidebarOpen }) => {
     }, [approvedLessons, userGradeNumber, searchTerm]);
 
     const exportToPDF = (lesson) => {
+        if (lesson.status !== "Approved") {
+            console.error('Cannot export non-approved lesson');
+            return;
+        }
         const doc = new jsPDF();
-        doc.text(`Title: ${lesson.name || 'N/A'}`, 10, 10);
-        doc.text(`Grade: ${lesson.gradeNumber || userGradeNumber || 'N/A'}`, 10, 20);
-        doc.text(`Description: ${lesson.description || 'N/A'}`, 10, 30);
+        doc.text(`Tiêu đề: ${lesson.name || 'N/A'}`, 10, 10);
+        doc.text(`Giáo viên: ${lesson.user || 'N/A'}`, 10, 20);
+        doc.text(`Khối: ${lesson.gradeNumber || userGradeNumber || 'N/A'}`, 10, 30);
+        doc.text(`Module: ${lesson.module || 'N/A'}`, 10, 40);
+        doc.text(`Ngày tạo: ${lesson.createdAt || 'N/A'}`, 10, 50);
         doc.save(`${lesson.name || 'Lesson'}_Grade${lesson.gradeNumber || userGradeNumber || 'NA'}.pdf`);
     };
 
     const exportToWord = (lesson) => {
+        if (lesson.status !== "Approved") {
+            console.error('Cannot export non-approved lesson');
+            return;
+        }
         const content = `
-      <h1>${lesson.name || 'N/A'}</h1>
-      <p><strong>Grade:</strong> ${lesson.gradeNumber || userGradeNumber || 'N/A'}</p>
-      <p><strong>Description:</strong> ${lesson.description || 'N/A'}</p>
-      ${lesson.module ? `<p><strong>Module:</strong> ${lesson.module}</p>` : ''}
-      ${lesson.week ? `<p><strong>Week:</strong> ${lesson.week}</p>` : ''}
-      ${lesson.totalPeriods ? `<p><strong>Periods:</strong> ${lesson.totalPeriods}</p>` : ''}
-    `;
+        <h1>${lesson.name || 'N/A'}</h1>
+        <p><strong>Giáo viên:</strong> ${lesson.user || 'N/A'}</p>
+        <p><strong>Khối:</strong> ${lesson.gradeNumber || userGradeNumber || 'N/A'}</p>
+        <p><strong>Module:</strong> ${lesson.module || 'N/A'}</p>
+        <p><strong>Ngày tạo:</strong> ${lesson.createdAt || 'N/A'}</p>
+        `;
         const blob = new Blob([content], { type: 'application/msword' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -314,7 +358,7 @@ const LessonExport = ({ sidebarOpen }) => {
                                     <Box display="flex" alignItems="center">
                                         <AssignmentIcon sx={{ mr: 1 }} />
                                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                            Xuất Bài Giảng
+                                            Xuất Giáo Án
                                         </Typography>
                                     </Box>
                                 </CardHeader>
@@ -335,13 +379,13 @@ const LessonExport = ({ sidebarOpen }) => {
                                                     color: COLORS.text.primary,
                                                 }}
                                             >
-                                                Bài giảng đã duyệt {userGradeNumber ? `- Khối ${userGradeNumber}` : ''}
+                                                Giáo án đã duyệt {userGradeNumber ? `- Khối ${userGradeNumber}` : ''}
                                             </Typography>
 
                                             {/* Search Bar */}
                                             <SearchTextField
                                                 fullWidth
-                                                placeholder="Tìm kiếm theo tên bài giảng..."
+                                                placeholder="Tìm kiếm theo tên giáo án..."
                                                 value={searchTerm}
                                                 onChange={handleSearchChange}
                                                 InputProps={{
@@ -383,7 +427,7 @@ const LessonExport = ({ sidebarOpen }) => {
                                                     }}
                                                 >
                                                     <Typography variant="body1" color={COLORS.text.secondary}>
-                                                        Không có bài giảng nào đã duyệt cho Khối {userGradeNumber || 'của bạn'}.
+                                                        Không có giáo án nào đã duyệt cho Khối {userGradeNumber || 'của bạn'}.
                                                     </Typography>
                                                 </Box>
                                             ) : paginatedLessons.length === 0 ? (
@@ -396,7 +440,7 @@ const LessonExport = ({ sidebarOpen }) => {
                                                     }}
                                                 >
                                                     <Typography variant="body1" color={COLORS.text.secondary}>
-                                                        Không tìm thấy bài giảng nào phù hợp với từ khóa "{searchTerm}".
+                                                        Không tìm thấy giáo án nào phù hợp với từ khóa "{searchTerm}".
                                                     </Typography>
                                                 </Box>
                                             ) : (
@@ -429,11 +473,11 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                                     label={lesson.module}
                                                                                 />
                                                                             )}
-                                                                            {lesson.week && (
+                                                                            {lesson.createdAt && (
                                                                                 <InfoChip
                                                                                     size="small"
                                                                                     icon={<ScheduleIcon />}
-                                                                                    label={`Tuần ${lesson.week}`}
+                                                                                    label={`Ngày tạo: ${new Date(lesson.createdAt).toLocaleDateString()}`}
                                                                                 />
                                                                             )}
                                                                         </Box>
@@ -448,7 +492,6 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                         }}>
                                                                             <ExportButton
                                                                                 variant="contained"
-                                                                                color="primary"
                                                                                 startIcon={<PictureAsPdfIcon />}
                                                                                 onClick={() => exportToPDF(lesson)}
                                                                                 size="small"
@@ -457,7 +500,6 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                             </ExportButton>
                                                                             <ExportButton
                                                                                 variant="outlined"
-                                                                                color="primary"
                                                                                 startIcon={<DescriptionIcon />}
                                                                                 onClick={() => exportToWord(lesson)}
                                                                                 size="small"
@@ -472,7 +514,7 @@ const LessonExport = ({ sidebarOpen }) => {
                                                     </List>
 
                                                     {/* Pagination */}
-                                                    <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                    <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
                                                         <Pagination
                                                             count={totalPages}
                                                             page={page}
@@ -480,31 +522,30 @@ const LessonExport = ({ sidebarOpen }) => {
                                                             renderItem={(item) => (
                                                                 <PaginationItem
                                                                     slots={{
-                                                                        first: FirstPageIcon,
-                                                                        last: LastPageIcon,
-                                                                        next: NavigateNextIcon,
-                                                                        previous: NavigateBeforeIcon
+                                                                        previous: NavigateBeforeIcon,
+                                                                        next: NavigateNextIcon
                                                                     }}
                                                                     {...item}
                                                                     sx={{
+                                                                        margin: '0 4px',
+                                                                        borderRadius: '4px',
+                                                                        '&.MuiPaginationItem-root': {
+                                                                            color: COLORS.text.secondary,
+                                                                        },
                                                                         '&.Mui-selected': {
-                                                                            bgcolor: COLORS.primary,
+                                                                            backgroundColor: COLORS.primary,
                                                                             color: '#fff',
-                                                                            fontWeight: 'bold'
-                                                                        }
+                                                                            '&:hover': {
+                                                                                backgroundColor: COLORS.primary,
+                                                                            },
+                                                                        },
+                                                                        '&:hover': {
+                                                                            backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                                        },
                                                                     }}
                                                                 />
                                                             )}
-                                                            siblingCount={1}
-                                                            boundaryCount={1}
-                                                            showFirstButton
-                                                            showLastButton
-                                                            disabled={totalPages <= 1}
                                                         />
-
-                                                        <Typography variant="body2" color={COLORS.text.secondary} sx={{ mt: 2 }}>
-                                                            Trang {page} / {totalPages} (Hiển thị {paginatedLessons.length} / {approvedLessons.length} bài học)
-                                                        </Typography>
                                                     </Box>
                                                 </>
                                             )}

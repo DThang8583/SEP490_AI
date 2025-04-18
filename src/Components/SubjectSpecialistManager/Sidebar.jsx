@@ -48,11 +48,11 @@ const Sidebar = ({ open }) => {
 
     const menuItems = [
         { text: 'Tổng quan', path: '/manager/dashboard', icon: <DashboardIcon /> },
-        { text: 'Bài giảng đã xem xét', path: '/manager/lesson-review', icon: <LibraryBooksIcon /> },
+        { text: 'Giáo án đã xem xét', path: '/manager/lesson-review', icon: <LibraryBooksIcon /> },
         { text: 'Phê duyệt nội dung', path: '/manager/content-approval', icon: <CheckCircleIcon /> },
-        { text: 'Xuất bài giảng', path: '/manager/lesson-export', icon: <FileDownloadIcon /> },
-        { text: 'Phân tích chương trình', path: '/manager/curriculum-analysis', icon: <AnalyticsIcon /> },
+        { text: 'Xuất giáo án', path: '/manager/lesson-export', icon: <FileDownloadIcon /> },
         { text: 'Khung chương trình', path: '/manager/curriculum-framework', icon: <AccountTreeIcon /> },
+        { text: 'Phân tích chương trình', path: '/manager/curriculum-analysis', icon: <AnalyticsIcon /> },
     ];
 
     const profileItems = [
