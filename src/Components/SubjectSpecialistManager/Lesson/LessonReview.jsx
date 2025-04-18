@@ -38,7 +38,7 @@ import {
 import { styled } from '@mui/material/styles';
 
 // API URL
-const TEACHER_LESSONS_API_URL = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons';
+const TEACHER_LESSONS_API_URL = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans';
 
 // Palette colors
 const COLORS = {
@@ -274,7 +274,7 @@ const LessonDetailView = ({ lessonId, onBack }) => {
                 >
                     Quay lại
                 </Button>
-                <Typography color="text.secondary">Không tìm thấy thông tin bài giảng</Typography>
+                <Typography color="text.secondary">Không tìm thấy thông tin giáo án</Typography>
             </Box>
         );
     }
@@ -323,7 +323,7 @@ const LessonDetailView = ({ lessonId, onBack }) => {
                         </Button>
 
                         <Typography variant="h5" sx={{ fontWeight: 700, flex: 1, color: COLORS.text.primary }}>
-                            Chi tiết bài giảng
+                            Chi tiết giáo án
                         </Typography>
 
                         <StatusBadge
@@ -447,7 +447,7 @@ const LessonDetailView = ({ lessonId, onBack }) => {
                     }}>
                         <ArticleIcon sx={{ color: COLORS.primary }} />
                         <Typography variant="h6" sx={{ fontWeight: 700, color: COLORS.text.primary }}>
-                            Nội dung bài giảng
+                            Nội dung giáo án
                         </Typography>
                         <Divider sx={{ flex: 1, ml: 2 }} />
                     </Box>
@@ -467,7 +467,7 @@ const LessonDetailView = ({ lessonId, onBack }) => {
                             </Box>
                         )}
 
-                    {/* Hiển thị các phần chi tiết của bài giảng */}
+                    {/* Hiển thị các phần chi tiết của giáo án */}
                     {lessonDetail.startUp && (
                         <DetailSection>
                             <DetailHeading variant="subtitle1">Khởi động</DetailHeading>
@@ -581,8 +581,9 @@ const LessonReview = () => {
     const [error, setError] = useState(null);
     const [filterStatus, setFilterStatus] = useState('Approved');
     const [searchTerm, setSearchTerm] = useState('');
-    // State để lưu trữ ID của bài giảng đang xem chi tiết
+    // State để lưu trữ ID của giáo án đang xem chi tiết
     const [selectedLessonId, setSelectedLessonId] = useState(null);
+    console.log(lessons);
 
     // Pagination states
     const [page, setPage] = useState(1);
@@ -605,7 +606,7 @@ const LessonReview = () => {
                 throw new Error('Vui lòng đăng nhập để xem bài học.');
             }
 
-            const response = await axios.get(`${TEACHER_LESSONS_API_URL.replace('teacher-lessons', 'users')}/${userInfo.id}`, {
+            const response = await axios.get(`${TEACHER_LESSONS_API_URL.replace('lesson-plans', 'users')}/${userInfo.id}`, {
                 headers: { Authorization: `Bearer ${accessToken}` },
             });
 
@@ -654,7 +655,7 @@ const LessonReview = () => {
                     const filteredItems = items.filter(item => item.grade === gradeNumber);
 
                     const processedItems = filteredItems.map(item => ({
-                        id: item.teacherLessonId,
+                        id: item.lessonPlanId,
                         title: item.lesson || 'Không có tiêu đề',
                         teacherName: item.fullname || 'Không xác định',
                         module: item.module || 'Không xác định',
@@ -690,7 +691,7 @@ const LessonReview = () => {
         fetchLessons();
     }, [fetchLessons]);
 
-    // Handler cho việc chọn bài giảng để xem chi tiết
+    // Handler cho việc chọn giáo án để xem chi tiết
     const handleLessonSelect = (lessonId) => {
         setSelectedLessonId(lessonId);
     };
@@ -768,7 +769,7 @@ const LessonReview = () => {
                     onBack={handleBackToList}
                 />
             ) : (
-                /* Ngược lại hiển thị danh sách bài giảng */
+                /* Ngược lại hiển thị danh sách giáo án */
                 <Box sx={{ py: 4, px: 3 }}>
                     <Container maxWidth="lg">
                         <Fade in timeout={500}>
@@ -777,10 +778,10 @@ const LessonReview = () => {
                                     <AssignmentIcon sx={{ fontSize: 36, color: COLORS.primary, mr: 2 }} />
                                     <Box>
                                         <Typography variant="h4" sx={{ fontWeight: 700, color: COLORS.text.primary }}>
-                                            Bài giảng đã xem xét
+                                            Giáo án đã xem xét
                                         </Typography>
                                         <Typography variant="subtitle1" sx={{ color: COLORS.text.secondary, mt: 0.5 }}>
-                                            Quản lý bài giảng khối {userGradeNumber || '?'}
+                                            Quản lý giáo án khối {userGradeNumber || '?'}
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -803,7 +804,7 @@ const LessonReview = () => {
                                         <Box display="flex" alignItems="center">
                                             <FilterListIcon sx={{ mr: 1 }} />
                                             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                                Danh sách bài giảng - Khối {userGradeNumber}
+                                                Danh sách giáo án - Khối {userGradeNumber}
                                             </Typography>
                                         </Box>
                                     </CardHeader>
@@ -831,7 +832,7 @@ const LessonReview = () => {
                                         {/* Search Bar */}
                                         <SearchTextField
                                             fullWidth
-                                            placeholder="Tìm kiếm theo tên bài giảng..."
+                                            placeholder="Tìm kiếm theo tên giáo án..."
                                             value={searchTerm}
                                             onChange={handleSearchChange}
                                             InputProps={{
@@ -877,8 +878,8 @@ const LessonReview = () => {
                                             >
                                                 <Typography variant="body1" color={COLORS.text.secondary}>
                                                     {searchTerm
-                                                        ? `Không tìm thấy bài giảng nào với từ khóa "${searchTerm}"`
-                                                        : `Không có bài học nào ${filterStatus === 'Approved' ? 'đã duyệt' : 'đã từ chối'} cho khối ${userGradeNumber}.`}
+                                                        ? `Không tìm thấy giáo án nào với từ khóa "${searchTerm}"`
+                                                        : `Không có giáo án nào ${filterStatus === 'Approved' ? 'đã duyệt' : 'đã từ chối'} cho khối ${userGradeNumber}.`}
                                                 </Typography>
                                             </Box>
                                         ) : (

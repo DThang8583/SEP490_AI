@@ -40,6 +40,7 @@ import {
     MenuBook as MenuBookIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 
 // API URLs
 const MODULE_API_URL = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules';
@@ -187,6 +188,7 @@ const CurriculumFramework = ({ sidebarOpen }) => {
     const [newModule, setNewModule] = useState({ name: '', book: '', semester: 1, totalPeriods: '' });
 
     const sidebarWidth = sidebarOpen ? 60 : 240;
+    const navigate = useNavigate();
 
     const getUserGradeNumber = useCallback(async () => {
         try {
@@ -609,6 +611,10 @@ const CurriculumFramework = ({ sidebarOpen }) => {
         }
     };
 
+    const handleViewCurriculumDetail = (curriculumId) => {
+        navigate(`/manager/curriculum-detail/${curriculumId}`);
+    };
+
     const bookName = modules.length > 0 ? modules[0].book : '';
 
     if (loading) {
@@ -690,7 +696,10 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                         <List sx={{ bgcolor: 'transparent', p: 0 }}>
                             {curricula.map((curriculum) => (
                                 <Box key={curriculum.curriculumId}>
-                                    <CurriculumCard onClick={() => handleCardClick(curriculum.curriculumId)}>
+                                    <CurriculumCard
+                                        component="div"
+                                        onClick={() => handleCardClick(curriculum.curriculumId)}
+                                    >
                                         {editMode === curriculum.curriculumId ? (
                                             <Box sx={{ width: '100%' }}>
                                                 <TextField
@@ -834,32 +843,60 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                 Danh sách các chủ đề/bài học - Học kỳ {currentSemester}
                                                             </Typography>
                                                         </Box>
-                                                        <StyledButton
-                                                            onClick={handleOpenAddModuleDialog}
-                                                            sx={{
-                                                                bgcolor: '#fff',
-                                                                color: COLORS.primary,
-                                                                fontWeight: 600,
-                                                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                                                                '&:hover': {
+                                                        <Box sx={{ display: 'flex', gap: 2 }}>
+                                                            <StyledButton
+                                                                onClick={() => handleViewCurriculumDetail(expandedCurriculum)}
+                                                                sx={{
                                                                     bgcolor: '#fff',
-                                                                    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
-                                                                    transform: 'translateY(-2px)'
-                                                                },
-                                                                transition: 'all 0.2s ease',
-                                                                textTransform: 'none',
-                                                                borderRadius: '8px',
-                                                                padding: '8px 20px',
-                                                                fontSize: '0.95rem',
-                                                                border: `2px solid ${COLORS.primary}`,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '8px'
-                                                            }}
-                                                        >
-                                                            <AddIcon sx={{ fontSize: 24, color: COLORS.primary }} />
-                                                            Thêm Module
-                                                        </StyledButton>
+                                                                    color: COLORS.primary,
+                                                                    fontWeight: 600,
+                                                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                                                    '&:hover': {
+                                                                        bgcolor: '#fff',
+                                                                        boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
+                                                                        transform: 'translateY(-2px)'
+                                                                    },
+                                                                    transition: 'all 0.2s ease',
+                                                                    textTransform: 'none',
+                                                                    borderRadius: '8px',
+                                                                    padding: '8px 20px',
+                                                                    fontSize: '0.95rem',
+                                                                    border: `2px solid ${COLORS.primary}`,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '8px'
+                                                                }}
+                                                            >
+                                                                <MenuBookIcon sx={{ fontSize: 24, color: COLORS.primary }} />
+                                                                Xem nội dung cần đạt
+                                                            </StyledButton>
+                                                            <StyledButton
+                                                                onClick={handleOpenAddModuleDialog}
+                                                                sx={{
+                                                                    bgcolor: '#fff',
+                                                                    color: COLORS.primary,
+                                                                    fontWeight: 600,
+                                                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                                                    '&:hover': {
+                                                                        bgcolor: '#fff',
+                                                                        boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
+                                                                        transform: 'translateY(-2px)'
+                                                                    },
+                                                                    transition: 'all 0.2s ease',
+                                                                    textTransform: 'none',
+                                                                    borderRadius: '8px',
+                                                                    padding: '8px 20px',
+                                                                    fontSize: '0.95rem',
+                                                                    border: `2px solid ${COLORS.primary}`,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '8px'
+                                                                }}
+                                                            >
+                                                                <AddIcon sx={{ fontSize: 24, color: COLORS.primary }} />
+                                                                Thêm Module
+                                                            </StyledButton>
+                                                        </Box>
                                                     </CardHeader>
 
                                                     <CardContent sx={{ p: 0 }}>

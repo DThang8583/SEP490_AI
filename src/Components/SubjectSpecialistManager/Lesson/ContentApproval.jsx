@@ -35,7 +35,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
-const TEACHER_LESSONS_API = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons';
+const TEACHER_LESSONS_API = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans';
 const USERS_API = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users';
 
 // Colors matching the app theme
@@ -170,7 +170,7 @@ const LessonDetailView = ({ lessonId, onBack, onApprove, onReject }) => {
         }
 
         // Pass the reason to parent component for rejection
-        onReject(lessonDetail.teacherLessonId, rejectReason.trim());
+        onReject(lessonDetail.lessonPlanId, rejectReason.trim());
         handleCloseRejectDialog();
     };
 
@@ -211,7 +211,7 @@ const LessonDetailView = ({ lessonId, onBack, onApprove, onReject }) => {
                 >
                     Quay lại
                 </Button>
-                <Typography color="text.secondary">Không tìm thấy thông tin bài giảng</Typography>
+                <Typography color="text.secondary">Không tìm thấy thông tin giáo án</Typography>
             </Box>
         );
     }
@@ -240,7 +240,7 @@ const LessonDetailView = ({ lessonId, onBack, onApprove, onReject }) => {
                         </Button>
 
                         <Typography variant="h6" sx={{ fontWeight: 700, flex: 1 }}>
-                            Chi tiết bài giảng
+                            Chi tiết giáo án
                         </Typography>
 
                         <StatusChip
@@ -291,7 +291,7 @@ const LessonDetailView = ({ lessonId, onBack, onApprove, onReject }) => {
 
                     {/* Detail sections */}
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: COLORS.text.primary }}>
-                        Nội dung bài giảng
+                        Nội dung giáo án
                     </Typography>
 
                     <DetailSection>
@@ -339,7 +339,7 @@ const LessonDetailView = ({ lessonId, onBack, onApprove, onReject }) => {
                             variant="contained"
                             color="success"
                             startIcon={<CheckIcon />}
-                            onClick={() => onApprove(lessonDetail.teacherLessonId)}
+                            onClick={() => onApprove(lessonDetail.lessonPlanId)}
                             disabled={lessonDetail.status === "Approved"}
                             sx={{ px: 4, py: 1 }}
                         >
@@ -376,11 +376,11 @@ const LessonDetailView = ({ lessonId, onBack, onApprove, onReject }) => {
                         textAlign: 'center',
                         pt: 3
                     }}>
-                        Từ chối bài giảng
+                        Từ chối giáo án
                     </DialogTitle>
                     <DialogContent>
                         <DialogContentText sx={{ mb: 2 }}>
-                            Vui lòng nhập lý do từ chối bài giảng này:
+                            Vui lòng nhập lý do từ chối giáo án này:
                         </DialogContentText>
                         <TextField
                             autoFocus
@@ -726,8 +726,8 @@ const ContentApproval = () => {
                                 >
                                     <Typography variant="body1" color={COLORS.text.secondary}>
                                         {searchTerm
-                                            ? `Không tìm thấy bài giảng nào với từ khóa "${searchTerm}"`
-                                            : `Không có bài học nào cần duyệt cho khối ${userGrade}.`}
+                                            ? `Không tìm thấy giáo án nào với từ khóa "${searchTerm}"`
+                                            : `Không có giáo án nào cần duyệt cho khối ${userGrade}.`}
                                     </Typography>
                                 </Box>
                             ) : (
@@ -752,7 +752,7 @@ const ContentApproval = () => {
                                         <TableBody>
                                             {getPaginatedLessons().map((lesson) => (
                                                 <TableRow
-                                                    key={lesson.teacherLessonId}
+                                                    key={lesson.lessonPlanId}
                                                     hover
                                                     sx={{
                                                         cursor: 'pointer',
@@ -760,7 +760,7 @@ const ContentApproval = () => {
                                                             backgroundColor: 'rgba(0, 0, 0, 0.01)'
                                                         }
                                                     }}
-                                                    onClick={() => handleLessonSelect(lesson.teacherLessonId)}
+                                                    onClick={() => handleLessonSelect(lesson.lessonPlanId)}
                                                 >
                                                     <TableCell>{lesson.fullname}</TableCell>
                                                     <TableCell>{lesson.lesson}</TableCell>
