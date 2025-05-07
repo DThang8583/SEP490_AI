@@ -70,7 +70,7 @@ const PendingLessons = () => {
 
       // Added Page and PageSize parameters, and changed status to Status=1
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons?Status=2&userId=${userInfo.id}&Page=${page}&PageSize=${pageSize}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans?Status=2&userId=${userInfo.id}&Page=${page}&PageSize=${pageSize}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -109,12 +109,12 @@ const PendingLessons = () => {
   };
 
   // Handle navigation to detail page
-  const handleNavigateToDetail = (lessonId) => {
-    if (lessonId) {
+  const handleNavigateToDetail = (lessonPlanId) => {
+    if (lessonPlanId) {
       // Adjust the path as needed for your detail route
-      navigate(`/Bài-giảng-đang-chờ/${lessonId}`); 
+      navigate(`/Bài-giảng-đang-chờ/${lessonPlanId}`); 
     } else {
-      console.warn("Cannot navigate: Lesson ID is missing.");
+      console.warn("Cannot navigate: Lesson Plan ID is missing.");
     }
   };
 
@@ -185,11 +185,11 @@ const PendingLessons = () => {
                 <List sx={{ p: 0 }}>
                   {lessons.map((lesson) => (
                     <ListItem 
-                      key={lesson.teacherLessonId} 
+                      key={lesson.lessonPlanId} 
                       disablePadding
                     >
                       <ListItemButton 
-                         onClick={() => handleNavigateToDetail(lesson.teacherLessonId)}
+                         onClick={() => handleNavigateToDetail(lesson.lessonPlanId)}
                          sx={{ 
                            borderRadius: '8px', // Rounded corners for button
                            mb: 0.5, // Small margin between items

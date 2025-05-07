@@ -107,7 +107,7 @@ const ApprovedLessonDetail = () => {
 
       // API endpoint for fetching approved lesson details
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons/${lessonId}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`

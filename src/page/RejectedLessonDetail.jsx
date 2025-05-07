@@ -107,7 +107,7 @@ const RejectedLessonDetail = () => {
 
       // API endpoint for fetching rejected lesson details
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons/${lessonId}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -241,7 +241,7 @@ const RejectedLessonDetail = () => {
       }
 
       const response = await axios.put(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons/${lessonId}/draft`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}/draft`,
         {},
         {
           headers: {
