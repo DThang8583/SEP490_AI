@@ -101,6 +101,29 @@ const Login = () => {
     }
   };
 
+  const refreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) return false;
+
+      const response = await axios.post(
+        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/auth/refresh-token',
+        { refreshToken }
+      );
+
+      if (response.data && response.data.data) {
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return false;
+    }
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', py: 4 }}>
       <Container maxWidth="sm">

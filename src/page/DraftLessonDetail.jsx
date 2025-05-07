@@ -118,7 +118,7 @@ const DraftLessonDetail = () => {
 
       // API endpoint for fetching draft lesson details
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons/${lessonId}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -252,7 +252,7 @@ const DraftLessonDetail = () => {
       }
 
       const response = await axios.put(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons/${lessonId}/pending`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}/pending`,
         {},
         {
           headers: {

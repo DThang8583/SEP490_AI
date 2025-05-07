@@ -68,7 +68,7 @@ const ApprovedLessons = () => {
 
       // Added Page and PageSize parameters, and changed status to Status=3
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons?Status=3&userId=${userInfo.id}&Page=${page}&PageSize=${pageSize}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans?Status=3&userId=${userInfo.id}&Page=${page}&PageSize=${pageSize}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -105,9 +105,9 @@ const ApprovedLessons = () => {
   };
 
   // Handle navigation to detail page
-  const handleNavigateToDetail = (lessonId) => {
-    if (lessonId) {
-      navigate(`/Bài-giảng-đã-chấp-nhận/${lessonId}`);
+  const handleNavigateToDetail = (lessonPlanId) => {
+    if (lessonPlanId) {
+      navigate(`/Bài-giảng-đã-chấp-nhận/${lessonPlanId}`);
     } else {
       console.warn("Cannot navigate: Lesson ID is missing.");
     }
@@ -182,11 +182,11 @@ const ApprovedLessons = () => {
                 <List sx={{ p: 0 }}>
                   {lessons.map((lesson) => (
                     <ListItem 
-                      key={lesson.teacherLessonId} 
+                      key={lesson.lessonPlanId} 
                       disablePadding
                     >
                       <ListItemButton 
-                         onClick={() => handleNavigateToDetail(lesson.teacherLessonId)}
+                         onClick={() => handleNavigateToDetail(lesson.lessonPlanId)}
                          sx={{ 
                            borderRadius: '8px', // Rounded corners for button
                            mb: 0.5, // Small margin between items
@@ -209,7 +209,7 @@ const ApprovedLessons = () => {
                          <Button 
                             variant="outlined" 
                             size="small" 
-                            onClick={() => navigate(`/lesson-details/${lesson.teacherLessonId}`)} // Adjust path
+                            onClick={() => navigate(`/lesson-details/${lesson.teacherlessonPlanId}`)} // Adjust path
                          >Xem</Button> 
                          */}
                       </ListItemButton>

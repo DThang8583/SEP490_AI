@@ -53,7 +53,7 @@ const DraftLessons = () => {
 
       // Added Page and PageSize parameters, and changed status to Status=1
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons?Status=1&userId=${userInfo.id}&Page=${page}&PageSize=${pageSize}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans?Status=1&userId=${userInfo.id}&Page=${page}&PageSize=${pageSize}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -102,9 +102,9 @@ const DraftLessons = () => {
      alert("Chức năng gửi duyệt đang được phát triển.");
   };
 
-  const handleNavigateToDetail = (lessonId) => {
-    if (lessonId) {
-      navigate(`/Bài-giảng-nháp/${lessonId}`);
+  const handleNavigateToDetail = (lessonPlanId) => {
+    if (lessonPlanId) {
+      navigate(`/Bài-giảng-nháp/${lessonPlanId}`);
     } else {
       console.warn("Cannot navigate: Lesson ID is missing.");
     }
@@ -194,11 +194,11 @@ const DraftLessons = () => {
                 <List sx={{ p: 0 }}>
                   {lessons.map((lesson) => (
                     <ListItem 
-                      key={lesson.teacherLessonId} 
+                      key={lesson.lessonPlanId} 
                       disablePadding
                     >
                       <ListItemButton 
-                         onClick={() => handleNavigateToDetail(lesson.teacherLessonId)}
+                         onClick={() => handleNavigateToDetail(lesson.lessonPlanId)}
                          sx={{ 
                            borderRadius: '8px',
                            mb: 0.5,
