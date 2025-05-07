@@ -130,7 +130,7 @@ const StyledButton = styled(Button)({
     }
 });
 
-const CurriculumCard = styled(ListItem)({
+const CurriculumCard = styled(Box)({
     backgroundColor: COLORS.background.paper,
     borderRadius: 12,
     marginBottom: 16,
@@ -612,7 +612,11 @@ const CurriculumFramework = ({ sidebarOpen }) => {
     };
 
     const handleViewCurriculumDetail = (curriculumId) => {
-        navigate(`/manager/curriculum-detail/${curriculumId}`);
+        if (curriculumId) {
+            navigate(`/manager/curriculum-detail/${curriculumId}`);
+        } else {
+            alert("Vui lòng chọn một chương trình trước khi xem chi tiết");
+        }
     };
 
     const bookName = modules.length > 0 ? modules[0].book : '';
@@ -697,8 +701,8 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                             {curricula.map((curriculum) => (
                                 <Box key={curriculum.curriculumId}>
                                     <CurriculumCard
-                                        component="div"
                                         onClick={() => handleCardClick(curriculum.curriculumId)}
+                                        sx={{ cursor: 'pointer' }}
                                     >
                                         {editMode === curriculum.curriculumId ? (
                                             <Box sx={{ width: '100%' }}>
@@ -844,7 +848,8 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                             </Typography>
                                                         </Box>
                                                         <Box sx={{ display: 'flex', gap: 2 }}>
-                                                            <StyledButton
+                                                            <Button
+                                                                variant="outlined"
                                                                 onClick={() => handleViewCurriculumDetail(expandedCurriculum)}
                                                                 sx={{
                                                                     bgcolor: '#fff',
@@ -869,7 +874,7 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                             >
                                                                 <MenuBookIcon sx={{ fontSize: 24, color: COLORS.primary }} />
                                                                 Xem nội dung cần đạt
-                                                            </StyledButton>
+                                                            </Button>
                                                             <StyledButton
                                                                 onClick={handleOpenAddModuleDialog}
                                                                 sx={{
