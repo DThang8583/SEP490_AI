@@ -17,15 +17,16 @@
     "docx": "^9.3.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.5.0",
+    "genai": "^0.0.18",
     "jspdf": "^3.0.0",
     "jwt-decode": "^4.0.0",
     "mammoth": "^1.9.0",
-    "jwt-decode": "^4.0.0",
-    "mammoth": "^1.9.0",
+    "pptxgenjs": "^4.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.4.0",
     "react-scripts": "5.0.1",
+    "reveal.js": "^5.2.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

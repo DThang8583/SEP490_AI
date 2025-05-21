@@ -42,8 +42,8 @@ const Support = () => {
     },
     {
       icon: <AutoAwesome sx={{ fontSize: 40, color: '#FF6B6B' }} />,
-      title: "Bài giảng AI",
-      description: "Tự động tạo bài giảng phù hợp với trình độ và nhu cầu của học sinh."
+      title: "Giáo án AI",
+      description: "Tự động tạo Giáo án phù hợp với trình độ và nhu cầu của học sinh."
     },
     {
       icon: <EmojiEvents sx={{ fontSize: 40, color: '#FF6B6B' }} />,

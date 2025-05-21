@@ -37,7 +37,7 @@ const Reports = () => {
   const lessonReports = [
     {
       id: 'LR001',
-      title: 'Báo cáo bài giảng tháng 3/2024',
+      title: 'Báo cáo Giáo án tháng 3/2024',
       grade: 'Lớp 1',
       totalLessons: 25,
       approvedLessons: 20,
@@ -49,7 +49,7 @@ const Reports = () => {
     },
     {
       id: 'LR002',
-      title: 'Báo cáo bài giảng tháng 3/2024',
+      title: 'Báo cáo Giáo án tháng 3/2024',
       grade: 'Lớp 2',
       totalLessons: 28,
       approvedLessons: 24,
@@ -61,7 +61,7 @@ const Reports = () => {
     },
     {
       id: 'LR003',
-      title: 'Báo cáo bài giảng tháng 3/2024',
+      title: 'Báo cáo Giáo án tháng 3/2024',
       grade: 'Lớp 3',
       totalLessons: 30,
       approvedLessons: 26,
@@ -120,7 +120,7 @@ const Reports = () => {
       color: 'primary'
     },
     {
-      title: 'Báo cáo bài giảng',
+      title: 'Báo cáo Giáo án',
       value: '6',
       icon: <SchoolIcon sx={{ fontSize: 40 }} />,
       color: 'success'
@@ -192,7 +192,7 @@ const Reports = () => {
                     label="Loại báo cáo"
                     onChange={(e) => setReportType(e.target.value)}
                   >
-                    <MenuItem value="lessons">Báo cáo bài giảng</MenuItem>
+                    <MenuItem value="lessons">Báo cáo Giáo án</MenuItem>
                     <MenuItem value="exams">Báo cáo đề thi</MenuItem>
                   </Select>
                 </FormControl>

@@ -176,7 +176,7 @@ const DashboardOverview = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Tổng số bài giảng"
+            title="Tổng số Giáo án"
             value={mockStats.totalLessons}
             icon={<MenuBookIcon />}
             color="warning"
@@ -210,7 +210,7 @@ const DashboardOverview = () => {
             <Box sx={{ mb: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2">
-                  Bài giảng đã tạo trong tuần
+                  Giáo án đã tạo trong tuần
                 </Typography>
                 <Typography variant="body2" color="primary.main" fontWeight={600}>
                   45 bài
@@ -243,7 +243,7 @@ const DashboardOverview = () => {
 
             <Box sx={{ mb: 3 }}>
               <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                Phân bố bài giảng Toán học
+                Phân bố Giáo án Toán học
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Box>

@@ -107,7 +107,7 @@ const ApprovedLessons = () => {
   // Handle navigation to detail page
   const handleNavigateToDetail = (lessonPlanId) => {
     if (lessonPlanId) {
-      navigate(`/Bài-giảng-đã-chấp-nhận/${lessonPlanId}`);
+      navigate(`/Giáo-án-đã-chấp-nhận/${lessonPlanId}`);
     } else {
       console.warn("Cannot navigate: Lesson ID is missing.");
     }

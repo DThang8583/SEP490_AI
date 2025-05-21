@@ -112,7 +112,7 @@ const PendingLessons = () => {
   const handleNavigateToDetail = (lessonPlanId) => {
     if (lessonPlanId) {
       // Adjust the path as needed for your detail route
-      navigate(`/Bài-giảng-đang-chờ/${lessonPlanId}`); 
+      navigate(`/Giáo-án-đang-chờ/${lessonPlanId}`); 
     } else {
       console.warn("Cannot navigate: Lesson Plan ID is missing.");
     }

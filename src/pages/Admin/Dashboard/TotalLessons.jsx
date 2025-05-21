@@ -123,7 +123,7 @@ const TotalLessons = () => {
 
   const stats = [
     {
-      title: 'Tổng số bài giảng',
+      title: 'Tổng số Giáo án',
       value: '45',
       icon: <SchoolIcon sx={{ fontSize: 40 }} />,
       color: 'primary'
@@ -151,7 +151,7 @@ const TotalLessons = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        Quản lý bài giảng Toán học
+        Quản lý Giáo án Toán học
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -191,7 +191,7 @@ const TotalLessons = () => {
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
-                <TableCell>Tên bài giảng</TableCell>
+                <TableCell>Tên Giáo án</TableCell>
                 <TableCell>Giáo viên</TableCell>
                 <TableCell>Khối lớp</TableCell>
                 <TableCell>Thời lượng</TableCell>

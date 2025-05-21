@@ -107,7 +107,7 @@ const RejectedLessons = () => {
   // Handle navigation to detail page
   const handleNavigateToDetail = (lessonPlanId) => {
     if (lessonPlanId) {
-      navigate(`/Bài-giảng-đã-từ-chối/${lessonPlanId}`);
+      navigate(`/Giáo-án-đã-từ-chối/${lessonPlanId}`);
     } else {
       console.warn('Cannot navigate: Lesson ID is missing.');
     }

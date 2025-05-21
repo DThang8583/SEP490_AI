@@ -53,7 +53,7 @@ const float = keyframes`
 `;
 
 const lessonCategories = [
-  { text: "Các bài giảng", path: "/các-bài-giảng", icon: <Calculate /> },
+  { text: "Các bài giảng", path: "/các-Giáo-án", icon: <Calculate /> },
   { 
     text: "Bài giảng đang chờ duyệt", 
     path: "/pending-lessons",

@@ -51,7 +51,7 @@ const AdminNavbar = ({ onMenuClick, isMobile }) => {
   };
 
   const notifications = [
-    { id: 1, message: 'Có bài giảng mới cần duyệt', time: '5 phút trước' },
+    { id: 1, message: 'Có Giáo án mới cần duyệt', time: '5 phút trước' },
     { id: 2, message: 'Tài khoản mới đăng ký', time: '10 phút trước' },
     { id: 3, message: 'Báo cáo thống kê tuần mới', time: '1 giờ trước' },
   ];
