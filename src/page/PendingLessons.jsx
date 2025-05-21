@@ -152,7 +152,7 @@ const PendingLessons = () => {
          > 
           <HourglassTop sx={{ color: 'warning.main', fontSize: '2.2rem' }} />
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Bài Giảng Đang Chờ Duyệt
+            Giáo án Đang Chờ Duyệt
           </Typography>
         </Stack>
 
@@ -177,7 +177,7 @@ const PendingLessons = () => {
               <Box sx={{ textAlign: 'center', py: 5 }}>
                  <InboxOutlined sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}/>
                  <Typography sx={{ color: 'text.secondary' }}>
-                   Không có bài giảng nào đang chờ duyệt.
+                   Không có Giáo án nào đang chờ duyệt.
                  </Typography>
               </Box>
             ) : !error && lessons.length > 0 ? (
