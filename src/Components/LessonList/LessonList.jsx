@@ -127,7 +127,7 @@ const LessonList = () => {
             color="text.secondary"
             sx={{ maxWidth: 600, mx: 'auto', mb: 4 }}
           >
-            Tìm hiểu và học tập với các bài giảng được thiết kế bởi AI
+            Tìm hiểu và học tập với các Giáo án được thiết kế bởi AI
           </Typography>
 
           {/* Search and Filter Section */}
@@ -177,7 +177,7 @@ const LessonList = () => {
             <TextField
               fullWidth
               variant="outlined"
-              placeholder="Tìm kiếm bài giảng..."
+              placeholder="Tìm kiếm Giáo án..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{

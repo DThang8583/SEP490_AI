@@ -71,8 +71,8 @@ const BlogLessonDetail = () => {
         throw new Error(response.data?.message || 'Có lỗi xảy ra khi tải dữ liệu');
       }
     } catch (err) {
-      console.error('Lỗi khi tải chi tiết bài giảng:', err);
-      setError(err.message || 'Không thể tải chi tiết bài giảng');
+      console.error('Lỗi khi tải chi tiết Giáo án:', err);
+      setError(err.message || 'Không thể tải chi tiết Giáo án');
     } finally {
       setLoading(false);
     }
@@ -398,7 +398,7 @@ const BlogLessonDetail = () => {
                 >
                   <Stack spacing={2}>
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Thông tin bài giảng
+                      Thông tin Giáo án
                     </Typography>
                     <Divider />
                     <Box>

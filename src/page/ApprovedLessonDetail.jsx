@@ -333,13 +333,28 @@ const ApprovedLessonDetail = () => {
                 </Button>
               </span>
             </Tooltip>
+            <Tooltip title="Làm thành Slide">
+              <span>
+                <Button
+                  variant="contained"
+                  color="info"
+                  startIcon={<Description />}
+                  onClick={() => {
+                    navigate('/slide-preview', { state: { lessonData: lessonDetail } });
+                  }}
+                  disabled={!lessonDetail}
+                >
+                  Làm thành Slide
+                </Button>
+              </span>
+            </Tooltip>
             <Tooltip title="Đăng bài giảng">
               <span>
                 <Button 
                   variant="contained"
                   color="secondary"
                   startIcon={<AddIcon />}
-                  onClick={() => navigate('/Đăng-bài-giảng', { state: { lessonData: lessonDetail } })}
+                  onClick={() => navigate('/Đăng-Giáo-án', { state: { lessonData: lessonDetail } })}
                 >
                   Đăng bài giảng
                 </Button>
@@ -402,7 +417,7 @@ const ApprovedLessonDetail = () => {
               {renderDetailSection("Hoạt động Vận dụng", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
             </Box>
           ) : (
-             <Alert severity="warning">Không tìm thấy chi tiết bài giảng.</Alert>
+             <Alert severity="warning">Không tìm thấy chi tiết giáo án.</Alert>
           )}
         </Paper>
       </Container>

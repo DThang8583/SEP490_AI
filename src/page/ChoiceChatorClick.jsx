@@ -34,22 +34,22 @@ const ChoiceChatorClick = () => {
 
   const options = [
     {
-      title: "Tạo bài giảng nhanh",
-      description: "Tạo bài giảng với các mẫu có sẵn, phù hợp cho các bài học cơ bản",
+      title: "Tạo Giáo án nhanh",
+      description: "Tạo Giáo án với các mẫu có sẵn, phù hợp cho các bài học cơ bản",
       icon: <RocketLaunch sx={{ fontSize: 40 }} />,
       color: "rgb(76, 175, 80)",
       hoverColor: "rgb(56, 142, 60)",
       path: "/CreateLesson",
       features: [
-        "Mẫu bài giảng đa dạng",
+        "Mẫu Giáo án đa dạng",
         "Tạo nhanh trong vài phút",
         "Phù hợp cho bài học cơ bản",
         "Dễ dàng chỉnh sửa"
       ]
     },
     {
-      title: "Tạo bài giảng theo ý muốn",
-      description: "Tương tác với AI để tạo bài giảng tùy chỉnh theo nhu cầu của bạn",
+      title: "Tạo Giáo án theo ý muốn",
+      description: "Tương tác với AI để tạo Giáo án tùy chỉnh theo nhu cầu của bạn",
       icon: <Psychology sx={{ fontSize: 40 }} />,
       color: "rgb(255, 107, 107)",
       hoverColor: "rgb(255, 82, 82)",
@@ -130,7 +130,7 @@ const ChoiceChatorClick = () => {
               fontSize: { xs: '2rem', md: '2.5rem' }
             }}
           >
-            Tạo Bài Giảng Thông Minh
+            Tạo Giáo án Thông Minh
           </Typography>
           <Typography 
             variant="h6" 
@@ -141,7 +141,7 @@ const ChoiceChatorClick = () => {
               fontWeight: 400
             }}
           >
-            Chọn phương thức tạo bài giảng phù hợp với nhu cầu của bạn
+            Chọn phương thức tạo Giáo án phù hợp với nhu cầu của bạn
           </Typography>
         </Box>
 

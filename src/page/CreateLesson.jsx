@@ -209,7 +209,7 @@ const CreateLesson = () => {
     // Combine API description with fixed prompt structure
     const prompt = `${promptData.description}
 
-Hãy tạo bài giảng theo đúng cấu trúc sau:
+Hãy tạo Giáo án theo đúng cấu trúc sau:
 
 1. Mục tiêu:
    a) Năng lực đặc thù:
@@ -230,7 +230,7 @@ Hãy tạo bài giảng theo đúng cấu trúc sau:
   - Phương tiện dạy học
    - Công cụ đánh giá
 
-3. Tiến trình bài giảng:
+3. Tiến trình Giáo án:
    a) Hoạt động 1: Hoạt động khởi động (5 phút)
    - Mục tiêu:
    - Cách tiến hành: (Hoạt động của giáo viên và học sinh)
@@ -351,7 +351,7 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
                     mb: 1,
                   }}
                 >
-                  Tạo bài giảng nhanh
+                  Tạo Giáo án nhanh
                 </Typography>
                 <Typography
                   variant="body1"
@@ -360,7 +360,7 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
                     maxWidth: "600px",
                   }}
                 >
-                  Chọn các thông tin cần thiết để tạo bài giảng
+                  Chọn các thông tin cần thiết để tạo Giáo án
                 </Typography>
               </Box>
             </Box>
@@ -521,7 +521,7 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
                       color: isDarkMode ? "rgb(176, 176, 176)" : "rgb(102, 102, 102)",
                     }}
                   >
-                    AI sẽ tạo bài giảng theo cấu trúc chuẩn cho bạn
+                    AI sẽ tạo Giáo án theo cấu trúc chuẩn cho bạn
                   </Typography>
                 </Box>
                 <Button
@@ -548,7 +548,7 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
                     },
                   }}
                 >
-                  {loading ? "Đang tạo bài giảng..." : "Tạo bài giảng"}
+                  {loading ? "Đang tạo Giáo án..." : "Tạo Giáo án"}
                 </Button>
               </Grid>
             </Grid>

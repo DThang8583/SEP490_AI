@@ -285,7 +285,7 @@ const Home = () => {
                       fontWeight: 600,
                     }}
                   >
-                    Tạo bài giảng nhanh
+                    Tạo Giáo án nhanh
                   </Typography>
                 </Box>
                 <Typography
@@ -294,7 +294,7 @@ const Home = () => {
                     color: isDarkMode ? "rgb(176, 176, 176)" : "rgb(102, 102, 102)",
                   }}
                 >
-                  Chọn các thông tin cần thiết để tạo bài giảng theo cấu trúc chuẩn
+                  Chọn các thông tin cần thiết để tạo Giáo án theo cấu trúc chuẩn
                 </Typography>
               </Paper>
             </Grid>
@@ -334,7 +334,7 @@ const Home = () => {
                       fontWeight: 600,
                     }}
                   >
-                    Tạo bài giảng bằng chat
+                    Tạo Giáo án bằng chat
                   </Typography>
                 </Box>
                 <Typography
@@ -343,7 +343,7 @@ const Home = () => {
                     color: isDarkMode ? "rgb(176, 176, 176)" : "rgb(102, 102, 102)",
                   }}
                 >
-                  Tương tác với AI để tạo bài giảng theo ý muốn
+                  Tương tác với AI để tạo Giáo án theo ý muốn
                 </Typography>
               </Paper>
             </Grid>

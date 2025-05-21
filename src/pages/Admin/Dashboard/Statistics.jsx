@@ -74,7 +74,7 @@ const Statistics = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="lessons" name="Bài giảng" fill="#2196F3" />
+                <Bar dataKey="lessons" name="Giáo án" fill="#2196F3" />
                 <Bar dataKey="exams" name="Đề thi" fill="#FF9800" />
               </BarChart>
             </ResponsiveContainer>
@@ -142,7 +142,7 @@ const Statistics = () => {
                         {teacher.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {teacher.lessons} bài giảng
+                        {teacher.lessons} Giáo án
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>

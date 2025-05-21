@@ -104,7 +104,7 @@ const DraftLessons = () => {
 
   const handleNavigateToDetail = (lessonPlanId) => {
     if (lessonPlanId) {
-      navigate(`/Bài-giảng-nháp/${lessonPlanId}`);
+      navigate(`/Giáo-án-nháp/${lessonPlanId}`);
     } else {
       console.warn("Cannot navigate: Lesson ID is missing.");
     }
