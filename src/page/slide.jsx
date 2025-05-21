@@ -122,8 +122,8 @@ Quan trọng: Đảm bảo các ảnh có chung một phong cách hoạt hình g
     setLoading(true);
     try {
       const prompt = `
-Bạn là một giáo viên đang chuẩn bị nội dung cho các slide trình bày bài giảng Toán cho học sinh tiểu học.
-Nội dung bài giảng được cung cấp dưới đây. Hãy chuyển đổi nội dung này thành các điểm trình bày trên slide, tập trung vào:
+Bạn là một giáo viên đang chuẩn bị nội dung cho các slide trình bày Giáo án Toán cho học sinh tiểu học.
+Nội dung Giáo án được cung cấp dưới đây. Hãy chuyển đổi nội dung này thành các điểm trình bày trên slide, tập trung vào:
 - Các câu hỏi hoặc nhiệm vụ trực tiếp gửi đến học sinh.
 - Các bài tập hoặc hoạt động mà học sinh sẽ thực hiện.
 - Những kiến thức/kết quả chính cần ghi nhớ sau mỗi hoạt động (nếu có).

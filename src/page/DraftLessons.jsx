@@ -161,7 +161,7 @@ const DraftLessons = () => {
          > 
           <HourglassTop sx={{ color: 'primary.main', fontSize: '2.2rem' }} />
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Bài Giảng Nháp
+            Giáo án Nháp
           </Typography>
         </Stack>
 
@@ -186,7 +186,7 @@ const DraftLessons = () => {
               <Box sx={{ textAlign: 'center', py: 5 }}>
                  <InboxOutlined sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}/>
                  <Typography sx={{ color: 'text.secondary' }}>
-                   Không có bài giảng nháp nào.
+                   Không có Giáo án nháp nào.
                  </Typography>
               </Box>
             ) : !error && lessons.length > 0 ? (

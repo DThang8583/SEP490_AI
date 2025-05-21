@@ -138,7 +138,7 @@ const ApprovedLessonDetail = () => {
   // Function to generate and download Word document
   const handleExportToWord = async () => {
     if (!lessonDetail) {
-      setSnackbar({ open: true, message: 'Không có dữ liệu bài giảng để xuất.', severity: 'warning' });
+      setSnackbar({ open: true, message: 'Không có dữ liệu Giáo án để xuất.', severity: 'warning' });
       return;
     }
 
@@ -178,7 +178,7 @@ const ApprovedLessonDetail = () => {
         sections: [{
           properties: {},
           children: [
-            new Paragraph({ text: lessonDetail.lesson || 'Bài Giảng', heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
+            new Paragraph({ text: lessonDetail.lesson || 'Giáo án', heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
             new Paragraph({ text: `Chủ đề: ${lessonDetail.module || 'N/A'}`, heading: HeadingLevel.HEADING_2 }),
             new Paragraph({ text: `Ngày gửi: ${formatDate(lessonDetail.createdAt)}`, style: "SubtleReference" }),
             new Paragraph({ text: "", spacing: { after: 200 } }),
@@ -197,7 +197,7 @@ const ApprovedLessonDetail = () => {
             new Paragraph({ text: "", spacing: { after: 200 } }),
 
             // Corrected numbering
-            new Paragraph({ text: "3. Tiến trình bài giảng", heading: HeadingLevel.HEADING_1 }), 
+            new Paragraph({ text: "3. Tiến trình Giáo án", heading: HeadingLevel.HEADING_1 }), 
             new Paragraph({ text: "a) Hoạt động Khởi động", heading: HeadingLevel.HEADING_2 }),
             ...formatContent(lessonDetail.startUp),
             new Paragraph({ text: "b) Hoạt động Hình thành Kiến thức", heading: HeadingLevel.HEADING_2 }),
@@ -316,7 +316,7 @@ const ApprovedLessonDetail = () => {
           <Stack direction="row" alignItems="center" spacing={1.5} mb={{ xs: 2, sm: 0 }}> 
             <CheckCircle sx={{ color: 'success.main', fontSize: '2.2rem' }} />
             <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-              Chi Tiết Bài Giảng Đã Chấp Nhận
+              Chi Tiết Giáo án Đã Chấp Nhận
             </Typography>
           </Stack>
           <Stack direction="row" spacing={2}>
@@ -348,7 +348,7 @@ const ApprovedLessonDetail = () => {
                 </Button>
               </span>
             </Tooltip>
-            <Tooltip title="Đăng bài giảng">
+            <Tooltip title="Đăng Giáo án">
               <span>
                 <Button 
                   variant="contained"
@@ -356,7 +356,7 @@ const ApprovedLessonDetail = () => {
                   startIcon={<AddIcon />}
                   onClick={() => navigate('/Đăng-Giáo-án', { state: { lessonData: lessonDetail } })}
                 >
-                  Đăng bài giảng
+                  Đăng Giáo án
                 </Button>
               </span>
             </Tooltip>
@@ -390,7 +390,7 @@ const ApprovedLessonDetail = () => {
                 <Box flexGrow={1}>
                   <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
                     <CheckCircle sx={{ color: 'success.main', fontSize: '1.8rem', verticalAlign: 'middle', mr: 1 }} />
-                    {lessonDetail.lesson || 'Chi Tiết Bài Giảng Đã Chấp Nhận'}
+                    {lessonDetail.lesson || 'Chi Tiết Giáo án Đã Chấp Nhận'}
                   </Typography>
                   <Typography variant="body1" color="text.secondary" sx={{ pl: 4.5 }}>Trạng thái: Đã chấp nhận</Typography>
                 </Box>

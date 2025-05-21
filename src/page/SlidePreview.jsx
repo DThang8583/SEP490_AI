@@ -625,7 +625,7 @@ Quan trọng: Đảm bảo các ảnh có chung một phong cách hoạt hình g
         <Box display="flex" flexDirection="column" alignItems="center">
           <CircularProgress color="inherit" />
           <Typography variant="h6" component="div" sx={{ mt: 2 }}>
-            Đang tạo bài giảng: {Math.round(loadingProgress)}%
+            Đang tạo Giáo án: {Math.round(loadingProgress)}%
           </Typography>
         </Box>
       </Backdrop>

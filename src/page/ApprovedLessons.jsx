@@ -149,7 +149,7 @@ const ApprovedLessons = () => {
          > 
           <CheckCircleOutline sx={{ color: 'success.main', fontSize: '2.2rem' }} />
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Bài Giảng Đã Chấp Nhận
+            Giáo án Đã Chấp Nhận
           </Typography>
         </Stack>
 
@@ -174,7 +174,7 @@ const ApprovedLessons = () => {
               <Box sx={{ textAlign: 'center', py: 5 }}>
                  <InboxOutlined sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}/>
                  <Typography sx={{ color: 'text.secondary' }}>
-                   Không có bài giảng nào đã được chấp nhận.
+                   Không có Giáo án nào đã được chấp nhận.
                  </Typography>
               </Box>
             ) : !error && lessons.length > 0 ? (

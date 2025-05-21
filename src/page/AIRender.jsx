@@ -46,7 +46,7 @@ const parseContent = (generatedText) => {
   
   // Define regex patterns for each section (Revised to match corrected prompt)
   const goalRegex = /1\.\s*Mục tiêu:\s*([\s\S]*?)(?=\n\s*2\.\s*Giáo viên chuẩn bị:|$)/i;
-  const supplyRegex = /2\.\s*Giáo viên chuẩn bị:\s*([\s\S]*?)(?=\n\s*3\.\s*Tiến trình bài giảng:|$)/i; // Updated to look for 'Giáo viên chuẩn bị'
+  const supplyRegex = /2\.\s*Giáo viên chuẩn bị:\s*([\s\S]*?)(?=\n\s*3\.\s*Tiến trình Giáo án:|$)/i; // Updated to look for 'Giáo viên chuẩn bị'
   
   // Updated regex patterns for activities - more flexible matching for "Cách tiến hành:" content
   const activity1Regex = /a\)\s*Hoạt động 1:[^]*?Cách tiến hành:[^]*?([^]*?)(?=\s*b\)\s*Hoạt động 2:|$)/i;
@@ -140,7 +140,7 @@ const AIRender = () => {
 
       // Basic validation if parsing failed
       if (!parsedData.goal && !parsedData.schoolSupply && !parsedData.startUp) {
-           throw new Error("Không thể phân tích nội dung bài giảng. Vui lòng kiểm tra định dạng.");
+           throw new Error("Không thể phân tích nội dung Giáo án. Vui lòng kiểm tra định dạng.");
       }
 
       const apiBody = {
@@ -216,7 +216,7 @@ const AIRender = () => {
 
       // Basic validation if parsing failed
       if (!parsedData.goal && !parsedData.schoolSupply && !parsedData.startUp) {
-           throw new Error("Không thể phân tích nội dung bài giảng. Vui lòng kiểm tra định dạng.");
+           throw new Error("Không thể phân tích nội dung Giáo án. Vui lòng kiểm tra định dạng.");
       }
 
 
@@ -256,19 +256,19 @@ const AIRender = () => {
       if (response.data && (response.data.code === 0 || /success|created/i.test(response.data.message || ''))) {
           setSnackbar({
             open: true,
-            message: response.data.message || 'Bài giảng đã được gửi thành công! ✅', // Use API message if available
+            message: response.data.message || 'Giáo án đã được gửi thành công! ✅', // Use API message if available
             severity: 'success'
           });
       } else {
           // If it reached here but didn't match success criteria
-          throw new Error(response.data.message || "Gửi bài giảng thất bại (phản hồi không mong đợi).");
+          throw new Error(response.data.message || "Gửi Giáo án thất bại (phản hồi không mong đợi).");
       }
 
     } catch (error) {
       console.error("Error sending lesson:", error);
       setSnackbar({
         open: true,
-        message: `Lỗi khi gửi bài giảng: ${error.message}`,
+        message: `Lỗi khi gửi Giáo án: ${error.message}`,
         severity: 'error'
       });
     } finally {
@@ -337,7 +337,7 @@ const AIRender = () => {
                 mb: 1,
               }}
             >
-              Bài Giảng Được Tạo
+              Giáo án Được Tạo
             </Typography>
             <Typography 
               variant="body1" 
@@ -345,7 +345,7 @@ const AIRender = () => {
                 color: isDarkMode ? 'rgb(176, 176, 176)' : 'rgb(102, 102, 102)',
               }}
             >
-              Xem và chỉnh sửa nội dung bài giảng
+              Xem và chỉnh sửa nội dung Giáo án
             </Typography>
           </Box>
 
