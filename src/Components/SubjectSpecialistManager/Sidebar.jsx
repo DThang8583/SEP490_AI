@@ -1,6 +1,6 @@
 // src/Components/SubjectSpecialistManager/Sidebar.jsx
 import React, { useState, useEffect } from 'react';
-import { Drawer, ListItem, Toolbar, Box, Snackbar, Alert, Typography, Badge, Avatar, Divider, List, Tooltip } from '@mui/material';
+import { Drawer, ListItem, Toolbar, Box, Snackbar, Alert, Typography, Avatar, Divider, List, Tooltip } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../api';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -10,7 +10,6 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import PersonIcon from '@mui/icons-material/Person';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SchoolIcon from '@mui/icons-material/School';
 import { useAuth } from '../../context/AuthContext';
@@ -18,23 +17,9 @@ import { useAuth } from '../../context/AuthContext';
 const Sidebar = ({ open }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
     const { logout } = useAuth();
-
-    useEffect(() => {
-        const fetchUnreadCount = async () => {
-            try {
-                const res = await api.getNotifications();
-                const unread = res.data.filter(notification => !notification.isRead).length;
-                setUnreadCount(unread);
-            } catch (error) {
-                console.error('Error fetching unread notifications:', error);
-            }
-        };
-        fetchUnreadCount();
-    }, []);
 
     const handleNavigation = (path, action) => {
         action ? action() : navigate(path);
@@ -57,15 +42,6 @@ const Sidebar = ({ open }) => {
 
     const profileItems = [
         { text: 'Trang cá nhân', path: '/manager/profile', icon: <PersonIcon /> },
-        {
-            text: 'Thông báo',
-            path: '/manager/notifications',
-            icon: (
-                <Badge badgeContent={unreadCount} color="error" overlap="circular">
-                    <NotificationsIcon />
-                </Badge>
-            ),
-        },
         { text: 'Đăng xuất', path: '/login', icon: <LogoutIcon />, action: handleLogout },
     ];
 

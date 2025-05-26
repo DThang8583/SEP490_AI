@@ -30,7 +30,6 @@ import Profile from './Components/SubjectSpecialistManager/Profile';
 import EditProfile from './Components/SubjectSpecialistManager/EditProfile';
 import ChangePassword from './Components/SubjectSpecialistManager/ChangePassword';
 import ForgotPassword from './page/ForgotPassword';
-import Notification from './Components/SubjectSpecialistManager/Notification';
 import TeacherProfile from './Components/Teacher/Profile';
 import { IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -82,13 +81,12 @@ const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
         <Route path="/curriculum-analysis" element={<CurriculumAnalysis sidebarOpen={sidebarOpen} />} />
         <Route path="/curriculum-framework" element={<CurriculumFramework sidebarOpen={sidebarOpen} />} />
         <Route path="/curriculum" element={<CurriculumFramework sidebarOpen={sidebarOpen} />} />
-        <Route path="/manager/curriculum-detail/:curriculumId" element={<CurriculumDetail sidebarOpen={sidebarOpen} />} />
+        <Route path="/curriculum-detail/:id" element={<CurriculumDetail sidebarOpen={sidebarOpen} />} />
         <Route path="/lesson-export" element={<LessonExport sidebarOpen={sidebarOpen} />} />
         <Route path="/profile" element={<Profile sidebarOpen={sidebarOpen} />} />
         <Route path="/edit-profile" element={<EditProfile sidebarOpen={sidebarOpen} />} />
         <Route path="/change-password" element={<ChangePassword sidebarOpen={sidebarOpen} />} />
         <Route path="/forgot-password" element={<ForgotPassword sidebarOpen={sidebarOpen} />} />
-        <Route path="/notifications" element={<Notification sidebarOpen={sidebarOpen} />} />
         <Route
           path="/admin/dashboard"
           element={
