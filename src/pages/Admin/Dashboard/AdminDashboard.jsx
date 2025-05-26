@@ -58,10 +58,10 @@ const AdminDashboard = () => {
       description: 'Quản lý người dùng hệ thống'
     },
     { 
-      text: 'Quản lý bài giảng', 
+      text: 'Quản lý Giáo án', 
       icon: <MenuBookIcon />, 
       path: '/admin/lessons',
-      description: 'Quản lý nội dung bài giảng'
+      description: 'Quản lý nội dung Giáo án'
     },
     { 
       text: 'Quản lý đề thi', 

@@ -33,27 +33,27 @@ const ChoiceSignUp = () => {
   const options = [
     {
       title: "Người quản lý chuyên môn",
-      description: "Đăng ký tài khoản để quản lý và đánh giá nội dung bài giảng",
+      description: "Đăng ký tài khoản để quản lý và đánh giá nội dung Giáo án",
       icon: <SupervisorAccount sx={{ fontSize: 40 }} />,
       color: "rgb(76, 175, 80)",
       hoverColor: "rgb(56, 142, 60)",
       path: "/signup-manager",
       features: [
-        "Quản lý nội dung bài giảng",
-        "Đánh giá chất lượng bài giảng",
+        "Quản lý nội dung Giáo án",
+        "Đánh giá chất lượng Giáo án",
         "Phê duyệt nội dung",
         "Quản lý giáo viên"
       ]
     },
     {
       title: "Giáo viên",
-      description: "Đăng ký tài khoản để tạo và quản lý bài giảng",
+      description: "Đăng ký tài khoản để tạo và quản lý Giáo án",
       icon: <School sx={{ fontSize: 40 }} />,
       color: "rgb(255, 107, 107)",
       hoverColor: "rgb(255, 82, 82)",
       path: "/signup-teacher",
       features: [
-        "Tạo bài giảng",
+        "Tạo Giáo án",
         "Quản lý học sinh",
         "Tương tác với phụ huynh",
         "Phân tích kết quả học tập"

@@ -15,7 +15,7 @@ const PopularLesson = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Giả lập dữ liệu bài giảng phổ biến
+    // Giả lập dữ liệu Giáo án phổ biến
     const mockLessons = [
       {
         id: 1,
@@ -68,7 +68,7 @@ const PopularLesson = () => {
             marginBottom: 4,
           }}
         >
-          Bài giảng phổ biến 🌟
+          Giáo án phổ biến 🌟
         </Typography>
 
         <Grid container spacing={4}>

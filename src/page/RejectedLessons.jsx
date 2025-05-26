@@ -107,7 +107,7 @@ const RejectedLessons = () => {
   // Handle navigation to detail page
   const handleNavigateToDetail = (lessonPlanId) => {
     if (lessonPlanId) {
-      navigate(`/Bài-giảng-đã-từ-chối/${lessonPlanId}`);
+      navigate(`/Giáo-án-đã-từ-chối/${lessonPlanId}`);
     } else {
       console.warn('Cannot navigate: Lesson ID is missing.');
     }
@@ -140,7 +140,7 @@ const RejectedLessons = () => {
         <Stack direction="row" alignItems="center" spacing={1.5} mb={3} sx={{ px: { xs: 2, sm: 3, md: 0 } }}>
           <Cancel sx={{ color: 'error.main', fontSize: '2.2rem' }} />
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Bài Giảng Bị Từ Chối
+            Giáo án Bị Từ Chối
           </Typography>
         </Stack>
 
@@ -162,7 +162,7 @@ const RejectedLessons = () => {
           ) : !error && lessons.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 5 }}>
               <InboxOutlined sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-              <Typography sx={{ color: 'text.secondary' }}>Không có bài giảng nào bị từ chối.</Typography>
+              <Typography sx={{ color: 'text.secondary' }}>Không có Giáo án nào bị từ chối.</Typography>
             </Box>
           ) : !error && lessons.length > 0 ? (
             <>

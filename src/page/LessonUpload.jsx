@@ -40,11 +40,11 @@ const LessonUpload = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
   
-  // Lấy dữ liệu bài giảng từ state
+  // Lấy dữ liệu Giáo án từ state
   const lessonData = location.state?.lessonData || {};
   
   // Log để kiểm tra dữ liệu
-  console.log("Dữ liệu bài giảng:", lessonData);
+  console.log("Dữ liệu Giáo án:", lessonData);
   console.log("Các thuộc tính của lessonData:", Object.keys(lessonData));
   
   const [categories, setCategories] = useState([]);
@@ -80,13 +80,13 @@ const LessonUpload = () => {
     fetchCategories();
   }, []);
 
-  // Thiết lập tiêu đề và nội dung mặc định dựa trên dữ liệu bài giảng
+  // Thiết lập tiêu đề và nội dung mặc định dựa trên dữ liệu Giáo án
   useEffect(() => {
-    console.log("Đang thiết lập tiêu đề với dữ liệu bài giảng:", lessonData);
+    console.log("Đang thiết lập tiêu đề với dữ liệu Giáo án:", lessonData);
     
     if (lessonData && lessonData.lesson) {
-      // Thiết lập tiêu đề mặc định dựa trên tiêu đề bài giảng
-      setTitle(`Bài giảng: ${lessonData.lesson}`);
+      // Thiết lập tiêu đề mặc định dựa trên tiêu đề Giáo án
+      setTitle(`Giáo án: ${lessonData.lesson}`);
       
       // Không tự động điền nội dung bài viết
       // Người dùng sẽ tự nhập nội dung
@@ -175,7 +175,7 @@ const LessonUpload = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Kiểm tra xem có dữ liệu bài giảng hay không
+  // Kiểm tra xem có dữ liệu Giáo án hay không
   const hasLessonData = lessonData && Object.keys(lessonData).length > 0;
   console.log("hasLessonData:", hasLessonData);
   console.log("lessonData.lesson:", lessonData?.lesson);
@@ -209,7 +209,7 @@ const LessonUpload = () => {
         </Button>
 
         <Grid container spacing={4}>
-          {/* Thẻ thông tin bài giảng */}
+          {/* Thẻ thông tin Giáo án */}
           <Grid item xs={12} md={4}>
             <Card 
               elevation={0}
@@ -226,7 +226,7 @@ const LessonUpload = () => {
                 <Stack direction="row" alignItems="center" spacing={1} mb={2}>
                   <SchoolIcon color="primary" />
                   <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-                    Thông tin bài giảng
+                    Thông tin Giáo án
                   </Typography>
                 </Stack>
                 <Divider sx={{ mb: 2 }} />
@@ -246,12 +246,12 @@ const LessonUpload = () => {
                       sx={{ mb: 2 }}
                     />
                     <Typography variant="body2" color="text.secondary">
-                      ID bài giảng: {lessonData.id || lessonData.teacherLessonId || 'N/A'}
+                      ID Giáo án: {lessonData.id || lessonData.teacherLessonId || 'N/A'}
                     </Typography>
                   </>
                 ) : (
                   <Alert severity="warning">
-                    Không tìm thấy thông tin bài giảng. Vui lòng quay lại trang chi tiết bài giảng.
+                    Không tìm thấy thông tin Giáo án. Vui lòng quay lại trang chi tiết Giáo án.
                   </Alert>
                 )}
               </CardContent>

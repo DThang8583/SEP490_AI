@@ -53,27 +53,27 @@ const float = keyframes`
 `;
 
 const lessonCategories = [
-  { text: "Các bài giảng", path: "/các-bài-giảng", icon: <Calculate /> },
+  { text: "Các Giáo án", path: "/các-Giáo-án", icon: <Calculate /> },
   { 
-    text: "Bài giảng đang chờ duyệt", 
+    text: "Giáo án đang chờ duyệt", 
     path: "/pending-lessons",
     icon: <HourglassTop />, 
     requiresTeacher: true 
   },
   { 
-    text: "Bài giảng đã chấp nhận", 
+    text: "Giáo án đã chấp nhận", 
     path: "/approved-lessons",
     icon: <CheckCircleOutline />, 
     requiresTeacher: true 
   },
   { 
-    text: "Bài giảng bị từ chối", 
+    text: "Giáo án bị từ chối", 
     path: "/rejected-lessons",
     icon: <Cancel />,
     requiresTeacher: true 
   },
   { 
-    text: "Bài giảng nháp", 
+    text: "Giáo án nháp", 
     path: "/draft-lessons",
     icon: <EditNote />, 
     requiresTeacher: true 
@@ -344,7 +344,7 @@ const Navbar = () => {
                 }
               }}
             >
-              Tạo bài giảng bằng AI
+              Tạo Giáo án bằng AI
             </Button>
           )}
             </Box>

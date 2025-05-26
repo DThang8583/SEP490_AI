@@ -138,7 +138,7 @@ const RejectedLessonDetail = () => {
   // Function to generate and download Word document
   const handleExportToWord = async () => {
     if (!lessonDetail) {
-      setSnackbar({ open: true, message: 'Không có dữ liệu bài giảng để xuất.', severity: 'warning' });
+      setSnackbar({ open: true, message: 'Không có dữ liệu Giáo án để xuất.', severity: 'warning' });
       return;
     }
 
@@ -178,7 +178,7 @@ const RejectedLessonDetail = () => {
         sections: [{
           properties: {},
           children: [
-            new Paragraph({ text: lessonDetail.lesson || 'Bài Giảng', heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
+            new Paragraph({ text: lessonDetail.lesson || 'Giáo án', heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
             new Paragraph({ text: `Chủ đề: ${lessonDetail.module || 'N/A'}`, heading: HeadingLevel.HEADING_2 }),
             new Paragraph({ text: `Ngày gửi: ${formatDate(lessonDetail.createdAt)}`, style: "SubtleReference" }),
             new Paragraph({ text: "", spacing: { after: 200 } }),
@@ -197,7 +197,7 @@ const RejectedLessonDetail = () => {
             new Paragraph({ text: "", spacing: { after: 200 } }),
 
             // Corrected numbering
-            new Paragraph({ text: "3. Tiến trình bài giảng", heading: HeadingLevel.HEADING_1 }), 
+            new Paragraph({ text: "3. Tiến trình Giáo án", heading: HeadingLevel.HEADING_1 }), 
             new Paragraph({ text: "a) Hoạt động Khởi động", heading: HeadingLevel.HEADING_2 }),
             ...formatContent(lessonDetail.startUp),
             new Paragraph({ text: "b) Hoạt động Hình thành Kiến thức", heading: HeadingLevel.HEADING_2 }),
@@ -229,7 +229,7 @@ const RejectedLessonDetail = () => {
   // Function to move lesson back to draft status
   const handleMoveToDraft = async () => {
     if (!lessonId) {
-      setSnackbar({ open: true, message: 'Không tìm thấy ID bài giảng.', severity: 'error' });
+      setSnackbar({ open: true, message: 'Không tìm thấy ID Giáo án.', severity: 'error' });
       return;
     }
 
@@ -256,7 +256,7 @@ const RejectedLessonDetail = () => {
       if (response.data && (response.data.code === 0 || response.data.message === "Updated successfully!" || response.data.message === "Updated successfully")) {
         setSnackbar({ 
           open: true, 
-          message: 'Đã chuyển bài giảng về trạng thái nháp thành công!', 
+          message: 'Đã chuyển Giáo án về trạng thái nháp thành công!', 
           severity: 'success' 
         });
         
@@ -274,7 +274,7 @@ const RejectedLessonDetail = () => {
       if (err.message === "Updated successfully!" || err.message === "Updated successfully") {
         setSnackbar({ 
           open: true, 
-          message: 'Đã chuyển bài giảng về trạng thái nháp thành công!', 
+          message: 'Đã chuyển Giáo án về trạng thái nháp thành công!', 
           severity: 'success' 
         });
         
@@ -285,7 +285,7 @@ const RejectedLessonDetail = () => {
       } else {
         setSnackbar({ 
           open: true, 
-          message: `Lỗi: ${err.message || 'Không thể chuyển bài giảng về trạng thái nháp.'}`, 
+          message: `Lỗi: ${err.message || 'Không thể chuyển Giáo án về trạng thái nháp.'}`, 
           severity: 'error' 
         });
       }
@@ -383,7 +383,7 @@ const RejectedLessonDetail = () => {
           <Stack direction="row" alignItems="center" spacing={1.5} mb={{ xs: 2, sm: 0 }}> 
             <Cancel sx={{ color: 'error.main', fontSize: '2.2rem' }} />
             <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-              Chi Tiết Bài Giảng Đã Từ Chối
+              Chi Tiết Giáo án Đã Từ Chối
             </Typography>
           </Stack>
           <Tooltip title="Xuất ra file Word (.docx)">
@@ -427,7 +427,7 @@ const RejectedLessonDetail = () => {
                 <Box flexGrow={1}>
                   <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
                     <Cancel sx={{ color: 'error.main', fontSize: '1.8rem', verticalAlign: 'middle', mr: 1 }} />
-                    {lessonDetail.lesson || 'Chi Tiết Bài Giảng Đã Từ Chối'}
+                    {lessonDetail.lesson || 'Chi Tiết Giáo án Đã Từ Chối'}
                   </Typography>
                   <Typography variant="body1" color="text.secondary" sx={{ pl: 4.5 }}>Trạng thái: Đã từ chối</Typography>
                 </Box>
@@ -490,7 +490,7 @@ const RejectedLessonDetail = () => {
               </Box>
             </Box>
           ) : (
-             <Alert severity="warning">Không tìm thấy chi tiết bài giảng.</Alert>
+             <Alert severity="warning">Không tìm thấy chi tiết Giáo án.</Alert>
           )}
         </Paper>
       </Container>
