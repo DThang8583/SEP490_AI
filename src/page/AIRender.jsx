@@ -37,32 +37,54 @@ const parseContent = (generatedText) => {
   // Normalize line breaks and remove potential leading/trailing spaces
   const text = generatedText.replace(/\r\n/g, '\n').trim();
 
-  // Regex to capture content between section headers
-  const extractSection = (regex) => {
+  // Helper to extract content based on a regex with a capturing group
+  const extractContent = (regex) => {
     const match = text.match(regex);
-    // console.log(`Regex: ${regex}, Match:`, match); // Optional: Add for debugging regex
     return match && match[1] ? match[1].trim() : '';
   };
+
+  // Helper to extract duration from a title line like "(5 phút)"
+  const extractDuration = (titleLine) => {
+    const durationMatch = titleLine.match(/(([0-9\s]+? phút))/i); // Capture content inside parentheses like "5 phút"
+    return durationMatch && durationMatch[1] ? durationMatch[1].trim() : '';
+  };
   
-  // Define regex patterns for each section (Revised to match corrected prompt)
+  // Define regex patterns for main sections
   const goalRegex = /1\.\s*Mục tiêu:\s*([\s\S]*?)(?=\n\s*2\.\s*Giáo viên chuẩn bị:|$)/i;
-  const supplyRegex = /2\.\s*Giáo viên chuẩn bị:\s*([\s\S]*?)(?=\n\s*3\.\s*Tiến trình Giáo án:|$)/i; // Updated to look for 'Giáo viên chuẩn bị'
-  
-  // Updated regex patterns for activities - more flexible matching for "Cách tiến hành:" content
-  const activity1Regex = /a\)\s*Hoạt động 1:[^]*?Cách tiến hành:[^]*?([^]*?)(?=\s*b\)\s*Hoạt động 2:|$)/i;
-  const activity2Regex = /b\)\s*Hoạt động 2:[^]*?Cách tiến hành:[^]*?([^]*?)(?=\s*c\)\s*Hoạt động 3:|$)/i;
-  const activity3Regex = /c\)\s*Hoạt động 3:[^]*?Cách tiến hành:[^]*?([^]*?)(?=\s*d\)\s*Hoạt động 4:|$)/i;
-  const activity4Regex = /d\)\s*Hoạt động 4:[^]*?Cách tiến hành:[^]*?([^]*?)(?=\s*(?:Lưu ý:|$))/i;
+  const supplyRegex = /2\.\s*Giáo viên chuẩn bị:\s*([\s\S]*?)(?=\n\s*3\.\s*Tiến trình Giáo án:|$)/i;
+
+  // Regex patterns to find each activity block. Capture Group 1 = Title line, Capture Group 2 = Content after "Cách tiến hành:"
+  const activity1BlockRegex = /3\.\s*Tiến trình Giáo án:[\s\S]*?(a\)\s*Hoạt động 1:[^\n]*?)[\s\S]*?Cách tiến hành:[\s\S]*?([\s\S]*?)(?=\s*b\)\s*Hoạt động 2:|$)/i; 
+  const activity2BlockRegex = /(b\)\s*Hoạt động 2:[^\n]*?)[\s\S]*?Cách tiến hành:[\s\S]*?([\s\S]*?)(?=\s*c\)\s*Hoạt động 3:|$)/i;
+  const activity3BlockRegex = /(c\)\s*Hoạt động 3:[^\n]*?)[\s\S]*?Cách tiến hành:[\s\S]*?([\s\S]*?)(?=\s*d\)\s*Hoạt động 4:|$)/i;
+  const activity4BlockRegex = /(d\)\s*Hoạt động 4:[^\n]*?)[\s\S]*?Cách tiến hành:[\s\S]*?([\s\S]*?)(?=\s*(?:Lưu ý:|$|\n\n))/i;
 
   // For debugging
   console.log("Original text:", text);
   
-  sections.goal = extractSection(goalRegex);
-  sections.schoolSupply = extractSection(supplyRegex);
-  sections.startUp = extractSection(activity1Regex);
-  sections.knowledge = extractSection(activity2Regex);
-  sections.practice = extractSection(activity3Regex);
-  sections.apply = extractSection(activity4Regex);
+  sections.goal = extractContent(goalRegex);
+  sections.schoolSupply = extractContent(supplyRegex);
+  
+  // Parse activities and their durations
+  const match1 = text.match(activity1BlockRegex);
+  if (match1) {
+    sections.startUp = match1[2] ? match1[2].trim() : ''; // match1[2] is the content after "Cách tiến hành:"
+  }
+
+  const match2 = text.match(activity2BlockRegex);
+  if (match2) {
+    sections.knowledge = match2[2] ? match2[2].trim() : ''; // match2[2] is the content
+  }
+
+  const match3 = text.match(activity3BlockRegex);
+  if (match3) {
+    sections.practice = match3[2] ? match3[2].trim() : ''; // match3[2] is the content
+  }
+
+  const match4 = text.match(activity4BlockRegex);
+  if (match4) {
+    sections.apply = match4[2] ? match4[2].trim() : ''; // match4[2] is the content
+  }
   
   // Log the parsed sections for debugging
   console.log("Parsed sections:", sections);
@@ -152,9 +174,10 @@ const AIRender = () => {
         apply: parsedData.apply,
         userId: parseInt(userId, 10), // Ensure userId is a number
         promptId: parseInt(promptId, 10), // Ensure promptId is a number
+        duration: "35", // This is likely the total duration, not individual
       };
 
-      console.log("Sending to API for draft:", apiBody); // Log the body for debugging
+      console.log("Sending to API for draft:", JSON.stringify(apiBody, null, 2)); // More detailed log
 
       // Get token for authenticated request
       const token = localStorage.getItem('accessToken');
@@ -219,7 +242,6 @@ const AIRender = () => {
            throw new Error("Không thể phân tích nội dung Giáo án. Vui lòng kiểm tra định dạng.");
       }
 
-
       const apiBody = {
         goal: parsedData.goal,
         schoolSupply: parsedData.schoolSupply,
@@ -229,9 +251,10 @@ const AIRender = () => {
         apply: parsedData.apply,
         userId: parseInt(userId, 10), // Ensure userId is a number
         promptId: parseInt(promptId, 10), // Ensure promptId is a number
+        duration: "35", // This is likely the total duration, not individual
       };
 
-      console.log("Sending to API:", apiBody); // Log the body for debugging
+      console.log("Sending to API for manager:", JSON.stringify(apiBody, null, 2)); // More detailed log
 
       // Get token for authenticated request
       const token = localStorage.getItem('accessToken');

@@ -13,20 +13,23 @@ import {
   Chip,
   Stack,
   Divider,
-  Button
+  Button,
+  TextField
 } from '@mui/material';
 import { School as SchoolIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 
 const AllLessons = () => {
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
+  const { blogId } = useParams();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [pagination, setPagination] = useState({
     currentPage: 1,
     pageSize: 10,
@@ -36,7 +39,7 @@ const AllLessons = () => {
     hasPreviousPage: false
   });
 
-  const fetchBlogs = async (page = 1, pageSize = 10) => {
+  const fetchBlogs = async (page = 1, pageSize = 10, currentSearchTerm = '') => {
     try {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
@@ -45,7 +48,7 @@ const AllLessons = () => {
       }
 
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs?Page=${page}&PageSize=${pageSize}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs?Page=${page}&PageSize=${pageSize}${currentSearchTerm ? `&searchTerm=${encodeURIComponent(currentSearchTerm)}` : ''}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -74,16 +77,51 @@ const AllLessons = () => {
     }
   };
 
-  useEffect(() => {
-    fetchBlogs();
-  }, []);
+  const fetchBlogDetails = async (blogId) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        console.error('Authentication token not found.');
+        return null;
+      }
 
-  const handlePageChange = (event, newPage) => {
-    fetchBlogs(newPage, pagination.pageSize);
+      const response = await axios.get(
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data && response.data.code === 0) {
+        console.log('Blog details:', response.data.data);
+        return response.data.data;
+      } else {
+        console.error('Failed to fetch blog details:', response.data?.message);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching blog details:', error);
+      return null;
+    }
   };
 
-  const handleViewLesson = (teacherLessonId) => {
-    navigate(`/blog-lesson/${teacherLessonId}`);
+  useEffect(() => {
+    // Initial fetch on component mount
+    fetchBlogs(1, pagination.pageSize, ''); // Fetch initial data without search term initially
+  }, []); // Empty dependency array means this runs only once on mount
+
+  const handlePageChange = (event, newPage) => {
+    fetchBlogs(newPage, pagination.pageSize, searchTerm); // Use current search term for pagination
+  };
+
+  const handleSearch = () => {
+    fetchBlogs(1, pagination.pageSize, searchTerm); // Fetch from page 1 with the new search term
+  };
+
+  const handleViewLesson = (blogId) => {
+    navigate(`/blog-lesson/${blogId}`);
   };
 
   if (loading) {
@@ -118,6 +156,18 @@ const AllLessons = () => {
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
             Danh sách bài viết
           </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TextField
+              label="Tìm kiếm bài viết"
+              variant="outlined"
+              size="small"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Button variant="contained" onClick={handleSearch} disabled={loading}>
+              Tìm kiếm
+            </Button>
+          </Box>
         </Stack>
 
         <Grid container spacing={2}>
@@ -138,7 +188,7 @@ const AllLessons = () => {
                     cursor: 'pointer',
                   },
                 }}
-                onClick={() => handleViewLesson(blog.teacherLessonId)}
+                onClick={() => handleViewLesson(blog.blogId)}
               >
                 <CardContent>
                   <Stack spacing={2}>
@@ -182,7 +232,7 @@ const AllLessons = () => {
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleViewLesson(blog.teacherLessonId);
+                          handleViewLesson(blog.blogId);
                         }}
                         sx={{ 
                           borderRadius: '8px',

@@ -60,18 +60,7 @@ const slugify = (str) => {
 // Reusing the formatDate function (or import if shared)
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
-  try {
-    return new Date(dateString).toLocaleString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch (e) {
-    console.error("Error formatting date:", e);
-    return 'Invalid Date';
-  }
+  return dateString;
 };
 
 const DraftLessonDetail = () => {
@@ -209,13 +198,13 @@ const DraftLessonDetail = () => {
 
             // Corrected numbering
             new Paragraph({ text: "3. Tiến trình Giáo án", heading: HeadingLevel.HEADING_1 }), 
-            new Paragraph({ text: "a) Hoạt động Khởi động", heading: HeadingLevel.HEADING_2 }),
+            new Paragraph({ text: "a) Hoạt động Khởi động(5 phút)", heading: HeadingLevel.HEADING_2 }),
             ...formatContent(lessonDetail.startUp),
-            new Paragraph({ text: "b) Hoạt động Hình thành Kiến thức", heading: HeadingLevel.HEADING_2 }),
+            new Paragraph({ text: "b) Hoạt động Hình thành Kiến thức(12 phút)", heading: HeadingLevel.HEADING_2 }),
             ...formatContent(lessonDetail.knowledge),
-            new Paragraph({ text: "c) Hoạt động Luyện tập", heading: HeadingLevel.HEADING_2 }),
+            new Paragraph({ text: "c) Hoạt động Luyện tập(15 phút)", heading: HeadingLevel.HEADING_2 }),
             ...formatContent(lessonDetail.practice),
-            new Paragraph({ text: "d) Hoạt động Vận dụng", heading: HeadingLevel.HEADING_2 }),
+            new Paragraph({ text: "d) Hoạt động Vận dụng(3 phút)", heading: HeadingLevel.HEADING_2 }),
             ...formatContent(lessonDetail.apply),
           ],
         }],
@@ -591,19 +580,19 @@ const DraftLessonDetail = () => {
                 <>
                   {renderEditableSection("Mục tiêu", "goal", <Assignment color="primary" />)}
                   {renderEditableSection("Giáo viên chuẩn bị", "schoolSupply", <Build color="action"/>)}
-                  {renderEditableSection("Hoạt động Khởi động", "startUp", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>1.</Typography>)}
-                  {renderEditableSection("Hoạt động Hình thành Kiến thức", "knowledge", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>2.</Typography>)}
-                  {renderEditableSection("Hoạt động Luyện tập", "practice", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>3.</Typography>)}
-                  {renderEditableSection("Hoạt động Vận dụng", "apply", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
+                  {renderEditableSection("Hoạt động Khởi động(5 phút)", "startUp", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>1.</Typography>)}
+                  {renderEditableSection("Hoạt động Hình thành Kiến thức(12 phút)", "knowledge", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>2.</Typography>)}
+                  {renderEditableSection("Hoạt động Luyện tập(15 phút)", "practice", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>3.</Typography>)}
+                  {renderEditableSection("Hoạt động Vận dụng(3 phút)", "apply", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
                 </>
               ) : (
                 <>
                   {renderDetailSection("Mục tiêu", lessonDetail.goal, <Assignment color="primary" />)}
                   {renderDetailSection("Giáo viên chuẩn bị", lessonDetail.schoolSupply, <Build color="action"/>)}
-                  {renderDetailSection("Hoạt động Khởi động", lessonDetail.startUp, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>1.</Typography>)}
-                  {renderDetailSection("Hoạt động Hình thành Kiến thức", lessonDetail.knowledge, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>2.</Typography>)}
-                  {renderDetailSection("Hoạt động Luyện tập", lessonDetail.practice, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>3.</Typography>)}
-                  {renderDetailSection("Hoạt động Vận dụng", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
+                  {renderDetailSection("Hoạt động Khởi động(5 phút)", lessonDetail.startUp, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>1.</Typography>)}
+                  {renderDetailSection("Hoạt động Hình thành Kiến thức(12 phút)", lessonDetail.knowledge, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>2.</Typography>)}
+                  {renderDetailSection("Hoạt động Luyện tập(15 phút)", lessonDetail.practice, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>3.</Typography>)}
+                  {renderDetailSection("Hoạt động Vận dụng(3 phút)", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
                 </>
               )}
               

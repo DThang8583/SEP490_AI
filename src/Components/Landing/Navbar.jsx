@@ -82,7 +82,7 @@ const lessonCategories = [
 
 const menuItems = [
   { text: "Bài học", path: "/lessons" },
-  { text: "Đề ôn", path: "/de-on" },
+  { text: "Bài tập", path: "/bai-tap" },
   { text: "Hỗ trợ", path: "/support" },
 ];
 

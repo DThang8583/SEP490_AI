@@ -1,620 +1,314 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Box, Container, Typography, Button, Grid, Fade, IconButton, CircularProgress, Backdrop } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Box, Container, Typography, Button, Grid, CircularProgress, Backdrop, Alert } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowBack, Fullscreen, FullscreenExit, Download } from '@mui/icons-material';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { ArrowBack } from '@mui/icons-material';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const API_KEY = "AIzaSyDSf6v2-ynUdw6IS7Ac_2cSOJN7-g12c7k";
+// Use your actual API Key
+const API_KEY = "AIzaSyDSf6v2-ynUdw6IS7Ac_2cSOJN7-g12c7k"; // Replace with your actual API Key
 const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Using the flash model
 
 const SlidePreview = () => {
-  const deckRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { lessonData } = location.state || {};
-  const [current, setCurrent] = useState(0);
-  const [fullscreen, setFullscreen] = useState(false);
-  const slideRef = useRef();
-  const [images, setImages] = useState({
-    introduction: null,
-    warmup: null,
-    practice: null,
-    application: null,
-    game: null,
-    closing: null
-  });
+
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [analyzedContents, setAnalyzedContents] = useState({
-    introduction: '',
-    warmup: '',
+    lesson: '',
+    startUp: '',
     practice: '',
     application: '',
-    game: '',
-    closing: ''
+    gameIdea: '',
+    closing: "Chúc các em học tốt!"
   });
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-  useEffect(() => {
-    const onFullScreenChange = () => {
-      setFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', onFullScreenChange);
-    return () => document.removeEventListener('fullscreenchange', onFullScreenChange);
-  }, []);
+  // Function to analyze content in bulk with retry logic
+  const analyzeLessonContent = async (lessonData) => {
+    if (!lessonData) return;
 
-  // Add new function to analyze content
-  const analyzeContent = async (content) => {
-    try {
-      // First analysis to understand the content
-      const initialPrompt = `Phân tích nội dung sau và xác định loại nội dung chính. Trả về một trong các loại sau:
-1. SO_SANH - nếu là bài toán so sánh số
-2. PHEP_TINH - nếu là bài toán cộng/trừ/nhân/chia
-3. PHAN_SO - nếu là bài toán phân số
-4. HINH_HOC - nếu là bài toán hình học
-5. DAI_LUONG - nếu là bài toán đại lượng
-6. THAO_LUAN - nếu có hoạt động nhóm
-7. VI_DU - nếu có ví dụ thực tế
-8. TRO_CHOI - nếu có trò chơi
-9. THI_NGHIEM - nếu có thí nghiệm
-10. BIEU_DO - nếu có biểu đồ/bảng
-11. DOC_SO - nếu là câu hỏi về cách đọc/viết số
-12. NHIEU_BAI - nếu có nhiều bài tập khác nhau
-13. TRO_CHOI_TINH - nếu là trò chơi tính toán
+    const maxRetries = 3;
+    const baseDelay = 2000; // 2 seconds base delay for bulk request
 
-Nội dung cần phân tích:
-${content}`;
+    const combinedContent = `Phân tích các phần nội dung sau và **TRÍCH XUẤT CHÍNH XÁC CHỈ NỘI DUNG CỐT LÕI (vấn đề, câu hỏi, ví dụ, quy tắc chính)**. **LOẠI BỎ HOÀN TOÀN** các câu hoặc cụm từ mang tính hướng dẫn sư phạm (Giáo viên làm gì, Học sinh làm gì), mô tả hành động, hoặc bất kỳ chi tiết nào không phải là trọng tâm trực tiếp của hoạt động. Viết lại kết quả trích xuất dưới dạng súc tích, là một phần của Giáo án trực tiếp cho học sinh.
+Sử dụng định dạng [Tên Phần]: [Chỉ nội dung cốt lõi đã trích xuất] cho mỗi phần.
 
-      const initialResult = await model.generateContent(initialPrompt);
-      const contentType = initialResult.response.text().trim();
+Các loại nội dung chính (trả về MỘT loại) và hướng dẫn trích xuất CỐT LÕI:
+SO_SANH - bài toán so sánh số/đại lượng (**CHỈ CÂU HỎI/VẤN ĐỀ so sánh**, dạng "đối tượng/số 1 >< đối tượng/số 2" hoặc câu hỏi)
+PHEP_TINH - bài toán cộng/trừ/nhân/chia (**CHỈ PHÉP TÍNH hoặc VẤN ĐỀ cần tính toán**)
+PHAN_SO - bài toán phân số (**CHỈ PHÂN SỐ hoặc KHÁI NIỆM/VẤN ĐỀ về phân số**)
+HINH_HOC - bài toán hình học (**CHỈ TÊN HÌNH hoặc VẤN ĐỀ/CÂU HỎI về hình học**)
+DAI_LUONG - bài toán đại lượng (không so sánh) (**CHỈ TÊN đại lượng hoặc VẤN ĐỀ/CÂU HỎI**)
+THAO_LUAN - hoạt động nhóm (**TRÌNH BÀY CHỈ NỘI DUNG/CÂU HỎI cần thảo luận**, không mô tả hoạt động nhóm)
+VI_DU - ví dụ thực tế (**TRÌNH BÀY CHỈ VÍ DỤ cụ thể** hoặc yêu cầu nêu ví dụ, không mô tả việc giáo viên/học sinh đưa ra ví dụ)
+TRO_CHOI - mô tả trò chơi (**MÔ TẢ CHỈ LUẬT CHƠI hoặc Ý TƯỞNG CHÍNH**, rất ngắn gọn, không mô tả cách triển khai chi tiết)
+BIEU_DO - biểu đồ/bảng (**TRÍCH XUẤT CHỈ LOẠI biểu đồ/bảng hoặc THÔNG TIN CHÍNH được hiển thị**)
+DOC_SO - cách đọc/viết số (**TRÍCH XUẤT CHỈ SỐ hoặc QUY TẮC CÁCH ĐỌC/VIẾT số đó**)
+NHIEU_BAI - nhiều bài tập khác nhau (**TÓM TẮT CHỈ CÁC LOẠI bài tập hoặc TRÌNH BÀY RẤT NGẮN GỌN các bài tập đó**)
+TRO_CHOI_TINH - trò chơi tính toán (**MÔ TẢ CHỈ LUẬT CHƠI HOẶC VẤN ĐỀ TÍNH TOÁN**, cực kỳ ngắn gọn)
 
-      // Second analysis based on content type
-      let finalPrompt = '';
-      switch(contentType) {
-        case 'NHIEU_BAI':
-          finalPrompt = `Từ nội dung sau, xác định các loại bài tập chính và trả về dạng "[loại bài 1] - [loại bài 2]". Ví dụ: "so sánh số - phép tính". Nội dung:
-${content}`;
-          break;
-        case 'TRO_CHOI_TINH':
-          finalPrompt = `Từ nội dung sau, mô tả ngắn gọn trò chơi tính toán, trả về dạng "[tên trò chơi] - [loại phép tính]". Ví dụ: "Thi tính nhanh - phép cộng trừ". Nội dung:
-${content}`;
-          break;
-        case 'DOC_SO':
-          finalPrompt = `Từ nội dung sau, trích xuất số và một ví dụ thực tế, trả về dạng "[số] - [ví dụ thực tế]". Ví dụ: "85000 - số học sinh trường lớn". Nội dung:
-${content}`;
-          break;
-        case 'SO_SANH':
-          finalPrompt = `Từ nội dung sau, trích xuất hai số cần so sánh, trả về dạng "số1 >< số2". Nội dung:
-${content}`;
-          break;
-        case 'PHEP_TINH':
-          finalPrompt = `Từ nội dung sau, trích xuất phép tính, trả về dạng "số1 + số2" hoặc "số1 - số2" hoặc "số1 × số2" hoặc "số1 ÷ số2". Nội dung:
-${content}`;
-          break;
-        case 'PHAN_SO':
-          finalPrompt = `Từ nội dung sau, trích xuất phân số, trả về dạng "tử/mẫu". Nội dung:
-${content}`;
-          break;
-        case 'HINH_HOC':
-          finalPrompt = `Từ nội dung sau, trích xuất tên hình học, trả về dạng "[tên hình]". Nội dung:
-${content}`;
-          break;
-        case 'DAI_LUONG':
-          finalPrompt = `Từ nội dung sau, trích xuất đại lượng, trả về dạng "[tên đại lượng]". Nội dung:
-${content}`;
-          break;
-        case 'THAO_LUAN':
-          finalPrompt = `Trả về "học sinh thảo luận nhóm" dựa trên nội dung sau. Nội dung:
-${content}`;
-          break;
-        case 'VI_DU':
-          finalPrompt = `Từ nội dung sau, trích xuất ví dụ thực tế, trả về dạng "[tên ví dụ]". Nội dung:
-${content}`;
-          break;
-        case 'TRO_CHOI':
-          finalPrompt = `Từ nội dung sau, trích xuất tên trò chơi, trả về dạng "[tên trò chơi]". Nội dung:
-${content}`;
-          break;
-        case 'THI_NGHIEM':
-          finalPrompt = `Từ nội dung sau, trích xuất tên thí nghiệm, trả về dạng "[tên thí nghiệm]". Nội dung:
-${content}`;
-          break;
-        case 'BIEU_DO':
-          finalPrompt = `Từ nội dung sau, trích xuất loại biểu đồ, trả về dạng "[loại biểu đồ]". Nội dung:
-${content}`;
-          break;
-        default:
-          finalPrompt = `Tóm tắt nội dung sau thành một cụm từ ngắn gọn nhất có thể. Nội dung:
-${content}`;
-      }
+// Added instruction for visual/positional descriptions within KHAC or similar content
+KHAC - khác (Nếu nội dung mô tả cảnh vật hoặc vị trí đồ vật, **HÃY TRÍCH XUẤT CHỈ CÁC CHI TIẾT MIÊU TẢ VỊ TRÍ CHÍNH**, ví dụ: "bảng đen ở trên cao, bàn giáo viên ở phía trước...")
 
-      const finalResult = await model.generateContent(finalPrompt);
-      let analyzedText = finalResult.response.text();
-      
-      // Clean up the response
-      analyzedText = analyzedText
-        .replace(/["']/g, '') // Remove quotes
-        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-        .trim();
+**LƯU Ý QUAN TRỌNG:** Đối với các phần nội dung đã phân tích (ngoại trừ Tiêu đề bài học), khi trích xuất nội dung cốt lõi, KHÔNG bao gồm nhãn loại nội dung (ví dụ: SO_SANH:, PHEP_TINH:, DAI_LUONG:, TRO_CHOI:, v.v.) ở đầu nội dung trích xuất. Chỉ trả về nội dung cốt lõi đã được làm sạch.
 
-      // Additional simplification based on format, if needed
-      if (contentType === 'PHEP_TINH' && analyzedText.includes('phép tính')) {
-        analyzedText = analyzedText.replace('phép tính', '').trim();
-      }
-      if (contentType === 'HINH_HOC' && analyzedText.includes('hình học:')) {
-         analyzedText = analyzedText.replace('hình học:', '').trim();
-      }
-       if (contentType === 'DAI_LUONG' && analyzedText.includes('đại lượng:')) {
-         analyzedText = analyzedText.replace('đại lượng:', '').trim();
-      }
-      if (contentType === 'VI_DU' && analyzedText.includes('ví dụ thực tế:')) {
-         analyzedText = analyzedText.replace('ví dụ thực tế:', '').trim();
-      }
-       if (contentType === 'TRO_CHOI' && analyzedText.includes('trò chơi:')) {
-         analyzedText = analyzedText.replace('trò chơi:', '').trim();
-      }
-       if (contentType === 'THI_NGHIEM' && analyzedText.includes('thí nghiệm:')) {
-         analyzedText = analyzedText.replace('thí nghiệm:', '').trim();
-      }
-       if (contentType === 'BIEU_DO' && analyzedText.includes('biểu đồ:')) {
-         analyzedText = analyzedText.replace('biểu đồ:', '').trim();
-      }
+Nội dung các phần:
 
-      return analyzedText;
-    } catch (error) {
-      console.error('Error analyzing content:', error);
-      return content; // Return original content if analysis fails
+LessonTitle: ${lessonData.lesson || ''}
+StartUp: ${lessonData.startUp || ''}
+Practice: ${lessonData.practice || ''}
+Application: ${lessonData.apply || ''}
+`; // Game idea will be a separate, simpler prompt
+
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        console.log(`Attempt ${attempt + 1} to analyze lesson content...`);
+        const result = await model.generateContent(combinedContent);
+        const responseText = result.response.text();
+        console.log("Raw analysis response:", responseText);
+
+        // Parse the combined response
+        const parsedResults = {};
+        const sections = ['LessonTitle', 'StartUp', 'Practice', 'Application'];
+        
+        // Improved regex to find all sections and their content
+        // It looks for [SECTION_NAME]: followed by any content until the next [SECTION_NAME]: or end of string
+        const sectionRegex = /\[([A-Za-z]+)\]:\s*([\s\S]*?)(?=\[[A-Za-z]+\]:|$)/g;
+        let match;
+
+        while ((match = sectionRegex.exec(responseText)) !== null) {
+            const sectionName = match[1];
+            const content = match[2].trim();
+            
+            // Find the matching section from our defined sections array (case-insensitive check)
+            const section = sections.find(s => s.toLowerCase() === sectionName.toLowerCase());
+            
+            if (section) {
+                // Clean up the content from AI wrappers and normalize newlines
+                let cleanedContent = content
+                    .replace(/^["'`*\- ]+|["'`*\- ]+$/g, '') // Remove wrappers
+                    .replace(/\n{3,}/g, '\n\n') // Normalize multiple newlines
+                    .trim();
+                
+                parsedResults[section] = cleanedContent;
+            } else {
+                console.warn(`Found unexpected section in AI response: ${sectionName}`);
+            }
+        }
+
+        // Handle any defined sections that weren't found in the AI response
+        sections.forEach(section => {
+            if (!parsedResults[section]) {
+                if (section === 'LessonTitle' && lessonData.lesson) {
+                    // Keep fallback for LessonTitle as it's the title
+                    parsedResults[section] = lessonData.lesson;
+                } else {
+                    // For activity sections, fallback to empty string if AI didn't provide content
+                    console.warn(`Could not parse ${section} from response or AI provided no content.`);
+                    parsedResults[section] = ''; // Changed fallback to empty string
+                }
+            }
+        });
+
+        // Handle the game idea separately as a simpler prompt
+        console.log("Analyzing game idea...");
+         const gameIdeaPrompt = `Gợi ý một ý tưởng trò chơi giáo dục dựa trên chủ đề: ${lessonData.module || lessonData.lesson}. Mô tả cụ thể hơn về cách chơi hoặc ý tưởng chính của trò chơi (khoảng 20-40 từ).`;
+        const gameIdeaResult = await model.generateContent(gameIdeaPrompt);
+        let gameIdeaText = gameIdeaResult.response.text().trim();
+         gameIdeaText = gameIdeaText.replace(/^["'`*\- ]+|["'`*\- ]+$/g, '').trim(); // Clean up
+
+
+        setAnalyzedContents({
+          lesson: parsedResults.LessonTitle || lessonData.lesson,
+          startUp: parsedResults.StartUp,
+          practice: parsedResults.Practice,
+          application: parsedResults.Application,
+          gameIdea: gameIdeaText || "Ý tưởng trò chơi đang cập nhật...",
+          closing: "Chúc các em học tốt!"
+        });
+
+        return; // Success, exit function
+      } catch (error) {
+        console.error(`Attempt ${attempt + 1} failed:`, error);
+
+        if (error.message && error.message.includes('429')) {
+          if (attempt < maxRetries - 1) {
+            const delay = baseDelay * Math.pow(2, attempt);
+            console.log(`Đã vượt quá giới hạn yêu cầu. Đợi ${delay/1000} giây trước khi thử lại...`);
+            setLoadingProgress(0); // Reset progress during wait
+            await new Promise(resolve => setTimeout(resolve, delay));
+            // Optional: Update a small message indicating waiting
+            // setError(`Đã vượt quá giới hạn yêu cầu. Đang đợi ${delay/1000} giây...`);
+            continue; // Retry
+          }
+        }
+
+        // If we've exhausted retries or it's not a rate limit error, throw
+        if (attempt === maxRetries - 1) {
+           const finalError = `Không thể phân tích nội dung Giáo án sau ${maxRetries} lần thử. Lỗi: ${error.message}`;
+           console.error(finalError);
+           setError(finalError);
+            setAnalyzedContents({
+               lesson: lessonData.lesson || '',
+               startUp: '[Lỗi phân tích]',
+               practice: '[Lỗi phân tích]',
+               application: '[Lỗi phân tích]',
+               gameIdea: '[Lỗi phân tích]',
+               closing: "Chúc các em học tốt!"
+            });
+        }
+      }
+    }
+     // Fallback if all retries fail
+    if (!error) { // Only set if error wasn't set in the catch block
+         setError("Đã xảy ra lỗi không xác định trong quá trình phân tích.");
+          setAnalyzedContents({
+               lesson: lessonData.lesson || '',
+               startUp: '[Lỗi phân tích]',
+               practice: '[Lỗi phân tích]',
+               application: '[Lỗi phân tích]',
+               gameIdea: '[Lỗi phân tích]',
+               closing: "Chúc các em học tốt!"
+            });
     }
   };
 
-  // Add new function to format analyzed content
+  // Refined function to format analyzed content for display
   const formatAnalyzedContent = (content) => {
-    if (!content) return '';
-    return content.split('\n').map((line, index) => {
-      const trimmedLine = line.trim();
-      
-      // Handle number comparison
-      if (trimmedLine.includes('><')) {
-        const [num1, num2] = trimmedLine.split('><').map(n => n.trim());
-        return `<p class="bullet-point">Số ${num1} lớn hơn hay nhỏ hơn ${num2}? Vì sao?</p>`;
-      }
-      
-      // Handle arithmetic operations
-      if (trimmedLine.includes('phép tính')) {
-        const operation = trimmedLine.replace('phép tính', '').trim();
-        return `<p class="bullet-point">• Thực hiện phép tính: ${operation}</p>`;
-      }
-      
-      // Handle fractions
-      if (trimmedLine.includes('phân số')) {
-        const fraction = trimmedLine.replace('phân số', '').trim();
-        return `<p class="bullet-point">• Làm việc với phân số: ${fraction}</p>`;
-      }
-      
-      // Handle geometry
-      if (trimmedLine.includes('hình học:')) {
-        const shape = trimmedLine.replace('hình học:', '').trim();
-        return `<p class="bullet-point">• Học về hình: ${shape}</p>`;
-      }
-      
-      // Handle measurements
-      if (trimmedLine.includes('đại lượng:')) {
-        const measurement = trimmedLine.replace('đại lượng:', '').trim();
-        return `<p class="bullet-point">• Tìm hiểu về đại lượng: ${measurement}</p>`;
-      }
-      
-      // Handle group discussion
-      if (trimmedLine.includes('thảo luận nhóm')) {
-        return `<p class="bullet-point">• Giáo viên cho học sinh thảo luận nhóm đôi, sau đó gọi một vài học sinh trình bày ý kiến.</p>`;
-      }
-      
-      // Handle real-world examples
-      if (trimmedLine.includes('ví dụ thực tế:')) {
-        const example = trimmedLine.replace('ví dụ thực tế:', '').trim();
-        return `<p class="bullet-point">• Giáo viên đưa ra ví dụ thực tế: ${example}</p>`;
-      }
-      
-      // Handle games
-      if (trimmedLine.includes('trò chơi:')) {
-        const game = trimmedLine.replace('trò chơi:', '').trim();
-        return `<p class="bullet-point">• Chơi trò chơi: ${game}</p>`;
-      }
-      
-      // Handle experiments
-      if (trimmedLine.includes('thí nghiệm:')) {
-        const experiment = trimmedLine.replace('thí nghiệm:', '').trim();
-        return `<p class="bullet-point">• Thực hiện thí nghiệm: ${experiment}</p>`;
-      }
-      
-      // Handle charts/tables
-      if (trimmedLine.includes('biểu đồ:')) {
-        const chart = trimmedLine.replace('biểu đồ:', '').trim();
-        return `<p class="bullet-point">• Làm việc với biểu đồ: ${chart}</p>`;
-      }
-      
-      return `<p>${trimmedLine}</p>`;
-    }).join('');
+    if (!content || content.includes('[Lỗi phân tích]')) {
+        return `<p style="font-style: italic; color: grey;">${content || 'Nội dung đang cập nhật hoặc trống.'}</p>`;
+    }
+
+    // The content is expected to be the AI's analysis result (potentially already extracted)
+    let contentToFormat = content.trim();
+
+    // Define regex for category labels outside the map loop
+    const categoryLabelRegex = /^[A-Za-z_]+:\s*/;
+
+    // Remove leading AI category labels from the whole content first (fallback just in case)
+    contentToFormat = contentToFormat.replace(categoryLabelRegex, '').trim();
+
+    // Add newline after patterns like 'Word:' or 'Phrase:' followed by content on the same line
+    // This helps structure content like 'Tính: a) ...' or 'So sánh: ...'
+    // Regex breakdown:
+    // (^|\n)        - Start of string or a newline (to handle cases not at the very beginning)
+    // ([A-Za-zÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸ\s]+:) - Capture one or more Vietnamese letters/spaces followed by a colon
+    // \s*         - Optional spaces after the colon
+    // (.*)          - Capture the rest of the line
+    // $             - End of the line
+    // 'gm' flags    - Global (find all matches) and Multiline (treat ^ and $ as start/end of line)
+    const lineBreakAfterColonRegex = /(^|\n)([A-Za-zÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸ\s]+):\s*(.*)$/gm;
+    contentToFormat = contentToFormat.replace(lineBreakAfterColonRegex, '$1$2:\n$3').trim();
+
+    // Split content by newlines, and also consider comma-separated lists for bullet points
+    // Fixed: Ensure regex literal is on a single line
+    const segments = contentToFormat.split(/[\n,;]/).map(segment => segment.trim()).filter(segment => segment.length > 0);
+
+    if (segments.length <= 1 && !contentToFormat.includes('\n')) {
+         // If it's a single short segment with no newlines, treat as a paragraph
+         return `<p>${contentToFormat}</p>`;
+    }
+
+    // Otherwise, format segments as bullet points or paragraphs
+    return segments.map((segment, index) => {
+        let trimmedSegment = segment.trim(); // Use let because we will modify it
+
+        // Remove leading AI category labels from THIS segment (like SO_SANH:, PHEP_TINH:, etc.)
+        trimmedSegment = trimmedSegment.replace(categoryLabelRegex, '').trim();
+
+        // Handle specific patterns that should always be bullet points
+         if (trimmedSegment.match(/^Số\s+.*\d.*\s+lớn hơn hay nhỏ hơn\s+.*\d.*\s*Vì sao\?$/) ||
+             (trimmedSegment.includes('Thành phố Hồ Chí Minh') && trimmedSegment.includes('Hà Nội') && trimmedSegment.includes('đông dân hơn?')) ||
+             trimmedSegment.includes('thảo luận nhóm đôi') ||
+             trimmedSegment.match(/^\d+\.\s+/)) // Numbered list
+         {
+             return `<p class="bullet-point">• ${trimmedSegment.replace(/^[-•*+]\s*/, '').trim()}</p>`;
+         }
+
+         // If it looks like a list item already or is a significant segment, make it a bullet point
+         if (trimmedSegment.startsWith('•') || trimmedSegment.length > 50 || segments.length > 2) {
+              return `<p class="bullet-point">• ${trimmedSegment.replace(/^[-•*+]\s*/, '').trim()}</p>`;
+         }
+
+         // Default to paragraph for other segments
+         if (trimmedSegment) {
+            return `<p>${trimmedSegment}</p>`;
+         }
+        return null; // Skip empty segments
+    }).filter(p => p !== null).join('');
   };
 
-  // Update generateImages function
-  const generateImages = async () => {
+
+  useEffect(() => {
+    const startAnalysis = async () => {
+      if (!lessonData) return;
+
     setLoading(true);
-    setLoadingProgress(0); // Reset progress at start
-    setError(null); // Clear previous errors
+      setError(null);
+      setLoadingProgress(0); // Start progress from 0
 
-    try {
-      // Analyze each section's content
-      const analyzedContent = {
-        introduction: await analyzeContent(lessonData.lesson),
-        warmup: await analyzeContent(lessonData.startUp),
-        practice: await analyzeContent(lessonData.practice),
-        application: await analyzeContent(lessonData.apply),
-        // Analyze content specifically for a game related to the lesson theme
-        game: await analyzeContent(`Tạo ý tưởng một trò chơi giáo dục đơn giản dựa trên chủ đề: ${lessonData.module || lessonData.lesson}. Chỉ mô tả ngắn gọn ý tưởng trò chơi.`),
-        closing: "Chúc các em học tốt!"
-      };
+      // Simple interval to show progress while waiting for analysis
+      const interval = setInterval(() => {
+          setLoadingProgress(prev => {
+              if (prev < 95) return prev + 1; // Simulate progress
+              return prev;
+          });
+      }, 300); // Update progress every 300ms
 
-      // Store analyzed content
-      setAnalyzedContents(analyzedContent);
-      setLoadingProgress(20); // Indicate analysis is done
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `
-Tuyệt đối KHÔNG ĐƯỢC ĐƯA BẤT KỲ VĂN BẢN, SỐ, KÝ HIỆU HOẶC CHỮ CÁI NÀO VÀO TRONG ẢNH ĐƯỢC TẠO RA. Ảnh CHỈ chứa các yếu tố hình ảnh minh họa.
-
-Tạo MỘT ảnh minh họa hoặc hình nền ĐỘC LẬP với phong cách hoạt hình giáo dục, tươi sáng, hấp dẫn và thân thiện cho mỗi mô tả dưới đây. Sử dụng phong cách minh họa nhất quán xuyên suốt.
-
----
-${analyzedContent.introduction}
----
-${analyzedContent.warmup}
----
-${analyzedContent.practice}
----
-${analyzedContent.application}
----
-${analyzedContent.game}
----
-${analyzedContent.closing}
----
-
-Tuyệt đối KHÔNG ĐƯỢC ĐƯA BẤT KỲ VĂN BẢN, SỐ, KÝ HIỆU HOẶC CHỮ CÁI NÀO VÀO TRONG ẢNH ĐƯỢC TẠO RA. Ảnh CHỈ chứa các yếu tố hình ảnh minh họa.
-
-Quan trọng: Đảm bảo các ảnh có chung một phong cách hoạt hình giáo dục, thân thiện, nhất quán với màu sắc tươi sáng.`
-            }]
-          }],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"]
-          }
-        })
-      });
-
-      const data = await response.json();
-      setLoadingProgress(50); // Indicate image generation API call is done
-
-      if (data.candidates && data.candidates[0].content.parts) {
-        const imageParts = data.candidates[0].content.parts.filter(part => part.inlineData && part.inlineData.mimeType.startsWith('image/'));
-        const totalImages = imageParts.length;
-        let loadedImagesCount = 0;
-
-        const newImages = {};
-
-        // Process and set images one by one to show progress
-        const imageKeys = ['introduction', 'warmup', 'practice', 'application', 'game', 'closing']; // Define order
-
-        for(let i = 0; i < imageParts.length; i++) {
-          const part = imageParts[i];
-          const imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-          
-          // Assign to the correct key based on assumed order in prompt (0=intro, 1=warmup, etc.)
-          // This assumes the API returns images in the same order as requested in the prompt.
-          if (imageKeys[i]) {
-             newImages[imageKeys[i]] = imageUrl;
-          }
-
-          loadedImagesCount++;
-          const progress = 50 + (loadedImagesCount / totalImages) * 50; // 50% for generation, 50% for loading
-          setLoadingProgress(Math.min(progress, 100)); // Ensure progress doesn't exceed 100
-        }
-        
-        setImages(newImages); // Set all images state once processing is done
-
-      } else {
-        setError('API call successful, but no images were generated. The prompt might be too complex or specific or there was an internal API issue.');
-        console.warn('API response did not contain images:', data);
-      }
-    } catch (error) {
-      console.error('Error generating images:', error);
-      setError(`Có lỗi xảy ra khi tạo hình ảnh: ${error.message}. Vui lòng thử lại.`);
-      setLoadingProgress(0); // Reset progress on error
+      try {
+         await analyzeLessonContent(lessonData);
+         setLoadingProgress(100); // Ensure it reaches 100% on success
     } finally {
+        clearInterval(interval); // Stop simulating progress
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (lessonData) {
-      generateImages();
-    }
-  }, [lessonData]);
+    startAnalysis();
 
-  if (!lessonData) return null;
+     // Cleanup interval on component unmount
+     return () => {
+         // Ensure interval is cleared even if startAnalysis doesn't finish
+         // (though with async await, this might be redundant depending on react lifecycle)
+     };
 
-  // Helper function to format content
-  const formatContent = (content) => {
-    if (!content) return '';
-    return content.split('\n').map((line, index) => {
-      const trimmedLine = line.trim();
-      if (trimmedLine.startsWith('-') || trimmedLine.startsWith('*')) {
-        return `<p class="bullet-point">• ${trimmedLine.substring(1).trim()}</p>`;
-      }
-      return `<p>${trimmedLine}</p>`;
-    }).join('');
-  };
+  }, [lessonData]); // Re-run analysis if lessonData changes
 
-  // Helper function to split goal and quality
-  const splitGoalAndQuality = (goalText) => {
-    if (!goalText) return { mainGoal: '', quality: '' };
-    const qualityHeader = "c) Phẩm chất:";
-    const index = goalText.toLowerCase().indexOf(qualityHeader.toLowerCase());
-    if (index !== -1) {
-      return {
-        mainGoal: goalText.substring(0, index).trim(),
-        quality: goalText.substring(index + qualityHeader.length).trim()
-      };
-    }
-    return { mainGoal: goalText, quality: '' };
-  };
+  if (!lessonData) {
+      return (
+          <Container maxWidth="lg" sx={{ py: 6 }}>
+               <Button
+                    startIcon={<ArrowBack />}
+                    onClick={() => navigate(-1)}
+                    sx={{ mb: 4 }}
+                >
+                    Quay lại
+                </Button>
+              <Alert severity="warning">Không có dữ liệu Giáo án được truyền.</Alert>
+          </Container>
+      );
+  }
 
-  const { mainGoal, quality } = splitGoalAndQuality(lessonData.goal);
-
+  // Define the slides structure based on logical sections
   const slides = [
-    {
-      title: 'Tiêu đề',
-      content: (
-        <Box>
-          <Typography variant="h2" color="primary" fontWeight={700} gutterBottom>
-            {lessonData.lesson}
-          </Typography>
-          <Typography variant="h5" color="info.main" gutterBottom>
-            Chủ đề: {lessonData.module}
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Ngày tạo: {new Date(lessonData.createdAt).toLocaleDateString('vi-VN')}
-          </Typography>
-          {loading ? (
-            <Box display="flex" justifyContent="center" mt={4}>
-              <CircularProgress />
-            </Box>
-          ) : images.introduction && (
-            <Box mt={4} display="flex" justifyContent="center">
-              <img 
-                src={images.introduction} 
-                alt="Introduction" 
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '400px',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                }} 
-              />
-            </Box>
-          )}
-        </Box>
-      )
-    },
-    {
-      title: 'Hoạt động Khởi động',
-      content: (
-        <Box>
-          <Typography variant="h4" color="primary" fontWeight={600} gutterBottom>
-            Hoạt động Khởi động
-          </Typography>
-          <Box sx={{ pl: 2, maxWidth: '90%', margin: 'auto' }}>
-            <div dangerouslySetInnerHTML={{ __html: formatAnalyzedContent(analyzedContents.warmup) }} />
-          </Box>
-          {loading ? (
-            <Box display="flex" justifyContent="center" mt={4}>
-              <CircularProgress />
-            </Box>
-          ) : images.warmup && (
-            <Box mt={4} display="flex" justifyContent="center">
-              <img 
-                src={images.warmup} 
-                alt="Warm-up Activity" 
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '400px',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                }} 
-              />
-            </Box>
-          )}
-        </Box>
-      )
-    },
-    {
-      title: 'Hoạt động Luyện tập',
-      content: (
-        <Box>
-          <Typography variant="h4" color="primary" fontWeight={600} gutterBottom>
-            Hoạt động Luyện tập
-          </Typography>
-          <Box sx={{ pl: 2, maxWidth: '90%', margin: 'auto' }}>
-            <div dangerouslySetInnerHTML={{ __html: formatAnalyzedContent(analyzedContents.practice) }} />
-          </Box>
-          {loading ? (
-            <Box display="flex" justifyContent="center" mt={4}>
-              <CircularProgress />
-            </Box>
-          ) : images.practice && (
-            <Box mt={4} display="flex" justifyContent="center">
-              <img 
-                src={images.practice} 
-                alt="Practice Activity" 
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '400px',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                }} 
-              />
-            </Box>
-          )}
-        </Box>
-      )
-    },
-    {
-      title: 'Hoạt động Vận dụng',
-      content: (
-        <Box>
-          <Typography variant="h4" color="primary" fontWeight={600} gutterBottom>
-            Hoạt động Vận dụng
-          </Typography>
-          <Box sx={{ pl: 2, maxWidth: '90%', margin: 'auto' }}>
-            <div dangerouslySetInnerHTML={{ __html: formatAnalyzedContent(analyzedContents.application) }} />
-          </Box>
-          {loading ? (
-            <Box display="flex" justifyContent="center" mt={4}>
-              <CircularProgress />
-            </Box>
-          ) : images.application && (
-            <Box mt={4} display="flex" justifyContent="center">
-              <img 
-                src={images.application} 
-                alt="Application Activity" 
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '400px',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                }} 
-              />
-            </Box>
-          )}
-        </Box>
-      )
-    },
-    {
-      title: 'Trò chơi',
-      content: (
-        <Box>
-          <Typography variant="h4" color="primary" fontWeight={600} gutterBottom>
-            Trò chơi
-          </Typography>
-          <Box sx={{ pl: 2, maxWidth: '90%', margin: 'auto' }}>
-            <div dangerouslySetInnerHTML={{ __html: formatAnalyzedContent(analyzedContents.game) }} />
-          </Box>
-          {loading ? (
-            <Box display="flex" justifyContent="center" mt={4}>
-              <CircularProgress />
-            </Box>
-          ) : images.game && (
-            <Box mt={4} display="flex" justifyContent="center">
-              <img 
-                src={images.game} 
-                alt="Educational Game" 
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '400px',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                }} 
-              />
-            </Box>
-          )}
-        </Box>
-      )
-    },
-    {
-      title: 'Kết thúc',
-      content: (
-        <Box>
-          <Typography variant="h4" color="primary" fontWeight={600} gutterBottom>
-            Chúc các em học tốt!
-          </Typography>
-          {loading ? (
-            <Box display="flex" justifyContent="center" mt={4}>
-              <CircularProgress />
-            </Box>
-          ) : images.closing && (
-            <Box mt={4} display="flex" justifyContent="center">
-              <img 
-                src={images.closing} 
-                alt="Closing Message" 
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '400px',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                }} 
-              />
-            </Box>
-          )}
-        </Box>
-      )
-    }
+    { title: 'Tiêu đề', contentKey: 'lesson', imagePlaceholder: true },
+    { title: 'Hoạt động Khởi động', contentKey: 'startUp', imagePlaceholder: true },
+    { title: 'Hoạt động Luyện tập', contentKey: 'practice', imagePlaceholder: true },
+    { title: 'Hoạt động Vận dụng', contentKey: 'application', imagePlaceholder: true },
+    { title: 'Trò chơi', contentKey: 'gameIdea', imagePlaceholder: true },
+    { title: 'Kết thúc', contentKey: 'closing', imagePlaceholder: true }
   ];
 
-  // Fullscreen presentation
-  const handleFullscreen = () => {
-    const element = slideRef.current;
-    if (!element) {
-      console.warn("Slide element not found for fullscreen.");
-      return; // Prevent errors if the element is not available
-    }
+   // Get the current slide's data
+  const currentSlideData = slides[currentSlide];
+  const currentContent = analyzedContents[currentSlideData.contentKey];
+  const currentTitle = currentSlideData.title === 'Tiêu đề' ? analyzedContents.lesson || lessonData.lesson : currentSlideData.title;
 
-    if (!fullscreen) {
-      // Attempt to request fullscreen
-      if (element.requestFullscreen) {
-        element.requestFullscreen().catch(err => {
-          console.error("Error requesting fullscreen:", err);
-        });
-      } else if (element.mozRequestFullScreen) { /* Firefox */
-        element.mozRequestFullScreen().catch(err => {
-          console.error("Error requesting fullscreen (Firefox):", err);
-        });
-      } else if (element.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-        element.webkitRequestFullscreen().catch(err => {
-          console.error("Error requesting fullscreen (Webkit):", err);
-        });
-      } else if (element.msRequestFullscreen) { /* IE/Edge */
-        element.msRequestFullscreen().catch(err => {
-          console.error("Error requesting fullscreen (MS):", err);
-        });
-      }
-    } else {
-      // Attempt to exit fullscreen
-      if (document.exitFullscreen) {
-        document.exitFullscreen().catch(err => {
-          console.error("Error exiting fullscreen:", err);
-        });
-      } else if (document.mozCancelFullScreen) { /* Firefox */
-        document.mozCancelFullScreen().catch(err => {
-          console.error("Error exiting fullscreen (Firefox):", err);
-        });
-      } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
-        document.webkitExitFullscreen().catch(err => {
-          console.error("Error exiting fullscreen (Webkit):", err);
-        });
-      } else if (document.msExitFullscreen) { /* IE/Edge */
-        document.msExitFullscreen().catch(err => {
-          console.error("Error exiting fullscreen (MS):", err);
-        });
-      }
-    }
-  };
 
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
@@ -625,10 +319,12 @@ Quan trọng: Đảm bảo các ảnh có chung một phong cách hoạt hình g
         <Box display="flex" flexDirection="column" alignItems="center">
           <CircularProgress color="inherit" />
           <Typography variant="h6" component="div" sx={{ mt: 2 }}>
-            Đang tạo Giáo án: {Math.round(loadingProgress)}%
+            {error ? 'Có lỗi xảy ra' : `Đang xử lý nội dung: ${Math.round(loadingProgress)}%`} {/* Updated message */}
           </Typography>
+           {error && <Typography variant="body2" component="div" sx={{ mt: 1, color: 'red', textAlign: 'center' }}>{error}</Typography>}
         </Box>
       </Backdrop>
+
       <Button
         startIcon={<ArrowBack />}
         onClick={() => navigate(-1)}
@@ -636,26 +332,38 @@ Quan trọng: Đảm bảo các ảnh có chung một phong cách hoạt hình g
       >
         Quay lại
       </Button>
+
       <Grid container spacing={2}>
-        {/* Slide list on the left */}
+        {/* Slide list on the left (Sidebar) */}
         <Grid item xs={2}>
           <Box>
             {slides.map((slide, idx) => (
               <Box
                 key={idx}
                 sx={{
-                  border: idx === current ? '2px solid #1976d2' : '1px solid #ccc',
+                  border: idx === currentSlide ? '2px solid #1976d2' : '1px solid #ccc',
                   borderRadius: 2,
                   mb: 2,
                   p: 1,
                   cursor: 'pointer',
-                  background: idx === current ? '#e3f2fd' : '#fff',
-                  transition: 'all 0.2s'
+                  background: idx === currentSlide ? '#e3f2fd' : '#fff',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
                 }}
-                onClick={() => setCurrent(idx)}
+                onClick={() => setCurrentSlide(idx)}
               >
-                <Typography variant="subtitle2" fontWeight={idx === current ? 700 : 400}>
-                  {slide.title}
+                 {/* Thumbnail Placeholder */}
+                <Box sx={{
+                  width: 40,
+                  height: 40,
+                  backgroundColor: '#e0e0e0', // Gray placeholder color
+                  borderRadius: 1,
+                  flexShrink: 0
+                }} />
+                <Typography variant="subtitle2" fontWeight={idx === currentSlide ? 700 : 400} sx={{ flexGrow: 1 }}>
+                  {slide.title === 'Tiêu đề' ? analyzedContents.lesson || 'Đang tải...' : slide.title}
                 </Typography>
               </Box>
             ))}
@@ -665,7 +373,6 @@ Quan trọng: Đảm bảo các ảnh có chung một phong cách hoạt hình g
         {/* Main slide on the right */}
         <Grid item xs={10}>
           <Box
-            ref={slideRef}
             sx={{
               minHeight: 400,
               border: '2px solid #1976d2',
@@ -673,30 +380,50 @@ Quan trọng: Đảm bảo các ảnh có chung một phong cách hoạt hình g
               p: 4,
               background: '#fff',
               boxShadow: '0 4px 16px rgba(25, 118, 210, 0.08)',
-              position: 'relative'
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'flex-start', // Align items to the top
+              gap: 3,
+              overflowY: 'auto', // Add scroll if content overflows
+              maxHeight: '70vh' // Limit height to fit viewport
             }}
           >
-            <Fade in timeout={400} key={current}>
-              <div>{slides[current].content}</div>
-            </Fade>
-            {/* Presentation and download buttons */}
-            <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 1 }}>
-              <IconButton onClick={handleFullscreen} title="Trình chiếu">
-                {fullscreen ? <FullscreenExit /> : <Fullscreen />}
-              </IconButton>
+             <Typography variant="h4" color="primary" fontWeight={600} gutterBottom>
+               {currentTitle || 'Đang tải...'}
+            </Typography>
+
+            {currentSlideData.imagePlaceholder && (
+                 <Box sx={{
+                  width: '80%',
+                  maxWidth: 600, // Max width for image placeholder
+                  height: 300,
+                  backgroundColor: '#e0e0e0', // Gray placeholder color
+                  borderRadius: 2,
+                  mb: 2 // Add margin below image placeholder
+                }} />
+            )}
+
+            {/* Display formatted analyzed content */}
+             <Box sx={{ width: '100%', px: 2 }}>
+                 <div dangerouslySetInnerHTML={{ __html: formatAnalyzedContent(currentContent) }} />
             </Box>
+
           </Box>
+
+           {/* Navigation buttons */}
           <Box mt={2} display="flex" justifyContent="space-between">
             <Button
-              disabled={current === 0}
-              onClick={() => setCurrent(current - 1)}
+              disabled={currentSlide === 0 || loading}
+              onClick={() => setCurrentSlide(currentSlide - 1)}
               variant="outlined"
             >
               Trước
             </Button>
             <Button
-              disabled={current === slides.length - 1}
-              onClick={() => setCurrent(current + 1)}
+              disabled={currentSlide === slides.length - 1 || loading}
+              onClick={() => setCurrentSlide(currentSlide + 1)}
               variant="contained"
             >
               Tiếp
@@ -704,16 +431,26 @@ Quan trọng: Đảm bảo các ảnh có chung một phong cách hoạt hình g
           </Box>
         </Grid>
       </Grid>
+       {/* Add basic styling for bullet points */}
       <style>{`
         .bullet-point {
           padding-left: 1.5em;
           position: relative;
+          margin-bottom: 0.5em; /* Space between list items */
         }
         .bullet-point:before {
           content: "•";
           position: absolute;
           left: 0;
-          color: #1976d2;
+          color: #1976d2; /* Use primary color or any color you like */
+          font-weight: bold;
+        }
+        p {
+            margin-bottom: 1em; /* Space between paragraphs */
+             line-height: 1.6;
+        }
+        p:last-child {
+            margin-bottom: 0;
         }
       `}</style>
     </Container>
