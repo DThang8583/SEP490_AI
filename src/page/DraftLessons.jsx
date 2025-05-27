@@ -14,7 +14,13 @@ import {
   ListItemIcon,
   ListItemButton,
   Skeleton,
-  Stack
+  Stack,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField
 } from '@mui/material';
 import { EditNote, DeleteOutline, Send, HourglassTop, InboxOutlined } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
@@ -35,6 +41,18 @@ const DraftLessons = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
 
+  // New state for filters
+  const [gradeIdFilter, setGradeIdFilter] = useState('');
+  const [moduleIdFilter, setModuleIdFilter] = useState('');
+
+  // New state for search term
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // State for dropdown options
+  const [grades, setGrades] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [loadingFilterOptions, setLoadingFilterOptions] = useState(true);
+
   // Use useCallback for the fetch function to stabilize dependencies
   const fetchDraftLessons = useCallback(async (page = 1) => {
     if (!userInfo?.id) {
@@ -45,15 +63,31 @@ const DraftLessons = () => {
 
     setLoading(true);
     setError('');
+
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error("Authentication token not found.");
       }
 
+      let url = `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans?Status=1&userId=${userInfo.id}&Page=${page}&PageSize=${pageSize}`;
+
+      // Add filters if they have values
+      if (gradeIdFilter) {
+          url += `&GradeId=${gradeIdFilter}`;
+      }
+      if (moduleIdFilter) {
+          url += `&ModuleId=${moduleIdFilter}`;
+      }
+      // Add search term if it has a value
+      if (searchTerm) {
+          url += `&SearchTerm=${encodeURIComponent(searchTerm)}`;
+      }
+      // TODO: Add SortColumn and SortOrder if needed later
+
       // Added Page and PageSize parameters, and changed status to Status=1
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans?Status=1&userId=${userInfo.id}&Page=${page}&PageSize=${pageSize}`,
+        url,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -65,6 +99,7 @@ const DraftLessons = () => {
       if (response.data && response.data.code === 0) {
          // Extract data from the pagination structure
          const responseData = response.data.data;
+         console.log("Raw API response data:", responseData);
          setLessons(responseData.items || []); 
          setCurrentPage(responseData.currentPage || 1);
          setTotalPages(responseData.totalPages || 0);
@@ -81,11 +116,60 @@ const DraftLessons = () => {
     } finally {
       setLoading(false);
     }
-  }, [userInfo?.id, pageSize]);
+  }, [userInfo?.id, pageSize, gradeIdFilter, moduleIdFilter, searchTerm]); // Removed lessonIdFilter from dependencies
+
+  // Effect to fetch filter options (Grades and Modules)
+  useEffect(() => {
+      const fetchFilterOptions = async () => {
+          setLoadingFilterOptions(true);
+          try {
+              const token = localStorage.getItem('accessToken');
+              if (!token) return; // Don't fetch if no token
+
+              // Fetch Grades
+              const gradesResponse = await axios.get(
+                  `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades`,
+                  { headers: { 'Authorization': `Bearer ${token}` } }
+              );
+              if (gradesResponse.data.code === 0) {
+                  setGrades(gradesResponse.data.data || []); 
+              } else {
+                  console.error("Failed to fetch grades for filter:", gradesResponse.data.message);
+                  setGrades([]);
+              }
+
+              // Fetch Modules based on selected Grade (or all if no grade selected initially)
+              if (gradeIdFilter) {
+                  const modulesResponse = await axios.get(
+                      `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades/${gradeIdFilter}/modules`,
+                      { headers: { 'Authorization': `Bearer ${token}` } }
+                  );
+                  if (modulesResponse.data.code === 0) {
+                      setModules(modulesResponse.data.data.modules || []); 
+                  } else {
+                      console.error(`Failed to fetch modules for grade ${gradeIdFilter}:`, modulesResponse.data.message);
+                      setModules([]);
+                  }
+              } else {
+                 // If no grade is selected, clear modules or fetch all if the API supports it
+                 // Based on the provided APIs, fetching modules requires a gradeId.
+                 // So, we'll clear the modules list if no grade is selected.
+                 setModules([]);
+              }
+
+          } catch (error) {
+              console.error("Error fetching filter options:", error);
+          } finally {
+              setLoadingFilterOptions(false);
+          }
+      };
+
+      fetchFilterOptions();
+  }, [gradeIdFilter]); // Dependency array includes gradeIdFilter to refetch modules when grade changes
 
   useEffect(() => {
     fetchDraftLessons(currentPage);
-  }, [fetchDraftLessons, currentPage]); // Use the stable fetch function
+ }, [fetchDraftLessons, currentPage, gradeIdFilter, moduleIdFilter, searchTerm]); // Removed lessonIdFilter from dependencies
 
   const handlePageChange = (event, value) => {
     setCurrentPage(value); // Set page state, useEffect will trigger fetch
@@ -129,18 +213,7 @@ const DraftLessons = () => {
   // Function to format date
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    try {
-      return new Date(dateString).toLocaleString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (e) {
-      console.error("Error formatting date:", e);
-      return 'Invalid Date';
-    }
+    return dateString;
   };
 
   return (
@@ -179,6 +252,66 @@ const DraftLessons = () => {
           {error && (
             <Alert severity="error" sx={{ my: 2 }}>{error}</Alert>
           )}
+
+          {/* Filter Controls */}
+          <Grid container spacing={2} mb={3}>
+             <Grid item xs={12} sm={12} md={gradeIdFilter ? 3 : 4}>
+                <FormControl fullWidth size="small">
+                   <Select
+                      value={gradeIdFilter}
+                      onChange={(e) => {
+                         setGradeIdFilter(e.target.value);
+                         setModuleIdFilter(''); // Reset module filter when grade changes
+                         setCurrentPage(1); // Reset page to 1
+                      }}
+                      disabled={loadingFilterOptions}
+                      displayEmpty
+                   >
+                      <MenuItem value="">Tất cả Lớp</MenuItem>
+                      {grades.map((grade) => (
+                         <MenuItem key={grade.gradeId} value={grade.gradeId}>{`Lớp ${grade.gradeNumber}`}</MenuItem>
+                      ))}
+                   </Select>
+                </FormControl>
+             </Grid>
+             {/* Conditionally render Module filter based on gradeIdFilter */}
+             {gradeIdFilter ? (
+               <Grid item xs={12} sm={12} md={3}>
+                  <FormControl fullWidth size="small" disabled={loadingFilterOptions || !gradeIdFilter}>
+                     <InputLabel>Lọc theo Chủ đề</InputLabel>
+                     <Select
+                        value={moduleIdFilter}
+                        label="Lọc theo Chủ đề"
+                        onChange={(e) => {
+                            setModuleIdFilter(e.target.value);
+                            setCurrentPage(1); // Reset page to 1
+                         }}
+                     >
+                        <MenuItem value=""><em>Tất cả Chủ đề</em></MenuItem>
+                        {modules.map((module) => (
+                           <MenuItem key={module.moduleId} value={module.moduleId}>{module.name}</MenuItem>
+                        ))}
+                     </Select>
+                  </FormControl>
+               </Grid>
+             ) : null}
+             <Grid item xs={12} sm={12} md={gradeIdFilter ? 6 : 8}>
+                <TextField
+                   fullWidth
+                   size="small"
+                   label="Tìm kiếm Giáo án"
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
+                   onKeyPress={(e) => {
+                      // Optional: Trigger fetch on Enter key press
+                      if (e.key === 'Enter') {
+                         setCurrentPage(1); // Reset page and trigger fetch via useEffect
+                      }
+                   }}
+                   InputLabelProps={{ shrink: true }}
+                />
+             </Grid>
+          </Grid>
 
           {loading ? (
              renderSkeletons()

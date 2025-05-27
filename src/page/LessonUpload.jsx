@@ -120,7 +120,7 @@ const LessonUpload = () => {
         throw new Error('Không tìm thấy token xác thực');
       }
       
-      console.log("Đang gửi bài viết với teacherLessonId:", lessonData.teacherLessonId);
+      console.log("Đang gửi bài viết với lessonPlanId:", lessonData.lessonPlanId);
       
       const response = await axios.post(
         'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs',
@@ -128,7 +128,7 @@ const LessonUpload = () => {
           title,
           body,
           categoryId: parseInt(selectedCategory),
-          teacherLessonId: lessonData.teacherLessonId
+          teacherLessonId: lessonData.lessonPlanId
         },
         {
           headers: {
@@ -181,7 +181,7 @@ const LessonUpload = () => {
   console.log("lessonData.lesson:", lessonData?.lesson);
   console.log("lessonData.module:", lessonData?.module);
   console.log("lessonData.id:", lessonData?.id);
-  console.log("lessonData.teacherLessonId:", lessonData?.teacherLessonId);
+  console.log("lessonData.teacherLessonId:", lessonData?.lessonPlanId);
 
   return (
     <Box
@@ -245,9 +245,6 @@ const LessonUpload = () => {
                       size="small" 
                       sx={{ mb: 2 }}
                     />
-                    <Typography variant="body2" color="text.secondary">
-                      ID Giáo án: {lessonData.id || lessonData.teacherLessonId || 'N/A'}
-                    </Typography>
                   </>
                 ) : (
                   <Alert severity="warning">

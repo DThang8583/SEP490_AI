@@ -25,9 +25,11 @@ import {
   School as SchoolIcon,
   Timer as TimerIcon,
   Assignment as AssignmentIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  AddCircleOutline as AddCircleOutlineIcon
 } from '@mui/icons-material';
 import { useTheme as useCustomTheme } from '../../context/ThemeContext';
+import CreateExerciseModal from '../CreateExerciseModal';
 
 const ExamList = () => {
   const navigate = useNavigate();
@@ -43,6 +45,13 @@ const ExamList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // State for modal visibility
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Handlers for modal
+  const handleOpenModal = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
 
   // Lấy danh sách bài quiz
   useEffect(() => {
@@ -72,7 +81,7 @@ const ExamList = () => {
   }, [page, pageSize]);
 
   const handleQuizClick = (quizId) => {
-    navigate(`/de-on-thi/${quizId}`);
+    navigate(`/bai-tap/${quizId}`);
   };
 
   const handlePageChange = (event, newPage) => {
@@ -157,6 +166,20 @@ const ExamList = () => {
             <option value={20}>20 bài/trang</option>
             <option value={50}>50 bài/trang</option>
           </TextField>
+          <Button 
+            variant="contained" 
+            startIcon={<AddCircleOutlineIcon />}
+            onClick={handleOpenModal}
+            sx={{ 
+              background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
+              color: 'white',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #21CBF3, #2196F3)',
+              }
+            }}
+          >
+            Tạo bài tập AI
+          </Button>
         </Box>
 
         {loading ? (
@@ -266,6 +289,12 @@ const ExamList = () => {
           </>
         )}
       </Container>
+
+      {/* Render the modal component */}
+      <CreateExerciseModal 
+        open={isModalOpen}
+        handleClose={handleCloseModal}
+      />
     </Box>
   );
 };

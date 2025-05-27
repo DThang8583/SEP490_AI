@@ -52,6 +52,7 @@ import BlogLessonDetail from './page/BlogLessonDetail';
 import LessonUpload from './page/LessonUpload';
 import CreateAccount from './pages/Admin/Dashboard/CreateAccount';
 import SlidePreview from './page/SlidePreview';
+import GeneratedQuiz from './page/GeneratedQuiz';
 
 const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
   return (
@@ -167,8 +168,8 @@ function App() {
                 <Route path="/AIRender" element={<AIRender />} />
                 <Route path="/ChoiceChatorClick" element={<ChoiceChatorClick />} />
                 <Route path="/cac-bai-hoc" element={<LessonList />} />
-                <Route path="/các-Giáo-án" element={<PrivateRoute><AllLessons /></PrivateRoute>} />
-                <Route path="/blog-lesson/:lessonId" element={<PrivateRoute><BlogLessonDetail /></PrivateRoute>} />
+                <Route path="/các-giáo-án" element={<PrivateRoute><AllLessons /></PrivateRoute>} />
+                <Route path="/blog-lesson/:blogId" element={<PrivateRoute><BlogLessonDetail /></PrivateRoute>} />
                 <Route path="/Đăng-Giáo-án" element={<PrivateRoute><LessonUpload /></PrivateRoute>} />
                 <Route path="/rejected-lessons" element={<PrivateRoute><RejectedLessons /></PrivateRoute>} />
                 <Route path="/pending-lessons" element={<PrivateRoute><PendingLessons /></PrivateRoute>} />
@@ -178,8 +179,8 @@ function App() {
                 <Route path="/Giáo-án-đã-chấp-nhận/:lessonId" element={<PrivateRoute><ApprovedLessonDetail /></PrivateRoute>} />
                 <Route path="/Giáo-án-đã-từ-chối/:lessonId" element={<PrivateRoute><RejectedLessonDetail /></PrivateRoute>} />
                 <Route path="/Giáo-án-nháp/:lessonId" element={<PrivateRoute><DraftLessonDetail /></PrivateRoute>} />
-                <Route path="/de-on" element={<ExamList />} />
-                <Route path="/de-on-thi/:id" element={<ExamDetail />} />
+                <Route path="/bai-tap" element={<ExamList />} />
+                <Route path="/bai-tap/:id" element={<ExamDetail />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/manager/*" element={
                   <PrivateRoute>
@@ -204,6 +205,7 @@ function App() {
                 <Route path="/Giáo-án-đã-chấp-nhận/:lessonId" element={<PrivateRoute><ApprovedLessonDetail /></PrivateRoute>} />
                 <Route path="/Giáo-án-đã-từ-chối/:lessonId" element={<PrivateRoute><RejectedLessonDetail /></PrivateRoute>} />
                 <Route path="/Giáo-án-nháp/:lessonId" element={<PrivateRoute><DraftLessonDetail /></PrivateRoute>} />
+                <Route path="/generated-quiz" element={<PrivateRoute><GeneratedQuiz /></PrivateRoute>} />
                 <Route
                   path="/admin/*"
                   element={

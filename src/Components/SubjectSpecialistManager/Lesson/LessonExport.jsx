@@ -477,7 +477,7 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                                 <InfoChip
                                                                                     size="small"
                                                                                     icon={<ScheduleIcon />}
-                                                                                    label={`Ngày tạo: ${new Date(lesson.createdAt).toLocaleDateString()}`}
+                                                                                    label={`Ngày tạo: ${(lesson.createdAt)}`}
                                                                                 />
                                                                             )}
                                                                         </Box>

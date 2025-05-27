@@ -369,7 +369,7 @@ const PendingLessonDetail = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                    <Typography variant="body2" color="text.secondary">Ngày gửi:</Typography>
-                   <Typography variant="h6">{formatDate(lessonDetail.createdAt)}</Typography>
+                   <Typography variant="h6">{(lessonDetail.createdAt)}</Typography>
                 </Grid>
               </Grid>
               
