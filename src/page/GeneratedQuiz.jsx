@@ -57,17 +57,20 @@ const GeneratedQuiz = () => {
     // Helper function to format the question text
     const formatQuestion = (text) => {
         return text
-            // Đảm bảo A./B./C./D. xuống dòng mới
-            .replace(/(?<!\n)([A-D]\.\s)/g, '\n$1')
+            // Thêm dòng trống sau câu hỏi
+            .replace(/([^A-D]\.\s*$)/g, '$1\n\n    ')
+            // Đảm bảo A./B./C./D. xuống dòng mới và có khoảng trắng phù hợp
+            .replace(/(?<!\n)([A-D]\.\s)/g, '\n\n    $1')
             // Đảm bảo "Đáp án đúng:" xuống dòng mới
             .replace(/(?<!\n)(Đáp án đúng:)/g, '\n$1')
             // Xóa dòng trống dư
-            .replace(/\n{2,}/g, '\n')
+            .replace(/\n{4,}/g, '\n\n')
             .trim();
     };
 
     const parseQuizContent = (content) => {
         const questions = [];
+        // Tách các câu hỏi bằng số thứ tự câu
         const questionBlocks = content.split(/\d+\./).filter(block => block.trim());
 
         questionBlocks.forEach(block => {
@@ -76,35 +79,63 @@ const GeneratedQuiz = () => {
             const quizAnswers = [];
             let correctAnswerText = '';
 
-            lines.forEach(line => {
+            // Tìm dòng chứa đáp án đúng trong khối câu hỏi hiện tại
+            const correctAnswerLines = lines.filter(line => {
                 const trimmedLine = line.trim();
-
-                if (trimmedLine.match(/^[A-D]\.\s/)) {
-                    // This is an answer option
-                    const answerText = trimmedLine.substring(3).trim();
-                    quizAnswers.push({ answer: answerText, isCorrect: false });
-                } else if (trimmedLine.startsWith('Đáp án đúng:')) {
-                    // This is the correct answer line
-                    correctAnswerText = trimmedLine.substring('Đáp án đúng:'.length).trim();
-                } else if (trimmedLine) {
-                    // This is part of the question name
-                    questionName += (questionName ? '\n' : '') + trimmedLine;
-                }
+                return trimmedLine.startsWith('Đáp án đúng:');
             });
 
-            // Mark the correct answer based on correctAnswerText
-            const correctAnswerLetter = correctAnswerText.replace('Đáp án:', '').trim(); // Handle potential variations
+            // Lấy đáp án đúng cuối cùng trong khối câu hỏi
+            if (correctAnswerLines.length > 0) {
+                correctAnswerText = correctAnswerLines[correctAnswerLines.length - 1].trim();
+            }
 
-            // Find the index of the correct answer option based on the letter (A, B, C, D)
-            const correctAnswerIndex = quizAnswers.findIndex(answer => answer.answer.startsWith(correctAnswerLetter + '.'));
+            // Lấy nội dung câu hỏi (bỏ qua các dòng chứa đáp án và đáp án đúng)
+            questionName = lines
+                .filter(line => {
+                    const trimmedLine = line.trim();
+                    return !trimmedLine.match(/^[A-D]\.\s/) && 
+                           !trimmedLine.startsWith('Đáp án đúng:') &&
+                           !trimmedLine.match(/^Đáp án đúng$/);
+                })
+                .join('\n')
+                .trim();
 
-            if (correctAnswerIndex !== -1) {
-                quizAnswers[correctAnswerIndex].isCorrect = true;
+            // Thu thập tất cả các lựa chọn trả lời (A, B, C, D)
+            const answerOptions = lines
+                .filter(line => {
+                    const trimmedLine = line.trim();
+                    return (trimmedLine.match(/^[A-D]\.\s/) || 
+                           trimmedLine.match(/^[A-D]\./)) && 
+                           !trimmedLine.startsWith('Đáp án đúng:');
+                })
+                .map(line => {
+                    // Giữ nguyên công thức LaTeX trong đáp án
+                    return line.trim();
+                });
+
+            // Kết hợp tất cả các lựa chọn thành một chuỗi
+            const combinedAnswers = answerOptions.join('          ');
+
+            // Thêm đáp án đúng ngay sau câu hỏi
+            if (correctAnswerText) {
+                quizAnswers.push({
+                    answer: correctAnswerText,
+                    isCorrect: true
+                });
+            }
+
+            // Thêm các lựa chọn trả lời
+            if (combinedAnswers) {
+                quizAnswers.push({
+                    answer: combinedAnswers,
+                    isCorrect: false
+                });
             }
 
             if (questionName || quizAnswers.length > 0) {
-                 questions.push({
-                    questionName: questionName.trim(),
+                questions.push({
+                    questionName: questionName,
                     quizAnswers: quizAnswers
                 });
             }
@@ -141,7 +172,7 @@ const GeneratedQuiz = () => {
                 { headers: { 'Authorization': `Bearer ${token}` } }
             );
 
-            if (response.data.code === 0) {
+            if (response.data.code === 0 || response.data.code === 22) {
                 console.log('Quiz saved successfully:', response.data);
                 setSaveSuccess('Bài tập đã được lưu thành công!');
                 // Optionally navigate away or reset state after success

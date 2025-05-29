@@ -302,34 +302,6 @@ const PendingLessonDetail = () => {
           Quay lại danh sách
         </Button>
 
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          justifyContent="space-between" 
-          alignItems={{ xs: 'flex-start', sm: 'center' }}
-          mb={3}
-          sx={{ px: { xs: 2, sm: 3, md: 0 } }} 
-        >
-          <Stack direction="row" alignItems="center" spacing={1.5} mb={{ xs: 2, sm: 0 }}> 
-            <HourglassTop sx={{ color: 'warning.main', fontSize: '2.2rem' }} />
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-              Chi Tiết Giáo án
-            </Typography>
-          </Stack>
-          <Tooltip title="Xuất ra file Word (.docx)">
-            <span>
-              <Button 
-                variant="contained"
-                color="primary"
-                startIcon={isExporting ? <CircularProgress size={20} color="inherit"/> : <Download />}
-                onClick={handleExportToWord}
-                disabled={!lessonDetail || isExporting}
-              >
-                {isExporting ? 'Đang xuất...' : 'Xuất ra Word'}
-              </Button>
-            </span>
-          </Tooltip>
-        </Stack>
-
         <Paper 
           elevation={0} 
           sx={{ 

@@ -314,7 +314,7 @@ const DraftLessonDetail = () => {
       }
 
       const response = await axios.put(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/teacher-lessons/${lessonId}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}`,
         editedData,
         {
           headers: {

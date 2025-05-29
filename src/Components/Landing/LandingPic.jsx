@@ -28,26 +28,26 @@ const LandingPic = () => {
   const features = [
     {
       icon: <School sx={{ fontSize: 40 }} />,
-      title: 'Bài học sinh động',
-      description: 'Nội dung được thiết kế trực quan, dễ hiểu',
+      title: 'Tạo bài học thông minh',
+      description: 'Nội dung được cá nhân hóa bởi AI',
       color: '#FF6B6B'
     },
     {
       icon: <EmojiEvents sx={{ fontSize: 40 }} />,
-      title: 'Học tập vui vẻ',
-      description: 'Phương pháp học tập thông qua trò chơi',
+      title: 'Học mà chơi, chơi mà học',
+      description: 'Tăng cường tương tác, giảm nhàm chán',
       color: '#4ECDC4'
     },
     {
       icon: <Psychology sx={{ fontSize: 40 }} />,
-      title: 'Nhiều trò chơi học tập',
-      description: 'Tương tác đa dạng, hấp dẫn',
+      title: 'Kho bài tập đa dạng',
+      description: 'Luyện tập với nhiều dạng bài',
       color: '#FFD93D'
     },
     {
       icon: <Speed sx={{ fontSize: 40 }} />,
-      title: 'Tiến bộ nhanh chóng',
-      description: 'Theo dõi và đánh giá tiến độ học tập',
+      title: 'Theo dõi kết quả học tập',
+      description: 'Báo cáo chi tiết giúp bạn hiểu rõ hơn',
       color: '#6C5CE7'
     }
   ];
@@ -215,7 +215,7 @@ const LandingPic = () => {
 
               <Button
                 component={Link}
-                to="/register"
+                to="/login"
                 variant="contained"
                 size="large"
                 endIcon={<ArrowForward />}
@@ -235,7 +235,7 @@ const LandingPic = () => {
                   },
                 }}
               >
-                Bắt đầu học ngay
+                 Đăng nhập ngay
               </Button>
             </Box>
           </Grid>

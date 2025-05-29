@@ -8,7 +8,6 @@ import Footer from './Components/Landing/Footer';
 import Home from './Components/Landing/Home';
 import CreateLesson from './page/CreateLesson';
 import Login from './page/Login';
-import PopularLesson from './Components/Landing/PopularLesson';
 import CreateLessonByChat from './page/CreateLessonByChat';
 import AIRender from './page/AIRender';
 import ChoiceSignUp from './page/ChoiceSignUp';
@@ -30,7 +29,7 @@ import Profile from './Components/SubjectSpecialistManager/Profile';
 import EditProfile from './Components/SubjectSpecialistManager/EditProfile';
 import ChangePassword from './Components/SubjectSpecialistManager/ChangePassword';
 import ForgotPassword from './page/ForgotPassword';
-import TeacherProfile from './Components/Teacher/Profile';
+import TeacherProfile from './Components/Teacher/TeacherProfile';
 import { IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import PrivateRoute from './Components/PrivateRoute';
@@ -53,6 +52,7 @@ import LessonUpload from './page/LessonUpload';
 import CreateAccount from './pages/Admin/Dashboard/CreateAccount';
 import SlidePreview from './page/SlidePreview';
 import GeneratedQuiz from './page/GeneratedQuiz';
+import QuizDetail from './pages/Admin/Dashboard/QuizDetail';
 
 const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
   return (
@@ -99,7 +99,7 @@ const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
           }
         />
         <Route
-          path="/admin/accounts"
+          path="/admin/quan-ly-tai-khoan"
           element={
             <PrivateRoute>
               <TotalAccounts />
@@ -107,7 +107,7 @@ const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
           }
         />
         <Route
-          path="/admin/lessons"
+          path="/admin/Quản lý giáo án"
           element={
             <PrivateRoute>
               <TotalLessons />
@@ -138,6 +138,14 @@ const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/admin/exams/:id"
+          element={
+            <PrivateRoute>
+              <QuizDetail />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </>
   );
@@ -163,7 +171,6 @@ function App() {
                 <Route path="/CreateLesson" element={<CreateLesson />} />
                 <Route path="/register" element={<ChoiceSignUp />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/popular-lessons" element={<PopularLesson />} />
                 <Route path="/CreateLessonByChat" element={<CreateLessonByChat />} />
                 <Route path="/AIRender" element={<AIRender />} />
                 <Route path="/ChoiceChatorClick" element={<ChoiceChatorClick />} />

@@ -17,7 +17,8 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
-  Snackbar
+  Snackbar,
+  IconButton
 } from '@mui/material';
 import { 
   ArrowBack,
@@ -26,12 +27,93 @@ import {
   Description,
   Assignment,
   Send as SendIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Person as PersonIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { format } from 'date-fns';
+import { format, parse, parseISO, isValid } from 'date-fns';
+import { vi } from 'date-fns/locale';
+
+const RecentUsersList = ({ comments, handleDeleteComment, handleEditClick, editingCommentId, editedCommentBody, setEditedCommentBody, handleSaveComment, handleCancelClick, currentUser }) => (
+  <List>
+    {comments.map((comment) => (
+      <React.Fragment key={comment.commentId}>
+        <ListItem alignItems="flex-start">
+          <ListItemAvatar>
+            <Avatar src={comment.imgURL}>
+              <PersonIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText
+            primary={
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                {comment.user}
+              </Typography>
+            }
+            secondary={
+              <React.Fragment>
+                {
+                  editingCommentId === comment.commentId ? (
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      value={editedCommentBody}
+                      onChange={(e) => setEditedCommentBody(e.target.value)}
+                      sx={{ mt: 1, mb: 1 }}
+                    />
+                  ) : (
+                    <Typography
+                      sx={{ display: 'inline' }}
+                      component="span"
+                      variant="body2"
+                      color="text.primary"
+                    >
+                      {comment.commentBody}
+                    </Typography>
+                  )
+                }
+                 <Typography
+                  sx={{ display: 'block' }}
+                  component="span"
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  {/* Parse and format the timeStamp date */}
+                  {comment.timeStamp ? format(parse(comment.timeStamp, 'dd/MM/yyyy HH:mm', new Date()), 'dd/MM/yyyy HH:mm', { locale: vi }) : ''}
+                </Typography>
+              </React.Fragment>
+            }
+          />
+          {/* Edit and Delete buttons */}
+          {currentUser && currentUser.userId === comment.userId && ( // Only show if current user is the author
+            <Box sx={{ ml: 2, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+              {editingCommentId === comment.commentId ? (
+                <Stack direction="row" spacing={0}>
+                  <Button variant="outlined" size="small" onClick={() => handleSaveComment(comment.commentId)}>Lưu</Button>
+                  <Button variant="outlined" size="small" color="secondary" onClick={handleCancelClick}>Hủy</Button>
+                </Stack>
+              ) : (
+                <Stack direction="row" spacing={0}>
+                  <IconButton size="small" onClick={() => handleEditClick(comment)} color="primary">
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" color="error" onClick={() => handleDeleteComment(comment.commentId)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
+              )}
+            </Box>
+          )}
+        </ListItem>
+        <Divider variant="inset" component="li" />
+      </React.Fragment>
+    ))}
+  </List>
+);
 
 const BlogLessonDetail = () => {
   const navigate = useNavigate();
@@ -49,6 +131,8 @@ const BlogLessonDetail = () => {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [blogDetails, setBlogDetails] = useState(null);
   const [loadingBlog, setLoadingBlog] = useState(true);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editedCommentBody, setEditedCommentBody] = useState('');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -74,6 +158,7 @@ const BlogLessonDetail = () => {
       
       if (response.data && response.data.code === 0) {
         console.log('Blog details:', response.data.data);
+        console.log('fetchBlogDetails code:', response.data?.code);
         return response.data.data;
       } else {
         console.error('Failed to fetch blog details:', response.data?.message);
@@ -103,6 +188,7 @@ const BlogLessonDetail = () => {
 
       if (response.data && response.data.code === 0) {
         setLesson(response.data.data);
+        console.log('fetchLessonDetail code:', response.data?.code);
       } else {
         console.error('Failed to fetch Lesson Plan details:', response.data?.message);
         setError(response.data?.message || 'Không thể tải chi tiết Giáo án');
@@ -136,8 +222,9 @@ const BlogLessonDetail = () => {
         }
       );
 
-      if (response.data && response.data.code === 0) {
+      if (response.data && response.data.code === 0 || response.data.code === 21) {
         // Thành công, xử lý bình luận
+        console.log('handleSubmitComment code:', response.data?.code);
         const userInfo = response.data.data;
       
         const newCommentObj = {
@@ -158,16 +245,82 @@ const BlogLessonDetail = () => {
           severity: 'success'
         });
       } else {
-        const errorMsg = response.data?.message || 'Có lỗi xảy ra khi gửi bình luận';
+        console.error('API returned non-success code for submitting comment:', response.data);
+        setSnackbar({
+          open: true,
+          message: response.data?.message || 'Có lỗi xảy ra khi gửi bình luận.',
+          severity: 'error'
+        });
       }
     } catch (err) {
       setSnackbar({
         open: true,
         message: err.message || 'Không thể gửi bình luận',
-        severity: 'success'
+        severity: 'error'
       });
     } finally {
       setSubmittingComment(false);
+    }
+  };
+
+  const handleEditClick = (comment) => {
+    setEditingCommentId(comment.commentId);
+    setEditedCommentBody(comment.commentBody);
+  };
+
+  const handleCancelClick = () => {
+    setEditingCommentId(null);
+    setEditedCommentBody('');
+  };
+
+  const handleSaveComment = async (commentId) => {
+    if (!editedCommentBody.trim()) return; // Prevent saving empty comment
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Không tìm thấy token xác thực');
+      }
+
+      const response = await axios.put(
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}/comments/${commentId}`,
+        { body: editedCommentBody },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data && response.data.code === 0 || response.data.code === 22) { // Assuming code 22 is also success for update
+        // Update the comment in the state
+        setComments(prevComments =>
+          prevComments.map(comment =>
+            comment.commentId === commentId ? { ...comment, commentBody: editedCommentBody } : comment
+          )
+        );
+        setEditingCommentId(null);
+        setEditedCommentBody('');
+        setSnackbar({
+          open: true,
+          message: 'Bình luận đã được cập nhật thành công!',
+          severity: 'success'
+        });
+      } else {
+        console.error('API returned non-success code for updating comment:', response.data);
+        setSnackbar({
+          open: true,
+          message: response.data?.message || 'Có lỗi xảy ra khi cập nhật bình luận.',
+          severity: 'error'
+        });
+      }
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err.message || 'Không thể cập nhật bình luận',
+        severity: 'error'
+      });
     }
   };
 
@@ -232,8 +385,9 @@ const BlogLessonDetail = () => {
         }
       );
 
-      if (response.data && response.data.code === 0) {
+      if (response.data && response.data.code === 0 || response.data.code === 23) {
         // Xóa bình luận khỏi state
+        console.log('handleDeleteComment code:', response.data?.code);
         setComments(prevComments => prevComments.filter(comment => comment.commentId !== commentId));
         setSnackbar({
           open: true,
@@ -241,10 +395,18 @@ const BlogLessonDetail = () => {
           severity: 'success'
         });
       } else {
+        console.error('API returned non-success code for deleting comment:', response.data);
+        setSnackbar({
+          open: true,
+          message: response.data?.message || 'Có lỗi xảy ra khi xóa bình luận.',
+          severity: 'error'
+        });
       }
     } catch (err) {
       setSnackbar({
         open: true,
+        message: err.message || 'Không thể xóa bình luận',
+        severity: 'error'
       });
     }
   };
@@ -438,61 +600,25 @@ const BlogLessonDetail = () => {
                       </Box>
                     </Box>
 
-                    {/* Comments List */}
-                    <List>
-                      {comments.length > 0 ? (
-                        comments.map((comment, index) => {
-                          console.log('Comment data:', { comment, currentUser });
-                          return (
-                            <ListItem key={index} alignItems="flex-start" sx={{ px: 0 }}>
-                              <ListItemText
-                                primary={
-                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Typography variant="subtitle2" component="div">
-                                      {comment.user || 'Người dùng'}
-                                    </Typography>
-                                    {currentUser && comment.user === currentUser.fullName && (
-                                      <Button
-                                        size="small"
-                                        color="error"
-                                        startIcon={<DeleteIcon />}
-                                        onClick={() => handleDeleteComment(comment.commentId)}
-                                        sx={{ minWidth: 'auto', p: 0.5 }}
-                                      >
-                                        Xóa
-                                      </Button>
-                                    )}
-                                  </Box>
-                                }
-                                secondary={
-                                  <>
-                                    <Typography
-                                      component="span"
-                                      variant="body2"
-                                      color="text.primary"
-                                      sx={{ display: 'block', mb: 0.5 }}
-                                    >
-                                      {comment.commentBody || comment.content}
-                                    </Typography>
-                                    <Typography
-                                      component="span"
-                                      variant="caption"
-                                      color="text.secondary"
-                                    >
-                                      {comment.timeStamp}
-                                    </Typography>
-                                  </>
-                                }
-                              />
-                            </ListItem>
-                          );
-                        })
-                      ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                          Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
-                        </Typography>
-                      )}
-                    </List>
+                    {/* Display existing comments */}
+                    {!loadingBlog && !error && blogDetails && blogDetails.comments && ( // Pass necessary props
+                      <RecentUsersList
+                        comments={comments}
+                        handleDeleteComment={handleDeleteComment}
+                        handleEditClick={handleEditClick}
+                        editingCommentId={editingCommentId}
+                        editedCommentBody={editedCommentBody}
+                        setEditedCommentBody={setEditedCommentBody}
+                        handleSaveComment={handleSaveComment}
+                        handleCancelClick={handleCancelClick}
+                        currentUser={currentUser}
+                      />
+                    )}
+                     {!loadingBlog && !error && (!blogDetails || !blogDetails.comments || blogDetails.comments.length === 0) && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                        Chưa có bình luận nào.
+                      </Typography>
+                    )}
                   </Box>
                 </Stack>
               </Grid>
