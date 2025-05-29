@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -14,14 +14,20 @@ import {
     Alert,
     Card,
     CardContent,
+    Snackbar,
+    IconButton,
 } from '@mui/material';
-import { Edit, Lock, Person, Email, Phone, Cake, School, LocationOn, SupervisorAccount, Badge, Class } from '@mui/icons-material';
+import { Edit, Lock, Person, Email, Phone, Cake, School, LocationOn, SupervisorAccount, Badge, Class, CameraAlt } from '@mui/icons-material';
+import { useAuth } from '../../context/AuthContext';
 
 const Profile = ({ sidebarOpen }) => {
+    const { userInfo, updateUserInfo } = useAuth();
     const [profile, setProfile] = useState(null);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
 
     const sidebarWidth = sidebarOpen ? 60 : 240;
 
@@ -65,6 +71,93 @@ const Profile = ({ sidebarOpen }) => {
 
         fetchProfile();
     }, []);
+
+    const handleFileChange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        try {
+            // Kiểm tra kích thước file (giới hạn 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setError('Kích thước ảnh không được vượt quá 5MB');
+                setSuccess('');
+                return;
+            }
+
+            // Kiểm tra định dạng file
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            if (!validTypes.includes(file.type)) {
+                setError('Chỉ chấp nhận file ảnh định dạng JPG, PNG hoặc GIF');
+                setSuccess('');
+                return;
+            }
+
+            // Hiển thị preview ngay lập tức
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                // setImagePreview(reader.result); // Profile.jsx không có state imagePreview, cập nhật trực tiếp profile
+                // Cập nhật profile state tạm thời với ảnh mới để hiển thị ngay
+                setProfile(prev => ({
+                    ...prev,
+                    imgURL: reader.result
+                }));
+
+                // Cập nhật AuthContext với ảnh mới ngay lập tức
+                if (updateUserInfo && userInfo) {
+                    updateUserInfo({ ...userInfo, imgURL: reader.result });
+                }
+            };
+            reader.readAsDataURL(file);
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const accessToken = localStorage.getItem('accessToken');
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+
+            const uploadResponse = await axios.post(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/profile-img`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            console.log('Upload API Response:', uploadResponse);
+            console.log('Upload API Response Code:', uploadResponse.data?.code);
+
+            // Check for success response (adjust based on actual API response structure)
+            if (uploadResponse.status === 200 && (uploadResponse.data.code === 0 || uploadResponse.data.code === 22)) {
+                console.log('Image upload successful.');
+                setSuccess('Cập nhật ảnh đại diện thành công');
+                setError(''); // Clear error message
+                // Nếu API trả về URL ảnh mới, bạn có thể cập nhật lại state profile và AuthContext tại đây
+                if (uploadResponse.data.data?.imgURL) {
+                    setProfile(prev => ({ ...prev, imgURL: uploadResponse.data.data.imgURL }));
+                    if (updateUserInfo && userInfo) {
+                        updateUserInfo({ ...userInfo, imgURL: uploadResponse.data.data.imgURL });
+                    }
+                }
+            } else {
+                // Xử lý phản hồi lỗi từ API
+                console.log('Image upload API returned error code/status.', uploadResponse.data);
+                setError(uploadResponse.data?.message || 'Không thể tải ảnh lên.');
+                setSuccess(''); // Clear success message
+                // Có thể rollback ảnh preview về ảnh cũ nếu upload lỗi nặng
+                // Để rollback, bạn cần lưu ảnh cũ trước khi set preview
+            }
+
+        } catch (err) {
+            console.error('Lỗi khi tải ảnh lên:', err);
+            setError(err.response?.data?.message || 'Đã xảy ra lỗi khi tải ảnh lên.');
+            setSuccess(''); // Clear success message
+        }
+    };
 
     const ProfileItem = ({ icon, label, value }) => (
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}>
@@ -151,67 +244,165 @@ const Profile = ({ sidebarOpen }) => {
                                 <Box
                                     sx={{
                                         position: 'relative',
-                                        height: 120,
+                                        height: 160,
                                         background: 'linear-gradient(120deg, #06A9AE 0%, #0089a3 100%)',
-                                        overflow: 'hidden',
+                                        overflow: 'visible',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        pt: 2,
+                                        pb: 4,
                                     }}
                                 >
                                     <Box
                                         sx={{
                                             position: 'absolute',
-                                            bottom: 0,
+                                            top: 0,
                                             left: 0,
-                                            width: '100%',
-                                            height: '40%',
-                                            background: 'linear-gradient(transparent, rgba(0,0,0,0.2))',
+                                            right: 0,
+                                            bottom: 0,
+                                            background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)',
                                         }}
                                     />
-                                    <Box
-                                        sx={{
-                                            position: 'absolute',
-                                            bottom: -50,
-                                            left: { xs: '50%', sm: 40 },
-                                            transform: { xs: 'translateX(-50%)', sm: 'translateX(0)' },
-                                        }}
-                                    >
-                                        <Avatar
-                                            src={profile?.imgURL || 'https://via.placeholder.com/150'}
-                                            alt="Ảnh đại diện"
-                                            sx={{
-                                                width: 100,
-                                                height: 100,
-                                                border: '4px solid white',
-                                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                                            }}
-                                        />
-                                    </Box>
+
                                     <Typography
-                                        variant="h5"
+                                        variant="h4"
                                         sx={{
-                                            position: 'absolute',
-                                            top: { xs: 20, sm: 30 },
-                                            left: { xs: '50%', sm: 40 },
-                                            transform: { xs: 'translateX(-50%)', sm: 'translateX(0)' },
                                             color: 'white',
-                                            fontWeight: 600,
-                                            textAlign: { xs: 'center', sm: 'left' },
+                                            fontWeight: 700,
+                                            textAlign: 'center',
+                                            textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                            zIndex: 2,
+                                            mt: 1,
                                         }}
                                     >
                                         Thông tin cá nhân
                                     </Typography>
+
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            bottom: -70,
+                                            left: '50%',
+                                            transform: 'translateX(-50%)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            zIndex: 10,
+                                        }}
+                                    >
+                                        <Box sx={{ position: 'relative', mb: 1 }}>
+                                            <Avatar
+                                                src={profile?.imgURL || 'https://via.placeholder.com/150'}
+                                                alt="Ảnh đại diện"
+                                                sx={{
+                                                    width: 120,
+                                                    height: 120,
+                                                    border: '5px solid white',
+                                                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.3s ease',
+                                                    backgroundColor: 'white',
+                                                    '&:hover': {
+                                                        transform: 'scale(1.05)',
+                                                        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
+                                                    },
+                                                }}
+                                                onClick={() => fileInputRef.current.click()}
+                                            />
+
+                                            <Box
+                                                sx={{
+                                                    position: 'absolute',
+                                                    bottom: 8,
+                                                    right: 8,
+                                                    backgroundColor: '#06A9AE',
+                                                    borderRadius: '50%',
+                                                    width: 36,
+                                                    height: 36,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                                                    border: '2px solid white',
+                                                    transition: 'all 0.3s ease',
+                                                    zIndex: 1,
+                                                    '&:hover': {
+                                                        backgroundColor: '#048b8f',
+                                                        transform: 'scale(1.1)',
+                                                    },
+                                                }}
+                                                onClick={() => fileInputRef.current.click()}
+                                            >
+                                                <CameraAlt sx={{ fontSize: 18, color: 'white' }} />
+                                            </Box>
+                                        </Box>
+
+                                        <Button
+                                            variant="contained"
+                                            size="small"
+                                            startIcon={<CameraAlt />}
+                                            onClick={() => fileInputRef.current.click()}
+                                            sx={{
+                                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                                color: '#06A9AE',
+                                                fontSize: '0.8rem',
+                                                py: 0.8,
+                                                px: 2,
+                                                borderRadius: '25px',
+                                                textTransform: 'none',
+                                                fontWeight: 600,
+                                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+                                                border: '1px solid rgba(6, 169, 174, 0.2)',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    backgroundColor: '#06A9AE',
+                                                    color: 'white',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 6px 20px rgba(6, 169, 174, 0.3)',
+                                                },
+                                            }}
+                                        >
+                                            Thay đổi ảnh đại diện
+                                        </Button>
+
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileChange}
+                                            style={{ display: 'none' }}
+                                            accept="image/*"
+                                        />
+                                    </Box>
                                 </Box>
 
                                 <CardContent sx={{
-                                    pt: 5,
+                                    pt: 12,
                                     px: { xs: 2, sm: 3 },
                                     pb: 2
                                 }}>
-                                    <Box sx={{ mt: { xs: 2, sm: 1 }, mb: 2 }}>
-                                        <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                    <Box sx={{ mt: { xs: 2, sm: 1 }, mb: 3, textAlign: 'center' }}>
+                                        <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: '#1a1a1a' }}>
                                             {profile.fullname}
                                         </Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                            {profile.role} • {profile.school}
+                                        <Typography variant="h6" sx={{
+                                            color: '#06A9AE',
+                                            fontWeight: 500,
+                                            mb: 1
+                                        }}>
+                                            {profile.role}
+                                        </Typography>
+                                        <Typography variant="body1" sx={{
+                                            color: 'text.secondary',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 1
+                                        }}>
+                                            <School sx={{ fontSize: 18 }} />
+                                            {profile.school}
                                         </Typography>
                                     </Box>
 
@@ -336,6 +527,22 @@ const Profile = ({ sidebarOpen }) => {
                     </Container>
                 </Box>
             </Fade>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={!!error || !!success} // Open on either error or success
+                autoHideDuration={6000}
+                onClose={() => { setError(''); setSuccess(''); }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => { setError(''); setSuccess(''); }}
+                    severity={error ? 'error' : 'success'} // Determine severity
+                    sx={{ width: '100%' }}
+                >
+                    {error || success} {/* Display either error or success message */}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

@@ -24,6 +24,13 @@ import {
     Chip,
     Divider,
     Button,
+    TextField,
+    Collapse,
+    List as MuiList,
+    ListItem,
+    ListItemText,
+    ListItemIcon,
+    Avatar,
 } from '@mui/material';
 import {
     Assignment as AssignmentIcon,
@@ -31,6 +38,11 @@ import {
     MenuBook as MenuBookIcon,
     CalendarMonth as CalendarIcon,
     Timer as TimerIcon,
+    Comment as CommentIcon,
+    Send as SendIcon,
+    ExpandLess as ExpandLessIcon,
+    ExpandMore as ExpandMoreIcon,
+    Person as PersonIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
@@ -156,6 +168,65 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
     const [selectedBook, setSelectedBook] = useState('');
     const [availableBooks, setAvailableBooks] = useState([]);
 
+    // Comment related states
+    const [expandedComments, setExpandedComments] = useState({});
+    const [comments, setComments] = useState({});
+    const [newComments, setNewComments] = useState({});
+    const [commentLoading, setCommentLoading] = useState({});
+    const [commentSubmitting, setCommentSubmitting] = useState({});
+    const [commentErrors, setCommentErrors] = useState({});
+
+    // Helper function to get valid token and handle auth errors
+    const getAuthConfig = () => {
+        const accessToken = localStorage.getItem('accessToken');
+        const userInfo = localStorage.getItem('userInfo');
+
+        if (!accessToken || !userInfo) {
+            throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        }
+
+        // Validate token format
+        try {
+            const tokenParts = accessToken.split('.');
+            if (tokenParts.length !== 3) {
+                throw new Error('Token không hợp lệ');
+            }
+        } catch (e) {
+            throw new Error('Token không hợp lệ. Vui lòng đăng nhập lại.');
+        }
+
+        return {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        };
+    };
+
+    // Handle auth errors and redirect to login
+    const handleAuthError = (error, curriculumId = null) => {
+        console.error('Authentication error:', error);
+
+        const errorMessage = error.response?.status === 401
+            ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+            : `Đã xảy ra lỗi: ${error.message}`;
+
+        if (curriculumId) {
+            setCommentErrors(prev => ({
+                ...prev,
+                [curriculumId]: errorMessage
+            }));
+        }
+
+        // If 401 error, clear localStorage and redirect to login
+        if (error.response?.status === 401) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('userInfo');
+            // You might want to redirect to login page here
+            // window.location.href = '/login';
+        }
+    };
+
     const getUserGradeNumber = useCallback(async () => {
         try {
             const accessToken = localStorage.getItem('accessToken');
@@ -273,6 +344,122 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
             setModuleLoading(false);
         }
     }, [currentSemester]);
+
+    // Updated Comment functions
+    const fetchComments = useCallback(async (curriculumId) => {
+        setCommentLoading(prev => ({ ...prev, [curriculumId]: true }));
+        setCommentErrors(prev => ({ ...prev, [curriculumId]: null }));
+
+        try {
+            const config = getAuthConfig();
+
+            console.log('Fetching comments for curriculum:', curriculumId);
+            const response = await axios.get(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums/${curriculumId}/feedbacks`,
+                config
+            );
+
+            console.log('Comments response:', response.data);
+
+            if (response.data.code === 0) {
+                setComments(prev => ({ ...prev, [curriculumId]: response.data.data || [] }));
+            } else {
+                setCommentErrors(prev => ({
+                    ...prev,
+                    [curriculumId]: 'Không thể tải danh sách comment: ' + response.data.message
+                }));
+            }
+        } catch (err) {
+            handleAuthError(err, curriculumId);
+        } finally {
+            setCommentLoading(prev => ({ ...prev, [curriculumId]: false }));
+        }
+    }, []);
+
+    const submitComment = async (curriculumId) => {
+        const commentText = newComments[curriculumId]?.trim();
+        if (!commentText) {
+            setCommentErrors(prev => ({
+                ...prev,
+                [curriculumId]: 'Vui lòng nhập nội dung comment'
+            }));
+            return;
+        }
+
+        setCommentSubmitting(prev => ({ ...prev, [curriculumId]: true }));
+        setCommentErrors(prev => ({ ...prev, [curriculumId]: null }));
+
+        try {
+            const config = getAuthConfig();
+
+            console.log('Submitting comment:', {
+                curriculumId,
+                body: commentText,
+                headers: config.headers
+            });
+
+            const response = await axios.post(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums/${curriculumId}/feedbacks`,
+                { body: commentText },
+                config
+            );
+
+            console.log('Submit comment response:', response.data);
+
+            if (response.data.code === 0) {
+                setNewComments(prev => ({ ...prev, [curriculumId]: '' }));
+                await fetchComments(curriculumId);
+
+                // Show success message
+                setCommentErrors(prev => ({
+                    ...prev,
+                    [curriculumId]: null
+                }));
+            } else {
+                setCommentErrors(prev => ({
+                    ...prev,
+                    [curriculumId]: 'Không thể gửi comment: ' + response.data.message
+                }));
+            }
+        } catch (err) {
+            console.error('Submit comment error details:', {
+                message: err.message,
+                response: err.response?.data,
+                status: err.response?.status,
+                headers: err.response?.headers
+            });
+            handleAuthError(err, curriculumId);
+        } finally {
+            setCommentSubmitting(prev => ({ ...prev, [curriculumId]: false }));
+        }
+    };
+
+    // Updated toggleComments with better error handling
+    const toggleComments = (curriculumId) => {
+        const isCurrentlyExpanded = expandedComments[curriculumId];
+
+        setExpandedComments(prev => ({
+            ...prev,
+            [curriculumId]: !isCurrentlyExpanded
+        }));
+
+        // Fetch comments when expanding for the first time
+        if (!isCurrentlyExpanded && !comments[curriculumId]) {
+            try {
+                fetchComments(curriculumId);
+            } catch (error) {
+                handleAuthError(error, curriculumId);
+            }
+        }
+    };
+
+    const handleCommentChange = (curriculumId, value) => {
+        setNewComments(prev => ({ ...prev, [curriculumId]: value }));
+        // Clear error when user starts typing
+        if (commentErrors[curriculumId]) {
+            setCommentErrors(prev => ({ ...prev, [curriculumId]: null }));
+        }
+    };
 
     useEffect(() => {
         fetchCurricula();
@@ -410,7 +597,183 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                     />
                                                 </Box>
                                             </Box>
+                                            <StyledButton
+                                                variant="outlined"
+                                                startIcon={<CommentIcon />}
+                                                endIcon={expandedComments[curriculum.curriculumId] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                                                onClick={() => toggleComments(curriculum.curriculumId)}
+                                                sx={{
+                                                    borderColor: COLORS.primary,
+                                                    color: COLORS.primary,
+                                                    '&:hover': {
+                                                        borderColor: COLORS.primary,
+                                                        backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                    }
+                                                }}
+                                            >
+                                                {expandedComments[curriculum.curriculumId] ? 'Đóng Comment' : 'Comment'}
+                                            </StyledButton>
                                         </Box>
+
+                                        {/* Comment Dropdown Section */}
+                                        <Collapse in={expandedComments[curriculum.curriculumId]} timeout="auto" unmountOnExit>
+                                            <Box sx={{ mt: 3, pt: 3, borderTop: `2px solid ${COLORS.background.secondary}` }}>
+                                                {/* Comment Form */}
+                                                <DashboardCard sx={{ mb: 3 }}>
+                                                    <CardHeader bgcolor={COLORS.primary}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                            <SendIcon sx={{ mr: 1 }} />
+                                                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                                                Ghi nhận xét
+                                                            </Typography>
+                                                        </Box>
+                                                    </CardHeader>
+                                                    <CardContent sx={{ p: 3 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            multiline
+                                                            rows={4}
+                                                            placeholder="Nhập nhận xét của bạn về chương trình..."
+                                                            value={newComments[curriculum.curriculumId] || ''}
+                                                            onChange={(e) => handleCommentChange(curriculum.curriculumId, e.target.value)}
+                                                            variant="outlined"
+                                                            sx={{
+                                                                '& .MuiOutlinedInput-root': {
+                                                                    borderRadius: 2,
+                                                                    '&:hover fieldset': {
+                                                                        borderColor: COLORS.primary,
+                                                                    },
+                                                                    '&.Mui-focused fieldset': {
+                                                                        borderColor: COLORS.primary,
+                                                                    },
+                                                                }
+                                                            }}
+                                                        />
+                                                        {commentErrors[curriculum.curriculumId] && (
+                                                            <Alert
+                                                                severity={commentErrors[curriculum.curriculumId].includes('thành công') ? 'success' : 'error'}
+                                                                sx={{ mt: 2, borderRadius: 2 }}
+                                                            >
+                                                                {commentErrors[curriculum.curriculumId]}
+                                                            </Alert>
+                                                        )}
+                                                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                                                            <StyledButton
+                                                                variant="contained"
+                                                                startIcon={<SendIcon />}
+                                                                onClick={() => submitComment(curriculum.curriculumId)}
+                                                                disabled={commentSubmitting[curriculum.curriculumId] || !newComments[curriculum.curriculumId]?.trim()}
+                                                                sx={{
+                                                                    bgcolor: COLORS.primary,
+                                                                    '&:hover': {
+                                                                        bgcolor: COLORS.primary,
+                                                                        opacity: 0.9
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {commentSubmitting[curriculum.curriculumId] ? 'Đang gửi...' : 'Gửi nhận xét'}
+                                                            </StyledButton>
+                                                        </Box>
+                                                    </CardContent>
+                                                </DashboardCard>
+
+                                                {/* Comments List */}
+                                                <DashboardCard>
+                                                    <CardHeader bgcolor={COLORS.primary}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                            <CommentIcon sx={{ mr: 1 }} />
+                                                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                                                Danh sách nhận xét
+                                                            </Typography>
+                                                        </Box>
+                                                    </CardHeader>
+                                                    <CardContent sx={{ p: 3 }}>
+                                                        {commentLoading[curriculum.curriculumId] ? (
+                                                            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                                                                <CircularProgress size={30} sx={{ color: COLORS.primary }} />
+                                                            </Box>
+                                                        ) : (comments[curriculum.curriculumId] || []).length === 0 ? (
+                                                            <Box sx={{
+                                                                textAlign: 'center',
+                                                                p: 3,
+                                                                bgcolor: COLORS.background.secondary,
+                                                                borderRadius: 2
+                                                            }}>
+                                                                <Typography sx={{ color: COLORS.text.secondary }}>
+                                                                    Chưa có nhận xét nào cho chương trình này
+                                                                </Typography>
+                                                            </Box>
+                                                        ) : (
+                                                            <MuiList sx={{ bgcolor: 'transparent' }}>
+                                                                {(comments[curriculum.curriculumId] || []).map((comment, index) => (
+                                                                    <ListItem
+                                                                        key={comment.curriculumFeedbackId || index}
+                                                                        sx={{
+                                                                            bgcolor: index % 2 === 0 ? COLORS.background.secondary : 'transparent',
+                                                                            borderRadius: 2,
+                                                                            mb: 1,
+                                                                            border: `1px solid ${COLORS.background.secondary}`,
+                                                                            alignItems: 'flex-start'
+                                                                        }}
+                                                                    >
+                                                                        <ListItemIcon sx={{ mt: 1 }}>
+                                                                            {comment.imgURL ? (
+                                                                                <Avatar
+                                                                                    src={comment.imgURL}
+                                                                                    sx={{
+                                                                                        width: 40,
+                                                                                        height: 40,
+                                                                                        border: `2px solid ${COLORS.primary}`
+                                                                                    }}
+                                                                                />
+                                                                            ) : (
+                                                                                <Avatar sx={{
+                                                                                    bgcolor: COLORS.primary,
+                                                                                    width: 40,
+                                                                                    height: 40
+                                                                                }}>
+                                                                                    <PersonIcon />
+                                                                                </Avatar>
+                                                                            )}
+                                                                        </ListItemIcon>
+                                                                        <ListItemText
+                                                                            primary={
+                                                                                <Box>
+                                                                                    <Typography variant="body1" sx={{
+                                                                                        color: COLORS.text.primary,
+                                                                                        lineHeight: 1.6,
+                                                                                        mb: 1
+                                                                                    }}>
+                                                                                        {comment.body}
+                                                                                    </Typography>
+                                                                                    {comment.user && (
+                                                                                        <Typography variant="caption" sx={{
+                                                                                            color: COLORS.primary,
+                                                                                            fontWeight: 600,
+                                                                                            display: 'block',
+                                                                                            mb: 0.5
+                                                                                        }}>
+                                                                                            {comment.user}
+                                                                                        </Typography>
+                                                                                    )}
+                                                                                    {comment.timeStamp && (
+                                                                                        <Typography variant="caption" sx={{
+                                                                                            color: COLORS.text.secondary,
+                                                                                        }}>
+                                                                                            {comment.timeStamp}
+                                                                                        </Typography>
+                                                                                    )}
+                                                                                </Box>
+                                                                            }
+                                                                        />
+                                                                    </ListItem>
+                                                                ))}
+                                                            </MuiList>
+                                                        )}
+                                                    </CardContent>
+                                                </DashboardCard>
+                                            </Box>
+                                        </Collapse>
 
                                         <Divider sx={{ my: 3 }} />
 
