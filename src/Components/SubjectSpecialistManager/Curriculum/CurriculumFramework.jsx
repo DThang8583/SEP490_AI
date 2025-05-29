@@ -210,6 +210,33 @@ const CurriculumFramework = ({ sidebarOpen }) => {
 
     const [curriculumReloadKey, setCurriculumReloadKey] = useState(0);
 
+    // Thêm state cho lesson edit với các trường mới
+    const [editedLesson, setEditedLesson] = useState({
+        name: '',
+        totalPeriods: '',
+        lessonTypeId: '',
+        noteId: '',
+        weekId: '',
+        moduleId: ''
+    });
+
+    // State cho các dropdown options
+    const [lessonTypes, setLessonTypes] = useState([]);
+    const [notes, setNotes] = useState([]);
+    const [weeks, setWeeks] = useState([]);
+    const [optionsLoading, setOptionsLoading] = useState(false);
+
+    // Cập nhật thêm state cho lesson edit dialog
+    const [openEditLessonDialog, setOpenEditLessonDialog] = useState(false);
+
+    // Thêm state cho delete lesson
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [lessonToDelete, setLessonToDelete] = useState(null);
+
+    // Thêm state mới cho dialog edit module
+    const [openEditModuleDialog, setOpenEditModuleDialog] = useState(false);
+
     const sidebarWidth = sidebarOpen ? 60 : 240;
     const navigate = useNavigate();
 
@@ -510,16 +537,19 @@ const CurriculumFramework = ({ sidebarOpen }) => {
 
     const handleSemesterChange = (semester) => setCurrentSemester(semester);
 
-    const handleEditModuleClick = (module) => {
+    const handleEditModuleClick = (module, curriculumId) => {
         setSelectedModuleId(module.moduleId);
         setEditModuleMode(true);
         setEditedModule({
             name: module.name,
-            book: module.book,
             semester: module.semester,
-            totalPeriods: module.totalPeriods
+            totalPeriods: module.totalPeriods,
+            bookId: 1, // Mặc định bookId = 1
+            curriculumId: curriculumId, // curriculumId được truyền vào
+            gradeId: userGradeId // gradeId giống edit curriculum
         });
         setModuleDetails(module);
+        setOpenEditModuleDialog(true); // Thêm state mới cho dialog
     };
 
     const handleModuleInputChange = (e) => {
@@ -533,23 +563,24 @@ const CurriculumFramework = ({ sidebarOpen }) => {
             const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
             const updatedModule = {
-                ...moduleDetails,
                 name: editedModule.name,
-                book: editedModule.book,
                 semester: parseInt(editedModule.semester, 10),
                 totalPeriods: parseInt(editedModule.totalPeriods, 10),
-                gradeNumber: userGradeNumber,
+                bookId: 1, // Mặc định bookId = 1
+                curriculumId: editedModule.curriculumId,
+                gradeId: userGradeId
             };
 
             const response = await axios.put(`${MODULE_API_URL}/${selectedModuleId}`, updatedModule, config);
 
-            if (response.data.code !== 0) {
+            if (response.data.code !== 0 && response.data.code !== 22) {
                 throw new Error(response.data.message || 'Lỗi khi cập nhật dữ liệu');
             }
 
             // Fetch lại toàn bộ dữ liệu modules sau khi cập nhật
             await fetchModules(userGradeNumber);
             setEditModuleMode(false);
+            setOpenEditModuleDialog(false);
             alert('Cập nhật module thành công!');
         } catch (error) {
             alert('Không thể cập nhật module. Vui lòng thử lại: ' + error.message);
@@ -557,12 +588,28 @@ const CurriculumFramework = ({ sidebarOpen }) => {
     };
 
     const handleCancelModuleEdit = () => {
+        setOpenEditModuleDialog(false);
         setEditModuleMode(false);
         setEditedModule({
-            name: moduleDetails.name,
-            book: moduleDetails.book,
-            semester: moduleDetails.semester,
-            totalPeriods: moduleDetails.totalPeriods
+            name: '',
+            semester: 1,
+            totalPeriods: '',
+            bookId: 1,
+            curriculumId: '',
+            gradeId: userGradeId
+        });
+    };
+
+    const handleCloseEditModuleDialog = () => {
+        setOpenEditModuleDialog(false);
+        setEditModuleMode(false);
+        setEditedModule({
+            name: '',
+            semester: 1,
+            totalPeriods: '',
+            bookId: 1,
+            curriculumId: '',
+            gradeId: userGradeId
         });
     };
 
@@ -572,43 +619,207 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                 const accessToken = localStorage.getItem('accessToken');
                 const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
+                console.log('Starting delete module request for moduleId:', moduleId);
+                console.log('Config:', config);
+
                 const response = await axios.delete(`${MODULE_API_URL}/${moduleId}`, config);
 
-                if (response.data.code !== 0) {
+                console.log('Delete module response:', response);
+                console.log('Response status:', response.status);
+                console.log('Response data:', response.data);
+                console.log('Response data code:', response.data.code);
+
+                if (response.data.code !== 0 && response.data.code !== 22) {
+                    console.error('API returned error code:', response.data.code);
+                    console.error('API error message:', response.data.message);
                     throw new Error(response.data.message || 'Lỗi khi xóa module');
                 }
 
+                console.log('Delete module successful, fetching updated modules...');
                 // Fetch lại toàn bộ dữ liệu modules sau khi xóa
                 await fetchModules(userGradeNumber);
                 if (selectedModuleId === moduleId) {
                     setSelectedModuleId(null);
                     setLessons([]);
                 }
+                console.log('Module deleted successfully!');
                 alert('Xóa module thành công!');
             } catch (error) {
                 console.error('Error deleting module:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    response: error.response,
+                    request: error.request,
+                    stack: error.stack
+                });
+
+                if (error.response) {
+                    console.error('Error response status:', error.response.status);
+                    console.error('Error response data:', error.response.data);
+                    console.error('Error response headers:', error.response.headers);
+                }
+
                 alert('Không thể xóa module. Vui lòng thử lại.');
             }
         }
     };
 
-    const handleEditLessonClick = (lesson) => {
-        setEditLessonMode(lesson.lessonId);
-        setEditedLessonName(lesson.name);
-        setEditedLessonPeriods(lesson.totalPeriods || '1');
+    const handleEditLessonClick = async (lesson) => {
+        try {
+            // Đảm bảo các options đã được load
+            if (lessonTypes.length === 0 || notes.length === 0 || weeks.length === 0) {
+                setOptionsLoading(true);
+                await Promise.all([
+                    fetchLessonTypes(),
+                    fetchNotes(),
+                    fetchWeeks()
+                ]);
+                setOptionsLoading(false);
+            }
 
-        // Validate input
-        if (!lesson.name || !lesson.totalPeriods) {
-            alert('Thông tin bài học không hợp lệ');
-            return;
+            // Tìm module mà lesson này thuộc về từ dữ liệu modules hiện tại
+            const parentModule = modules.find(module =>
+                module.lessons && module.lessons.some(l => l.lessonId === lesson.lessonId)
+            );
+
+            // Fetch chi tiết lesson từ API để có đầy đủ thông tin
+            const accessToken = localStorage.getItem('accessToken');
+            const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+            const response = await axios.get(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lesson.lessonId}/info`,
+                config
+            );
+
+            if (response.data.code === 0) {
+                const lessonData = response.data.data;
+                console.log('Lesson data from API:', lessonData); // Debug log
+                console.log('Parent Module:', parentModule); // Debug log
+
+                // Map dữ liệu để lấy ID từ text/name
+                let lessonTypeId = '';
+                let noteId = '';
+                let weekId = '';
+
+                // Xử lý lessonTypeId
+                if (lessonData.lessonTypeId) {
+                    lessonTypeId = String(lessonData.lessonTypeId);
+                } else if (lessonData.lessonType && lessonTypes.length > 0) {
+                    const foundLessonType = lessonTypes.find(type =>
+                        type.lessonTypeName === lessonData.lessonType
+                    );
+                    if (foundLessonType) {
+                        lessonTypeId = String(foundLessonType.lessonTypeId);
+                    }
+                }
+
+                // Xử lý noteId
+                if (lessonData.noteId) {
+                    noteId = String(lessonData.noteId);
+                } else if (lessonData.note && notes.length > 0) {
+                    const foundNote = notes.find(note =>
+                        note.description === lessonData.note
+                    );
+                    if (foundNote) {
+                        noteId = String(foundNote.noteId);
+                    }
+                }
+
+                // Xử lý weekId
+                if (lessonData.weekId) {
+                    weekId = String(lessonData.weekId);
+                } else if (lessonData.week && weeks.length > 0) {
+                    const foundWeek = weeks.find(week =>
+                        week.weekNumber === lessonData.week
+                    );
+                    if (foundWeek) {
+                        weekId = String(foundWeek.weekId);
+                    }
+                }
+
+                // Lấy moduleId từ parent module hoặc từ API response
+                const moduleIdForLesson = parentModule
+                    ? String(parentModule.moduleId)
+                    : String(lessonData.moduleId || selectedModuleId || '');
+
+                console.log('Final moduleId for edit:', moduleIdForLesson); // Debug log
+
+                setEditLessonMode(lesson.lessonId);
+                setEditedLesson({
+                    name: lessonData.name || lesson.name,
+                    totalPeriods: String(lessonData.totalPeriods || lesson.totalPeriods || '1'),
+                    lessonTypeId: lessonTypeId,
+                    noteId: noteId,
+                    weekId: weekId,
+                    moduleId: moduleIdForLesson
+                });
+                setOpenEditLessonDialog(true);
+            } else {
+                // Fallback nếu không lấy được chi tiết
+                const moduleIdForLesson = parentModule
+                    ? String(parentModule.moduleId)
+                    : String(selectedModuleId || '');
+
+                setEditLessonMode(lesson.lessonId);
+                setEditedLesson({
+                    name: lesson.name,
+                    totalPeriods: String(lesson.totalPeriods || '1'),
+                    lessonTypeId: '',
+                    noteId: '',
+                    weekId: '',
+                    moduleId: moduleIdForLesson
+                });
+                setOpenEditLessonDialog(true);
+            }
+        } catch (error) {
+            console.error('Error fetching lesson details for edit:', error);
+
+            // Tìm module mà lesson này thuộc về trong trường hợp lỗi
+            const parentModule = modules.find(module =>
+                module.lessons && module.lessons.some(l => l.lessonId === lesson.lessonId)
+            );
+
+            const moduleIdForLesson = parentModule
+                ? String(parentModule.moduleId)
+                : String(selectedModuleId || '');
+
+            // Fallback nếu có lỗi
+            setEditLessonMode(lesson.lessonId);
+            setEditedLesson({
+                name: lesson.name,
+                totalPeriods: String(lesson.totalPeriods || '1'),
+                lessonTypeId: '',
+                noteId: '',
+                weekId: '',
+                moduleId: moduleIdForLesson
+            });
+            setOpenEditLessonDialog(true);
         }
     };
 
-    const handleLessonInputChange = (e) => setEditedLessonName(e.target.value);
-    const handleLessonPeriodsChange = (e) => setEditedLessonPeriods(e.target.value);
+    const handleEditedLessonInputChange = (e) => {
+        const { name, value } = e.target;
+        setEditedLesson(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleCloseEditLessonDialog = () => {
+        setOpenEditLessonDialog(false);
+        setEditLessonMode(null);
+        setEditedLesson({
+            name: '',
+            totalPeriods: '',
+            lessonTypeId: '',
+            noteId: '',
+            weekId: '',
+            moduleId: ''
+        });
+    };
 
     const handleSaveLessonEdit = async (lessonId) => {
-        if (!editedLessonName.trim() || !editedLessonPeriods || isNaN(Number(editedLessonPeriods)) || Number(editedLessonPeriods) < 1) {
+        if (!editedLesson.name.trim() || !editedLesson.totalPeriods || isNaN(Number(editedLesson.totalPeriods)) || Number(editedLesson.totalPeriods) < 1) {
             alert('Vui lòng nhập đầy đủ thông tin và số tiết phải lớn hơn 0');
             return;
         }
@@ -618,20 +829,48 @@ const CurriculumFramework = ({ sidebarOpen }) => {
             const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
             const updatedLesson = {
-                name: editedLessonName.trim(),
-                moduleId: Number(selectedModuleId),
-                totalPeriods: Number(editedLessonPeriods)
+                name: editedLesson.name.trim(),
+                moduleId: Number(editedLesson.moduleId || selectedModuleId),
+                totalPeriods: Number(editedLesson.totalPeriods),
+                lessonTypeId: editedLesson.lessonTypeId ? Number(editedLesson.lessonTypeId) : undefined,
+                noteId: editedLesson.noteId ? Number(editedLesson.noteId) : undefined,
+                weekId: editedLesson.weekId ? Number(editedLesson.weekId) : undefined,
             };
+
+            // Loại bỏ các field undefined
+            Object.keys(updatedLesson).forEach(key =>
+                updatedLesson[key] === undefined && delete updatedLesson[key]
+            );
 
             const response = await axios.put(`${LESSON_API_URL}/${lessonId}`, updatedLesson, config);
 
-            if (response.data.code !== 0) {
+            if (response.data.code !== 0 && response.data.code !== 22) {
                 throw new Error(response.data.message || 'Lỗi khi cập nhật bài học');
             }
 
             // Fetch lại toàn bộ dữ liệu modules sau khi cập nhật bài học
             await fetchModules(userGradeNumber);
-            setEditLessonMode(null);
+
+            // Nếu đang xem chi tiết module, fetch lại module details
+            if (selectedModuleId) {
+                await fetchModuleDetails(selectedModuleId);
+            }
+
+            // Clear lesson details cache để force reload khi expand
+            setLessonDetails(prev => {
+                const updated = { ...prev };
+                delete updated[lessonId];
+                return updated;
+            });
+
+            // Reset expanded lesson nếu lesson đang được expand
+            if (expandedLessonId === lessonId) {
+                setExpandedLessonId(null);
+            }
+
+            // Đóng dialog và reset state
+            handleCloseEditLessonDialog();
+
             alert('Cập nhật bài học thành công!');
         } catch (error) {
             if (error.response && error.response.data && error.response.data.message) {
@@ -643,69 +882,223 @@ const CurriculumFramework = ({ sidebarOpen }) => {
         }
     };
 
-    const handleCancelLessonEdit = () => {
-        setEditLessonMode(null);
-        setEditedLessonName('');
-        setEditedLessonPeriods('');
+    const handleDeleteLesson = (lesson, moduleId) => {
+        handleOpenDeleteDialog(lesson, moduleId);
     };
 
-    const handleDeleteLesson = async (lessonId, moduleId) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa bài học này?')) {
-            try {
-                const accessToken = localStorage.getItem('accessToken');
-                const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+    const handleOpenDeleteDialog = (lesson, moduleId) => {
+        setLessonToDelete({ ...lesson, moduleId });
+        setOpenDeleteDialog(true);
+    };
 
-                const response = await axios.delete(`${LESSON_API_URL}/${lessonId}`, config);
+    const handleCloseDeleteDialog = () => {
+        setOpenDeleteDialog(false);
+        setLessonToDelete(null);
+    };
 
-                if (response.data.code !== 0) {
-                    throw new Error(response.data.message || 'Lỗi khi xóa bài học');
-                }
+    const handleConfirmDeleteLesson = async () => {
+        if (!lessonToDelete) return;
 
-                // Fetch lại toàn bộ dữ liệu modules sau khi xóa bài học
-                await fetchModules(userGradeNumber);
-                alert('Xóa bài học thành công!');
-            } catch (error) {
-                console.error('Error deleting lesson:', error);
-                alert('Không thể xóa bài học. Vui lòng thử lại.');
+        setDeleteLoading(true);
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                alert('Vui lòng đăng nhập để thực hiện thao tác này.');
+                return;
             }
+
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            console.log(`Deleting lesson with ID: ${lessonToDelete.lessonId}`); // Debug log
+
+            const response = await axios.delete(`${LESSON_API_URL}/${lessonToDelete.lessonId}`, config);
+
+            console.log('Delete response:', response.data); // Debug log
+
+            if (response.data.code !== 0 && response.data.code !== 22) {
+                throw new Error(response.data.message || 'Lỗi khi xóa bài học');
+            }
+
+            // Fetch lại toàn bộ dữ liệu modules sau khi xóa bài học
+            await fetchModules(userGradeNumber);
+
+            // Đóng dialog
+            handleCloseDeleteDialog();
+
+            // Hiển thị thông báo thành công
+            alert('Xóa bài học thành công!');
+
+        } catch (error) {
+            console.error('Error deleting lesson:', error);
+
+            let errorMessage = 'Không thể xóa bài học. Vui lòng thử lại.';
+
+            if (error.response) {
+                // Server responded with error status
+                const { status, data } = error.response;
+                if (status === 401) {
+                    errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
+                } else if (status === 404) {
+                    errorMessage = 'Bài học không tồn tại hoặc đã bị xóa.';
+                } else if (status === 403) {
+                    errorMessage = 'Bạn không có quyền xóa bài học này.';
+                } else if (data && data.message) {
+                    errorMessage = `Lỗi: ${data.message}`;
+                }
+            } else if (error.request) {
+                // Network error
+                errorMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet.';
+            }
+
+            alert(errorMessage);
+        } finally {
+            setDeleteLoading(false);
         }
     };
 
-    const handleOpenAddLessonDialog = () => {
-        setOpenAddLessonDialog(true);
-        setNewLessonName('');
-        setNewLessonPeriods('1');
+    // Cập nhật state cho new lesson với đầy đủ các trường
+    const [newLesson, setNewLesson] = useState({
+        name: '',
+        description: '',
+        totalPeriods: '1',
+        lessonTypeId: '',
+        noteId: '',
+        weekId: '',
+        moduleId: ''
+    });
+
+    const handleOpenAddLessonDialog = async () => {
+        try {
+            // Đảm bảo các options đã được load
+            if (lessonTypes.length === 0 || notes.length === 0 || weeks.length === 0) {
+                setOptionsLoading(true);
+                await Promise.all([
+                    fetchLessonTypes(),
+                    fetchNotes(),
+                    fetchWeeks()
+                ]);
+                setOptionsLoading(false);
+            }
+
+            setOpenAddLessonDialog(true);
+            setNewLesson({
+                name: '',
+                description: '',
+                totalPeriods: '1',
+                lessonTypeId: '',
+                noteId: '',
+                weekId: '',
+                moduleId: String(selectedModuleId)
+            });
+        } catch (error) {
+            console.error('Error loading options for add lesson:', error);
+            setOpenAddLessonDialog(true);
+            setNewLesson({
+                name: '',
+                description: '',
+                totalPeriods: '1',
+                lessonTypeId: '',
+                noteId: '',
+                weekId: '',
+                moduleId: String(selectedModuleId)
+            });
+        }
     };
 
     const handleCloseAddLessonDialog = () => {
         setOpenAddLessonDialog(false);
-        setNewLessonName('');
-        setNewLessonPeriods('1');
+        setNewLesson({
+            name: '',
+            description: '',
+            totalPeriods: '1',
+            lessonTypeId: '',
+            noteId: '',
+            weekId: '',
+            moduleId: ''
+        });
+    };
+
+    const handleNewLessonInputChange = (e) => {
+        const { name, value } = e.target;
+        setNewLesson(prev => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
     const handleAddLesson = async () => {
+        if (!newLesson.name.trim() || !newLesson.totalPeriods || !newLesson.moduleId || !newLesson.lessonTypeId || !newLesson.noteId || !newLesson.weekId) {
+            alert('Vui lòng nhập đầy đủ thông tin bắt buộc (Tên bài học, Số tiết, Module, Loại bài học, Ghi chú, Tuần)');
+            return;
+        }
+
+        if (isNaN(Number(newLesson.totalPeriods)) || Number(newLesson.totalPeriods) < 1) {
+            alert('Số tiết phải là số nguyên lớn hơn 0');
+            return;
+        }
+
         try {
             const accessToken = localStorage.getItem('accessToken');
             const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-            const newLesson = {
-                name: newLessonName,
-                moduleId: parseInt(selectedModuleId, 10),
-                totalPeriods: parseInt(newLessonPeriods, 10)
+            const lessonData = {
+                name: newLesson.name.trim(),
+                description: newLesson.description.trim(),
+                totalPeriods: Number(newLesson.totalPeriods),
+                moduleId: Number(newLesson.moduleId),
+                lessonTypeId: Number(newLesson.lessonTypeId),
+                noteId: Number(newLesson.noteId),
+                weekId: Number(newLesson.weekId),
             };
 
-            const response = await axios.post(LESSON_API_URL, newLesson, config);
+            console.log('Sending lesson data:', lessonData); // Debug log
 
-            if (response.data.code !== 0) {
-                throw new Error(response.data.message || 'Lỗi khi thêm bài học');
+            const response = await axios.post(LESSON_API_URL, lessonData, config);
+
+            console.log('Full API response:', response.data); // Debug log để xem response đầy đủ
+
+            // Cải thiện logic xử lý response
+            const { data } = response;
+            const isSuccess = (
+                data.code === 0 ||
+                data.code === 22 ||
+                data.message === "Created successfully!" ||
+                response.status === 200 ||
+                response.status === 201
+            );
+
+            if (!isSuccess) {
+                throw new Error(data.message || 'Lỗi khi thêm bài học');
             }
 
             // Fetch lại toàn bộ dữ liệu modules sau khi thêm bài học
             await fetchModules(userGradeNumber);
             handleCloseAddLessonDialog();
             alert('Thêm bài học thành công!');
+
         } catch (error) {
-            alert('Không thể thêm bài học. Vui lòng thử lại.');
+            console.error('Error adding lesson:', error);
+
+            // Kiểm tra xem có phải là success response bị nhầm lẫn không
+            if (error.message && error.message.includes("Created successfully")) {
+                // Đây thực ra là success, không phải error
+                await fetchModules(userGradeNumber);
+                handleCloseAddLessonDialog();
+                alert('Thêm bài học thành công!');
+                return;
+            }
+
+            // Xử lý error thực sự
+            if (error.response && error.response.data && error.response.data.message) {
+                alert('Lỗi: ' + error.response.data.message);
+            } else {
+                alert('Không thể thêm bài học. Vui lòng thử lại.');
+            }
         }
     };
 
@@ -744,7 +1137,7 @@ const CurriculumFramework = ({ sidebarOpen }) => {
 
             const response = await axios.post(MODULE_API_URL, moduleToAdd, config);
 
-            if (response.data.code !== 0) {
+            if (response.data.code !== 0 && response.data.code !== 22) {
                 throw new Error(response.data.message || 'Lỗi khi thêm module');
             }
 
@@ -800,13 +1193,59 @@ const CurriculumFramework = ({ sidebarOpen }) => {
         }
     }, [grades, userGradeNumber]);
 
+    // Fetch lesson types từ API
+    const fetchLessonTypes = useCallback(async () => {
+        try {
+            const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-types');
+            if (response.data.code === 0) {
+                setLessonTypes(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching lesson types:', error);
+        }
+    }, []);
+
+    // Fetch notes từ API
+    const fetchNotes = useCallback(async () => {
+        try {
+            const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/notes');
+            if (response.data.code === 0) {
+                setNotes(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching notes:', error);
+        }
+    }, []);
+
+    // Fetch weeks từ API
+    const fetchWeeks = useCallback(async () => {
+        try {
+            const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/weeks');
+            if (response.data.code === 0) {
+                setWeeks(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching weeks:', error);
+        }
+    }, []);
+
+    // Fetch tất cả options khi component mount
+    useEffect(() => {
+        const fetchAllOptions = async () => {
+            setOptionsLoading(true);
+            await Promise.all([
+                fetchLessonTypes(),
+                fetchNotes(),
+                fetchWeeks()
+            ]);
+            setOptionsLoading(false);
+        };
+        fetchAllOptions();
+    }, [fetchLessonTypes, fetchNotes, fetchWeeks]);
+
     // Thêm function để fetch lesson details
     const fetchLessonDetails = useCallback(async (lessonId) => {
-        console.log('fetchLessonDetails called with:', lessonId);
-        console.log('Current lessonDetails:', lessonDetails);
-
         if (lessonDetails[lessonId]) {
-            console.log('Lesson details already exist for:', lessonId);
             return;
         }
 
@@ -816,20 +1255,16 @@ const CurriculumFramework = ({ sidebarOpen }) => {
             const accessToken = localStorage.getItem('accessToken');
             const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-            console.log('Calling API for lesson:', lessonId);
             const response = await axios.get(
                 `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}/info`,
                 config
             );
-
-            console.log('API response:', response.data);
 
             if (response.data.code === 0) {
                 setLessonDetails(prev => ({
                     ...prev,
                     [lessonId]: response.data.data
                 }));
-                console.log('Lesson details saved for:', lessonId, response.data.data);
             } else {
                 setLessonDetailError('Không thể tải thông tin chi tiết bài học: ' + response.data.message);
             }
@@ -843,14 +1278,9 @@ const CurriculumFramework = ({ sidebarOpen }) => {
 
     // Thêm function để handle click vào lesson
     const handleLessonClick = async (lessonId) => {
-        console.log('handleLessonClick called with:', lessonId);
-        console.log('Current expandedLessonId:', expandedLessonId);
-
         if (expandedLessonId === lessonId) {
-            console.log('Collapsing lesson:', lessonId);
             setExpandedLessonId(null);
         } else {
-            console.log('Expanding lesson:', lessonId);
             setExpandedLessonId(lessonId);
             await fetchLessonDetails(lessonId);
         }
@@ -1228,18 +1658,23 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                                                     </Typography>
                                                                                                     <Box>
                                                                                                         <IconButton
-                                                                                                            onClick={() => handleEditModuleClick(module)}
+                                                                                                            onClick={(e) => {
+                                                                                                                e.stopPropagation();
+                                                                                                                handleEditModuleClick(module, curriculum.curriculumId);
+                                                                                                            }}
                                                                                                             sx={{
                                                                                                                 color: COLORS.primary,
                                                                                                                 bgcolor: 'rgba(6, 169, 174, 0.08)',
-                                                                                                                mr: 1,
                                                                                                                 '&:hover': { bgcolor: 'rgba(6, 169, 174, 0.15)' }
                                                                                                             }}
                                                                                                         >
                                                                                                             <EditIcon />
                                                                                                         </IconButton>
                                                                                                         <IconButton
-                                                                                                            onClick={() => handleDeleteModule(module.moduleId)}
+                                                                                                            onClick={(e) => {
+                                                                                                                e.stopPropagation();
+                                                                                                                handleDeleteModule(module.moduleId);
+                                                                                                            }}
                                                                                                             sx={{
                                                                                                                 color: COLORS.error,
                                                                                                                 bgcolor: 'rgba(255, 72, 66, 0.08)',
@@ -1319,31 +1754,21 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                                                                                     }
                                                                                                                                 }}
                                                                                                                             >
-                                                                                                                                {editLessonMode === lesson.lessonId ? (
-                                                                                                                                    <TextField
-                                                                                                                                        value={editedLessonName}
-                                                                                                                                        onChange={handleLessonInputChange}
-                                                                                                                                        fullWidth
-                                                                                                                                        variant="outlined"
-                                                                                                                                        size="small"
-                                                                                                                                        onClick={(e) => e.stopPropagation()}
-                                                                                                                                    />
-                                                                                                                                ) : (
-                                                                                                                                    <>
-                                                                                                                                        <InfoIcon sx={{ mr: 1, color: COLORS.primary, fontSize: 18 }} />
-                                                                                                                                        {lesson.name}
-                                                                                                                                    </>
-                                                                                                                                )}
+                                                                                                                                <>
+                                                                                                                                    <InfoIcon sx={{ mr: 1, color: COLORS.primary, fontSize: 18 }} />
+                                                                                                                                    {lesson.name}
+                                                                                                                                </>
                                                                                                                             </TableCell>
                                                                                                                             <TableCell align="center">
                                                                                                                                 {editLessonMode === lesson.lessonId ? (
                                                                                                                                     <TextField
                                                                                                                                         value={editedLessonPeriods}
-                                                                                                                                        onChange={handleLessonPeriodsChange}
+                                                                                                                                        onChange={handleEditedLessonInputChange}
                                                                                                                                         type="number"
                                                                                                                                         variant="outlined"
                                                                                                                                         size="small"
                                                                                                                                         sx={{ width: '80px' }}
+                                                                                                                                        inputProps={{ min: 1 }}
                                                                                                                                         onClick={(e) => e.stopPropagation()}
                                                                                                                                     />
                                                                                                                                 ) : (
@@ -1360,28 +1785,37 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                                                                                         <IconButton
                                                                                                                                             onClick={(e) => {
                                                                                                                                                 e.stopPropagation();
-                                                                                                                                                handleSaveLessonEdit(lesson.lessonId);
+                                                                                                                                                handleEditLessonClick(lesson);
                                                                                                                                             }}
                                                                                                                                             sx={{
-                                                                                                                                                color: COLORS.success,
-                                                                                                                                                bgcolor: 'rgba(0, 171, 85, 0.08)',
-                                                                                                                                                '&:hover': { bgcolor: 'rgba(0, 171, 85, 0.15)' }
+                                                                                                                                                color: COLORS.primary,
+                                                                                                                                                bgcolor: 'rgba(6, 169, 174, 0.08)',
+                                                                                                                                                '&:hover': { bgcolor: 'rgba(6, 169, 174, 0.15)' }
                                                                                                                                             }}
                                                                                                                                         >
-                                                                                                                                            <CheckIcon />
+                                                                                                                                            <EditIcon />
                                                                                                                                         </IconButton>
                                                                                                                                         <IconButton
                                                                                                                                             onClick={(e) => {
                                                                                                                                                 e.stopPropagation();
-                                                                                                                                                handleCancelLessonEdit();
+                                                                                                                                                handleDeleteLesson(lesson, module.moduleId);
                                                                                                                                             }}
                                                                                                                                             sx={{
                                                                                                                                                 color: COLORS.error,
                                                                                                                                                 bgcolor: 'rgba(255, 72, 66, 0.08)',
-                                                                                                                                                '&:hover': { bgcolor: 'rgba(255, 72, 66, 0.15)' }
+                                                                                                                                                '&:hover': {
+                                                                                                                                                    bgcolor: 'rgba(255, 72, 66, 0.15)',
+                                                                                                                                                    transform: 'scale(1.05)'
+                                                                                                                                                },
+                                                                                                                                                transition: 'all 0.2s ease'
                                                                                                                                             }}
+                                                                                                                                            disabled={deleteLoading}
                                                                                                                                         >
-                                                                                                                                            <CloseIcon />
+                                                                                                                                            {deleteLoading && lessonToDelete?.lessonId === lesson.lessonId ? (
+                                                                                                                                                <CircularProgress size={20} sx={{ color: COLORS.error }} />
+                                                                                                                                            ) : (
+                                                                                                                                                <DeleteIcon />
+                                                                                                                                            )}
                                                                                                                                         </IconButton>
                                                                                                                                     </Box>
                                                                                                                                 ) : (
@@ -1402,15 +1836,24 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                                                                                         <IconButton
                                                                                                                                             onClick={(e) => {
                                                                                                                                                 e.stopPropagation();
-                                                                                                                                                handleDeleteLesson(lesson.lessonId, module.moduleId);
+                                                                                                                                                handleDeleteLesson(lesson, module.moduleId);
                                                                                                                                             }}
                                                                                                                                             sx={{
                                                                                                                                                 color: COLORS.error,
                                                                                                                                                 bgcolor: 'rgba(255, 72, 66, 0.08)',
-                                                                                                                                                '&:hover': { bgcolor: 'rgba(255, 72, 66, 0.15)' }
+                                                                                                                                                '&:hover': {
+                                                                                                                                                    bgcolor: 'rgba(255, 72, 66, 0.15)',
+                                                                                                                                                    transform: 'scale(1.05)'
+                                                                                                                                                },
+                                                                                                                                                transition: 'all 0.2s ease'
                                                                                                                                             }}
+                                                                                                                                            disabled={deleteLoading}
                                                                                                                                         >
-                                                                                                                                            <DeleteIcon />
+                                                                                                                                            {deleteLoading && lessonToDelete?.lessonId === lesson.lessonId ? (
+                                                                                                                                                <CircularProgress size={20} sx={{ color: COLORS.error }} />
+                                                                                                                                            ) : (
+                                                                                                                                                <DeleteIcon />
+                                                                                                                                            )}
                                                                                                                                         </IconButton>
                                                                                                                                     </Box>
                                                                                                                                 )}
@@ -1421,8 +1864,6 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                                                                         <TableRow>
                                                                                                                             <TableCell colSpan={4} sx={{ p: 0, border: 'none' }}>
                                                                                                                                 <Collapse in={expandedLessonId === lesson.lessonId} timeout="auto" unmountOnExit>
-                                                                                                                                    {console.log('Rendering collapse for lesson:', lesson.lessonId, 'expandedLessonId:', expandedLessonId, 'should show:', expandedLessonId === lesson.lessonId)}
-
                                                                                                                                     <Box sx={{
                                                                                                                                         m: 2,
                                                                                                                                         p: 0,
@@ -1565,7 +2006,7 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                                                                                                                     fontSize: '0.7rem',
                                                                                                                                                                     letterSpacing: 0.5
                                                                                                                                                                 }}>
-                                                                                                                                                                    Tuần học
+                                                                                                                                                                    Tuần
                                                                                                                                                                 </Typography>
                                                                                                                                                                 <Typography variant="body1" sx={{
                                                                                                                                                                     color: COLORS.text.primary,
@@ -1673,7 +2114,6 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                     </TableBody>
                                                                 </Table>
                                                             </TableContainer>
-                                                            )}
                                                         </>
                                                     ) : (
                                                         <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -1754,110 +2194,1116 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                         </DialogActions>
                     </Dialog>
 
-                    {/* Add Lesson Dialog */}
-                    <Dialog open={openAddLessonDialog} onClose={handleCloseAddLessonDialog} maxWidth="sm" fullWidth>
-                        <DialogTitle>Thêm Bài Học Mới</DialogTitle>
-                        <DialogContent>
-                            <Stack spacing={2} sx={{ mt: 1 }}>
-                                <TextField
-                                    label="Tên bài học"
-                                    value={newLessonName}
-                                    onChange={(e) => setNewLessonName(e.target.value)}
-                                    fullWidth
-                                    required
-                                />
-                                <TextField
-                                    label="Số tiết"
-                                    type="number"
-                                    value={newLessonPeriods}
-                                    onChange={(e) => setNewLessonPeriods(e.target.value)}
-                                    fullWidth
-                                    required
-                                    inputProps={{ min: 1 }}
-                                />
+                    {/* Add Lesson Dialog - Improved UI/UX */}
+                    <Dialog
+                        open={openAddLessonDialog}
+                        onClose={handleCloseAddLessonDialog}
+                        maxWidth="md"
+                        fullWidth
+                        PaperProps={{
+                            sx: {
+                                borderRadius: 4,
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.12)',
+                                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                                overflow: 'hidden'
+                            }
+                        }}
+                    >
+                        {/* Enhanced Dialog Header */}
+                        <DialogTitle sx={{
+                            background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
+                            color: '#fff',
+                            p: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            position: 'relative',
+                            '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: '4px',
+                                background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)'
+                            }
+                        }}>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 48,
+                                height: 48,
+                                borderRadius: '12px',
+                                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                                backdropFilter: 'blur(10px)'
+                            }}>
+                                <AddIcon sx={{ fontSize: 28, color: '#fff' }} />
+                            </Box>
+                            <Box>
+                                <Typography variant="h5" sx={{
+                                    fontWeight: 700,
+                                    fontSize: '1.5rem',
+                                    mb: 0.5,
+                                    textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                                }}>
+                                    Thêm Bài Học Mới
+                                </Typography>
+                                <Typography variant="body2" sx={{
+                                    opacity: 0.9,
+                                    fontSize: '0.875rem'
+                                }}>
+                                    Tạo bài học mới cho chương trình giảng dạy
+                                </Typography>
+                            </Box>
+                        </DialogTitle>
+
+                        <DialogContent sx={{ p: 4, bgcolor: '#fff' }}>
+                            <Stack spacing={4} sx={{ mt: 1 }}>
+                                {/* Basic Information Section */}
+                                <Box>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        mb: 3,
+                                        pb: 2,
+                                        borderBottom: `2px solid ${COLORS.primary}20`
+                                    }}>
+                                        <InfoIcon sx={{
+                                            color: COLORS.primary,
+                                            mr: 1.5,
+                                            fontSize: 24
+                                        }} />
+                                        <Typography variant="h6" sx={{
+                                            color: COLORS.text.primary,
+                                            fontWeight: 600,
+                                            fontSize: '1.1rem'
+                                        }}>
+                                            Thông tin cơ bản
+                                        </Typography>
+                                    </Box>
+
+                                    <Stack spacing={3}>
+                                        <Box sx={{ position: 'relative' }}>
+                                            <TextField
+                                                label="Tên bài học"
+                                                name="name"
+                                                value={newLesson.name}
+                                                onChange={handleNewLessonInputChange}
+                                                fullWidth
+                                                required
+                                                variant="outlined"
+                                                placeholder="Nhập tên bài học..."
+                                                InputProps={{
+                                                    startAdornment: (
+                                                        <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+                                                            <AssignmentIcon sx={{ color: COLORS.primary, fontSize: 20 }} />
+                                                        </Box>
+                                                    ),
+                                                }}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            boxShadow: `0 4px 12px ${COLORS.primary}20`
+                                                        },
+                                                        '&.Mui-focused': {
+                                                            boxShadow: `0 4px 20px ${COLORS.primary}30`
+                                                        }
+                                                    }
+                                                }}
+                                                helperText={
+                                                    newLesson.name.trim() ?
+                                                        "✓ Tên bài học hợp lệ" :
+                                                        "Vui lòng nhập tên bài học"
+                                                }
+                                                FormHelperTextProps={{
+                                                    sx: {
+                                                        color: newLesson.name.trim() ? COLORS.success : COLORS.text.secondary,
+                                                        fontWeight: 500
+                                                    }
+                                                }}
+                                            />
+                                        </Box>
+
+                                        <TextField
+                                            label="Mô tả bài học"
+                                            name="description"
+                                            value={newLesson.description}
+                                            onChange={handleNewLessonInputChange}
+                                            fullWidth
+                                            multiline
+                                            rows={3}
+                                            variant="outlined"
+                                            placeholder="Nhập mô tả cho bài học (tùy chọn)..."
+                                            InputProps={{
+                                                startAdornment: (
+                                                    <Box sx={{ mr: 1, display: 'flex', alignItems: 'flex-start', mt: 1 }}>
+                                                        <NotesIcon sx={{ color: COLORS.primary, fontSize: 20 }} />
+                                                    </Box>
+                                                ),
+                                            }}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    borderRadius: 2,
+                                                    transition: 'all 0.3s ease',
+                                                    '&:hover': {
+                                                        boxShadow: `0 4px 12px ${COLORS.primary}20`
+                                                    },
+                                                    '&.Mui-focused': {
+                                                        boxShadow: `0 4px 20px ${COLORS.primary}30`
+                                                    }
+                                                }
+                                            }}
+                                        />
+
+                                        <TextField
+                                            select
+                                            label="Module"
+                                            name="moduleId"
+                                            value={newLesson.moduleId}
+                                            onChange={handleNewLessonInputChange}
+                                            fullWidth
+                                            required
+                                            variant="outlined"
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    borderRadius: 2,
+                                                    transition: 'all 0.3s ease',
+                                                    '&:hover': {
+                                                        boxShadow: `0 4px 12px ${COLORS.primary}20`
+                                                    },
+                                                    '&.Mui-focused': {
+                                                        boxShadow: `0 4px 20px ${COLORS.primary}30`
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            {modules.map((module) => (
+                                                <MenuItem key={module.moduleId} value={String(module.moduleId)}>
+                                                    {module.name}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    </Stack>
+                                </Box>
+
+                                {/* Schedule & Classification Section */}
+                                <Box>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        mb: 3,
+                                        pb: 2,
+                                        borderBottom: `2px solid ${COLORS.secondary}20`
+                                    }}>
+                                        <AccessTimeIcon sx={{
+                                            color: COLORS.secondary,
+                                            mr: 1.5,
+                                            fontSize: 24
+                                        }} />
+                                        <Typography variant="h6" sx={{
+                                            color: COLORS.text.primary,
+                                            fontWeight: 600,
+                                            fontSize: '1.1rem'
+                                        }}>
+                                            Phân loại & Thời gian
+                                        </Typography>
+                                    </Box>
+
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                select
+                                                label="Số tiết"
+                                                name="totalPeriods"
+                                                value={newLesson.totalPeriods}
+                                                onChange={handleNewLessonInputChange}
+                                                fullWidth
+                                                required
+                                                variant="outlined"
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            boxShadow: `0 4px 12px ${COLORS.secondary}20`
+                                                        },
+                                                        '&.Mui-focused': {
+                                                            boxShadow: `0 4px 20px ${COLORS.secondary}30`
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                <MenuItem value="1">1 tiết</MenuItem>
+                                                <MenuItem value="2">2 tiết</MenuItem>
+                                            </TextField>
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                select
+                                                label="Loại bài học"
+                                                name="lessonTypeId"
+                                                value={newLesson.lessonTypeId}
+                                                onChange={handleNewLessonInputChange}
+                                                fullWidth
+                                                required
+                                                variant="outlined"
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            boxShadow: `0 4px 12px ${COLORS.secondary}20`
+                                                        },
+                                                        '&.Mui-focused': {
+                                                            boxShadow: `0 4px 20px ${COLORS.secondary}30`
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {lessonTypes.map((type) => (
+                                                    <MenuItem key={type.lessonTypeId} value={type.lessonTypeId}>
+                                                        {type.lessonTypeName}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        </Grid>
+                                    </Grid>
+                                </Box>
+
+                                {/* Additional Details Section */}
+                                <Box>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        mb: 3,
+                                        pb: 2,
+                                        borderBottom: `2px solid ${COLORS.warning}20`
+                                    }}>
+                                        <DateRangeIcon sx={{
+                                            color: COLORS.warning,
+                                            mr: 1.5,
+                                            fontSize: 24
+                                        }} />
+                                        <Typography variant="h6" sx={{
+                                            color: COLORS.text.primary,
+                                            fontWeight: 600,
+                                            fontSize: '1.1rem'
+                                        }}>
+                                            Chi tiết bổ sung
+                                        </Typography>
+                                    </Box>
+
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                select
+                                                label="Ghi chú"
+                                                name="noteId"
+                                                value={newLesson.noteId}
+                                                onChange={handleNewLessonInputChange}
+                                                fullWidth
+                                                required
+                                                variant="outlined"
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            boxShadow: `0 4px 12px ${COLORS.warning}20`
+                                                        },
+                                                        '&.Mui-focused': {
+                                                            boxShadow: `0 4px 20px ${COLORS.warning}30`
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {notes.map((note) => (
+                                                    <MenuItem key={note.noteId} value={note.noteId}>
+                                                        {note.description}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                select
+                                                label="Tuần học"
+                                                name="weekId"
+                                                value={newLesson.weekId}
+                                                onChange={handleNewLessonInputChange}
+                                                fullWidth
+                                                required
+                                                variant="outlined"
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            boxShadow: `0 4px 12px ${COLORS.warning}20`
+                                                        },
+                                                        '&.Mui-focused': {
+                                                            boxShadow: `0 4px 20px ${COLORS.warning}30`
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {weeks.map((week) => (
+                                                    <MenuItem key={week.weekId} value={week.weekId}>
+                                                        Tuần {week.weekNumber}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        </Grid>
+                                    </Grid>
+                                </Box>
+
+                                {/* Loading State */}
+                                {optionsLoading && (
+                                    <Box sx={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        p: 4,
+                                        bgcolor: `${COLORS.primary}08`,
+                                        borderRadius: 3,
+                                        border: `2px dashed ${COLORS.primary}30`,
+                                        backdropFilter: 'blur(10px)'
+                                    }}>
+                                        <CircularProgress
+                                            size={28}
+                                            sx={{
+                                                color: COLORS.primary,
+                                                mr: 2
+                                            }}
+                                        />
+                                        <Typography sx={{
+                                            color: COLORS.text.primary,
+                                            fontWeight: 500,
+                                            fontSize: '1rem'
+                                        }}>
+                                            Đang tải dữ liệu dropdown...
+                                        </Typography>
+                                    </Box>
+                                )}
+
+                                {/* Form Validation Summary */}
+                                {(newLesson.name.trim() && newLesson.moduleId && newLesson.lessonTypeId && newLesson.noteId && newLesson.weekId) && (
+                                    <Box sx={{
+                                        p: 3,
+                                        bgcolor: `${COLORS.success}08`,
+                                        borderRadius: 2,
+                                        border: `1px solid ${COLORS.success}30`,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>
+                                        <CheckIcon sx={{ color: COLORS.success, mr: 2, fontSize: 24 }} />
+                                        <Typography sx={{
+                                            color: COLORS.success,
+                                            fontWeight: 600
+                                        }}>
+                                            Tất cả thông tin đã được điền đầy đủ. Sẵn sàng tạo bài học!
+                                        </Typography>
+                                    </Box>
+                                )}
                             </Stack>
                         </DialogContent>
-                        <DialogActions>
-                            <Button onClick={handleCloseAddLessonDialog}>Hủy</Button>
-                            <Button
+
+                        {/* Enhanced Dialog Actions */}
+                        <DialogActions sx={{
+                            p: 4,
+                            gap: 2,
+                            bgcolor: 'rgba(6, 169, 174, 0.02)',
+                            borderTop: '1px solid rgba(0, 0, 0, 0.08)'
+                        }}>
+                            <StyledButton
+                                onClick={handleCloseAddLessonDialog}
+                                variant="outlined"
+                                color="secondary"
+                                sx={{
+                                    minWidth: 120,
+                                    height: 48,
+                                    borderRadius: 3,
+                                    fontSize: '1rem',
+                                    fontWeight: 600,
+                                    borderWidth: 2,
+                                    '&:hover': {
+                                        borderWidth: 2,
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
+                                    }
+                                }}
+                                startIcon={<CloseIcon />}
+                            >
+                                Hủy bỏ
+                            </StyledButton>
+                            <StyledButton
                                 onClick={handleAddLesson}
                                 variant="contained"
+                                color="primary"
                                 disabled={
-                                    !newLessonName.trim() ||
-                                    !newLessonPeriods ||
-                                    isNaN(Number(newLessonPeriods)) ||
-                                    Number(newLessonPeriods) < 1
+                                    !newLesson.name.trim() ||
+                                    !newLesson.totalPeriods ||
+                                    !newLesson.moduleId ||
+                                    !newLesson.lessonTypeId ||
+                                    !newLesson.noteId ||
+                                    !newLesson.weekId ||
+                                    isNaN(Number(newLesson.totalPeriods)) ||
+                                    Number(newLesson.totalPeriods) < 1 ||
+                                    optionsLoading
                                 }
+                                sx={{
+                                    minWidth: 160,
+                                    height: 48,
+                                    borderRadius: 3,
+                                    fontSize: '1rem',
+                                    fontWeight: 700,
+                                    background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
+                                    boxShadow: `0 8px 20px ${COLORS.primary}40`,
+                                    '&:hover': {
+                                        background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
+                                        transform: 'translateY(-3px)',
+                                        boxShadow: `0 12px 28px ${COLORS.primary}50`
+                                    },
+                                    '&:disabled': {
+                                        background: 'rgba(0, 0, 0, 0.12)',
+                                        color: 'rgba(0, 0, 0, 0.26)',
+                                        boxShadow: 'none'
+                                    }
+                                }}
+                                startIcon={<AddIcon sx={{ fontSize: 20 }} />}
                             >
-                                Thêm
-                            </Button>
+                                Tạo bài học
+                            </StyledButton>
                         </DialogActions>
                     </Dialog>
 
-                    {/* Module Edit Dialog */}
-                    {editModuleMode && selectedModuleId && (
-                        <Dialog open={editModuleMode} onClose={handleCancelModuleEdit} maxWidth="sm" fullWidth>
-                            <DialogTitle>Chỉnh sửa Module</DialogTitle>
-                            <DialogContent>
-                                <Stack spacing={2} sx={{ mt: 1 }}>
-                                    <TextField
-                                        label="Tên module"
-                                        name="name"
-                                        value={editedModule.name}
-                                        onChange={handleModuleInputChange}
-                                        fullWidth
-                                        required
-                                    />
-                                    <TextField
-                                        label="Sách"
-                                        name="book"
-                                        value={editedModule.book}
-                                        onChange={handleModuleInputChange}
-                                        fullWidth
-                                        required
-                                    />
-                                    <TextField
-                                        select
-                                        label="Học kỳ"
-                                        name="semester"
-                                        value={editedModule.semester}
-                                        onChange={handleModuleInputChange}
-                                        fullWidth
-                                        required
-                                    >
-                                        <MenuItem value={1}>Học kỳ 1</MenuItem>
-                                        <MenuItem value={2}>Học kỳ 2</MenuItem>
-                                    </TextField>
-                                    <TextField
-                                        label="Tổng số tiết"
-                                        name="totalPeriods"
-                                        type="number"
-                                        value={editedModule.totalPeriods}
-                                        onChange={handleModuleInputChange}
-                                        fullWidth
-                                        required
-                                        inputProps={{ min: 1 }}
-                                    />
-                                </Stack>
-                            </DialogContent>
-                            <DialogActions>
-                                <Button onClick={handleCancelModuleEdit}>Hủy</Button>
-                                <Button
-                                    onClick={handleSaveModuleEdit}
-                                    variant="contained"
-                                    disabled={
-                                        !editedModule.name.trim() ||
-                                        !editedModule.book.trim() ||
-                                        !editedModule.totalPeriods ||
-                                        isNaN(Number(editedModule.totalPeriods)) ||
-                                        Number(editedModule.totalPeriods) < 1
+                    {/* Edit Lesson Dialog - THÊM PHẦN NÀY */}
+                    <Dialog
+                        open={openEditLessonDialog}
+                        onClose={handleCloseEditLessonDialog}
+                        maxWidth="md"
+                        fullWidth
+                        PaperProps={{
+                            sx: {
+                                borderRadius: 4,
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.12)',
+                                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                                overflow: 'hidden'
+                            }
+                        }}
+                    >
+                        {/* Enhanced Dialog Header */}
+                        <DialogTitle sx={{
+                            background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
+                            color: '#fff',
+                            p: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            position: 'relative',
+                            '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: '4px',
+                                background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)'
+                            }
+                        }}>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 48,
+                                height: 48,
+                                borderRadius: '12px',
+                                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                                backdropFilter: 'blur(10px)'
+                            }}>
+                                <EditIcon sx={{ fontSize: 28, color: '#fff' }} />
+                            </Box>
+                            <Box>
+                                <Typography variant="h5" sx={{
+                                    fontWeight: 700,
+                                    fontSize: '1.5rem',
+                                    mb: 0.5,
+                                    textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                                }}>
+                                    Chỉnh Sửa Bài Học
+                                </Typography>
+                                <Typography variant="body2" sx={{
+                                    opacity: 0.9,
+                                    fontSize: '0.875rem'
+                                }}>
+                                    Cập nhật thông tin bài học
+                                </Typography>
+                            </Box>
+                        </DialogTitle>
+
+                        <DialogContent sx={{ p: 4, bgcolor: '#fff' }}>
+                            <Stack spacing={4} sx={{ mt: 1 }}>
+                                {/* Basic Information Section */}
+                                <Box>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        mb: 3,
+                                        pb: 2,
+                                        borderBottom: `2px solid ${COLORS.primary}20`
+                                    }}>
+                                        <InfoIcon sx={{
+                                            color: COLORS.primary,
+                                            mr: 1.5,
+                                            fontSize: 24
+                                        }} />
+                                        <Typography variant="h6" sx={{
+                                            color: COLORS.text.primary,
+                                            fontWeight: 600,
+                                            fontSize: '1.1rem'
+                                        }}>
+                                            Thông tin cơ bản
+                                        </Typography>
+                                    </Box>
+
+                                    <Stack spacing={3}>
+                                        <Box sx={{ position: 'relative' }}>
+                                            <TextField
+                                                label="Tên bài học"
+                                                name="name"
+                                                value={editedLesson.name}
+                                                onChange={handleEditedLessonInputChange}
+                                                fullWidth
+                                                required
+                                                variant="outlined"
+                                                placeholder="Nhập tên bài học..."
+                                                InputProps={{
+                                                    startAdornment: (
+                                                        <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+                                                            <AssignmentIcon sx={{ color: COLORS.primary, fontSize: 20 }} />
+                                                        </Box>
+                                                    ),
+                                                }}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            boxShadow: `0 4px 12px ${COLORS.primary}20`
+                                                        },
+                                                        '&.Mui-focused': {
+                                                            boxShadow: `0 4px 20px ${COLORS.primary}30`
+                                                        }
+                                                    }
+                                                }}
+                                                helperText={
+                                                    editedLesson.name.trim() ?
+                                                        "Tên bài học hợp lệ" :
+                                                        "Vui lòng nhập tên bài học"
+                                                }
+                                                FormHelperTextProps={{
+                                                    sx: {
+                                                        color: editedLesson.name.trim() ? COLORS.success : COLORS.text.secondary,
+                                                        fontWeight: 500
+                                                    }
+                                                }}
+                                            />
+                                        </Box>
+
+                                        <TextField
+                                            select
+                                            label="Module"
+                                            name="moduleId"
+                                            value={editedLesson.moduleId}
+                                            onChange={handleEditedLessonInputChange}
+                                            fullWidth
+                                            required
+                                            variant="outlined"
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    borderRadius: 2,
+                                                    transition: 'all 0.3s ease',
+                                                    '&:hover': {
+                                                        boxShadow: `0 4px 12px ${COLORS.primary}20`
+                                                    },
+                                                    '&.Mui-focused': {
+                                                        boxShadow: `0 4px 20px ${COLORS.primary}30`
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            {modules.map((module) => (
+                                                <MenuItem key={module.moduleId} value={String(module.moduleId)}>
+                                                    {module.name}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    </Stack>
+                                </Box>
+
+                                {/* Schedule & Classification Section */}
+                                <Box>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        mb: 3,
+                                        pb: 2,
+                                        borderBottom: `2px solid ${COLORS.secondary}20`
+                                    }}>
+                                        <AccessTimeIcon sx={{
+                                            color: COLORS.secondary,
+                                            mr: 1.5,
+                                            fontSize: 24
+                                        }} />
+                                        <Typography variant="h6" sx={{
+                                            color: COLORS.text.primary,
+                                            fontWeight: 600,
+                                            fontSize: '1.1rem'
+                                        }}>
+                                            Phân loại & Thời gian
+                                        </Typography>
+                                    </Box>
+
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                select
+                                                label="Số tiết"
+                                                name="totalPeriods"
+                                                value={editedLesson.totalPeriods}
+                                                onChange={handleEditedLessonInputChange}
+                                                fullWidth
+                                                required
+                                                variant="outlined"
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            boxShadow: `0 4px 12px ${COLORS.secondary}20`
+                                                        },
+                                                        '&.Mui-focused': {
+                                                            boxShadow: `0 4px 20px ${COLORS.secondary}30`
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                <MenuItem value="1">1 tiết</MenuItem>
+                                                <MenuItem value="2">2 tiết</MenuItem>
+                                            </TextField>
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                select
+                                                label="Loại bài học"
+                                                name="lessonTypeId"
+                                                value={editedLesson.lessonTypeId}
+                                                onChange={handleEditedLessonInputChange}
+                                                fullWidth
+                                                required
+                                                variant="outlined"
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            boxShadow: `0 4px 12px ${COLORS.secondary}20`
+                                                        },
+                                                        '&.Mui-focused': {
+                                                            boxShadow: `0 4px 20px ${COLORS.secondary}30`
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {lessonTypes.map((type) => (
+                                                    <MenuItem key={type.lessonTypeId} value={String(type.lessonTypeId)}>
+                                                        {type.lessonTypeName}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        </Grid>
+                                    </Grid>
+                                </Box>
+
+                                {/* Additional Details Section */}
+                                <Box>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        mb: 3,
+                                        pb: 2,
+                                        borderBottom: `2px solid ${COLORS.warning}20`
+                                    }}>
+                                        <DateRangeIcon sx={{
+                                            color: COLORS.warning,
+                                            mr: 1.5,
+                                            fontSize: 24
+                                        }} />
+                                        <Typography variant="h6" sx={{
+                                            color: COLORS.text.primary,
+                                            fontWeight: 600,
+                                            fontSize: '1.1rem'
+                                        }}>
+                                            Chi tiết bổ sung
+                                        </Typography>
+                                    </Box>
+
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                select
+                                                label="Ghi chú"
+                                                name="noteId"
+                                                value={editedLesson.noteId}
+                                                onChange={handleEditedLessonInputChange}
+                                                fullWidth
+                                                required
+                                                variant="outlined"
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            boxShadow: `0 4px 12px ${COLORS.warning}20`
+                                                        },
+                                                        '&.Mui-focused': {
+                                                            boxShadow: `0 4px 20px ${COLORS.warning}30`
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {notes.map((note) => (
+                                                    <MenuItem key={note.noteId} value={String(note.noteId)}>
+                                                        {note.description}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                select
+                                                label="Tuần học"
+                                                name="weekId"
+                                                value={editedLesson.weekId}
+                                                onChange={handleEditedLessonInputChange}
+                                                fullWidth
+                                                required
+                                                variant="outlined"
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: 2,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            boxShadow: `0 4px 12px ${COLORS.warning}20`
+                                                        },
+                                                        '&.Mui-focused': {
+                                                            boxShadow: `0 4px 20px ${COLORS.warning}30`
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {weeks.map((week) => (
+                                                    <MenuItem key={week.weekId} value={String(week.weekId)}>
+                                                        Tuần {week.weekNumber}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        </Grid>
+                                    </Grid>
+                                </Box>
+
+                                {/* Loading State */}
+                                {optionsLoading && (
+                                    <Box sx={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        p: 4,
+                                        bgcolor: `${COLORS.primary}08`,
+                                        borderRadius: 3,
+                                        border: `2px dashed ${COLORS.primary}30`,
+                                        backdropFilter: 'blur(10px)'
+                                    }}>
+                                        <CircularProgress
+                                            size={28}
+                                            sx={{
+                                                color: COLORS.primary,
+                                                mr: 2
+                                            }}
+                                        />
+                                        <Typography sx={{
+                                            color: COLORS.text.primary,
+                                            fontWeight: 500,
+                                            fontSize: '1rem'
+                                        }}>
+                                            Đang tải dữ liệu dropdown...
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Stack>
+                        </DialogContent>
+
+                        {/* Enhanced Dialog Actions */}
+                        <DialogActions sx={{
+                            p: 4,
+                            gap: 2,
+                            bgcolor: 'rgba(6, 169, 174, 0.02)',
+                            borderTop: '1px solid rgba(0, 0, 0, 0.08)'
+                        }}>
+                            <StyledButton
+                                onClick={handleCloseEditLessonDialog}
+                                variant="outlined"
+                                color="secondary"
+                                sx={{
+                                    minWidth: 120,
+                                    height: 48,
+                                    borderRadius: 3,
+                                    fontSize: '1rem',
+                                    fontWeight: 600,
+                                    borderWidth: 2,
+                                    '&:hover': {
+                                        borderWidth: 2,
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
                                     }
+                                }}
+                                startIcon={<CloseIcon />}
+                            >
+                                Hủy bỏ
+                            </StyledButton>
+                            <StyledButton
+                                onClick={() => handleSaveLessonEdit(editLessonMode)}
+                                variant="contained"
+                                color="primary"
+                                disabled={
+                                    !editedLesson.name.trim() ||
+                                    !editedLesson.totalPeriods ||
+                                    !editedLesson.moduleId ||
+                                    !editedLesson.lessonTypeId ||
+                                    !editedLesson.noteId ||
+                                    !editedLesson.weekId ||
+                                    isNaN(Number(editedLesson.totalPeriods)) ||
+                                    Number(editedLesson.totalPeriods) < 1 ||
+                                    optionsLoading
+                                }
+                                sx={{
+                                    minWidth: 160,
+                                    height: 48,
+                                    borderRadius: 3,
+                                    fontSize: '1rem',
+                                    fontWeight: 700,
+                                    background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
+                                    boxShadow: `0 8px 20px ${COLORS.primary}40`,
+                                    '&:hover': {
+                                        background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
+                                        transform: 'translateY(-3px)',
+                                        boxShadow: `0 12px 28px ${COLORS.primary}50`
+                                    },
+                                    '&:disabled': {
+                                        background: 'rgba(0, 0, 0, 0.12)',
+                                        color: 'rgba(0, 0, 0, 0.26)',
+                                        boxShadow: 'none'
+                                    }
+                                }}
+                                startIcon={<CheckIcon sx={{ fontSize: 20 }} />}
+                            >
+                                Cập nhật
+                            </StyledButton>
+                        </DialogActions>
+                    </Dialog>
+
+                    {/* Delete Confirmation Dialog */}
+                    <Dialog
+                        open={openDeleteDialog}
+                        onClose={handleCloseDeleteDialog}
+                        maxWidth="sm"
+                        fullWidth
+                        PaperProps={{
+                            sx: {
+                                borderRadius: 3,
+                                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)'
+                            }
+                        }}
+                    >
+                        <DialogTitle sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            pb: 2,
+                            borderBottom: '1px solid rgba(0, 0, 0, 0.08)'
+                        }}>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                color: COLORS.error,
+                                mr: 2
+                            }}>
+                                <DeleteIcon sx={{ fontSize: 28 }} />
+                            </Box>
+                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                Xác nhận xóa bài học
+                            </Typography>
+                        </DialogTitle>
+
+                        <DialogContent sx={{ pt: 3 }}>
+                            {lessonToDelete && (
+                                <Box>
+                                    <Alert severity="warning" sx={{ mb: 3 }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                            Hành động này không thể hoàn tác!
+                                        </Typography>
+                                    </Alert>
+
+                                    <Typography variant="body1" sx={{ mb: 2, color: COLORS.text.primary }}>
+                                        Bạn có chắc chắn muốn xóa bài học sau?
+                                    </Typography>
+
+                                    <Box sx={{
+                                        p: 3,
+                                        bgcolor: 'rgba(255, 72, 66, 0.05)',
+                                        borderRadius: 2,
+                                        border: '1px solid rgba(255, 72, 66, 0.2)',
+                                        textAlign: 'center'
+                                    }}>
+                                        <Typography variant="h6" sx={{
+                                            fontWeight: 600,
+                                            color: COLORS.text.primary,
+                                            mb: 1
+                                        }}>
+                                            "{lessonToDelete.name}"
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            )}
+                        </DialogContent>
+
+                        <DialogActions sx={{ p: 3, gap: 2 }}>
+                            <StyledButton
+                                onClick={handleCloseDeleteDialog}
+                                variant="outlined"
+                                color="secondary"
+                                disabled={deleteLoading}
+                            >
+                                Hủy bỏ
+                            </StyledButton>
+
+                            <StyledButton
+                                onClick={handleConfirmDeleteLesson}
+                                variant="contained"
+                                disabled={deleteLoading}
+                                sx={{
+                                    bgcolor: COLORS.error,
+                                    '&:hover': {
+                                        bgcolor: COLORS.error,
+                                        opacity: 0.9
+                                    }
+                                }}
+                                startIcon={deleteLoading ? (
+                                    <CircularProgress size={16} sx={{ color: '#fff' }} />
+                                ) : (
+                                    <DeleteIcon />
+                                )}
+                            >
+                                {deleteLoading ? 'Đang xóa...' : 'Xóa bài học'}
+                            </StyledButton>
+                        </DialogActions>
+                    </Dialog>
+
+                    {/* Edit Module Dialog */}
+                    <Dialog
+                        open={openEditModuleDialog}
+                        onClose={handleCloseEditModuleDialog}
+                        maxWidth="sm"
+                        fullWidth
+                        PaperProps={{
+                            sx: {
+                                borderRadius: 3,
+                                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)'
+                            }
+                        }}
+                    >
+                        <DialogTitle sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            pb: 2,
+                            borderBottom: '1px solid rgba(0, 0, 0, 0.08)'
+                        }}>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                color: COLORS.primary,
+                                mr: 2
+                            }}>
+                                <EditIcon sx={{ fontSize: 28 }} />
+                            </Box>
+                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                Chỉnh sửa Module
+                            </Typography>
+                        </DialogTitle>
+
+                        <DialogContent sx={{ pt: 3 }}>
+                            <Stack spacing={3}>
+                                <TextField
+                                    label="Tên module"
+                                    name="name"
+                                    value={editedModule.name}
+                                    onChange={handleModuleInputChange}
+                                    fullWidth
+                                    required
+                                    variant="outlined"
+                                />
+                                <TextField
+                                    select
+                                    label="Học kỳ"
+                                    name="semester"
+                                    value={editedModule.semester}
+                                    onChange={handleModuleInputChange}
+                                    fullWidth
+                                    required
+                                    variant="outlined"
                                 >
-                                    Cập nhật
-                                </Button>
-                            </DialogActions>
-                        </Dialog>
-                    )}
+                                    <MenuItem value={1}>Học kỳ 1</MenuItem>
+                                    <MenuItem value={2}>Học kỳ 2</MenuItem>
+                                </TextField>
+                                <TextField
+                                    label="Tổng số tiết"
+                                    name="totalPeriods"
+                                    type="number"
+                                    value={editedModule.totalPeriods}
+                                    onChange={handleModuleInputChange}
+                                    fullWidth
+                                    required
+                                    inputProps={{ min: 1 }}
+                                    variant="outlined"
+                                />
+                            </Stack>
+                        </DialogContent>
+
+                        <DialogActions sx={{ p: 3, gap: 2 }}>
+                            <StyledButton
+                                onClick={handleCloseEditModuleDialog}
+                                variant="outlined"
+                                color="secondary"
+                            >
+                                Hủy bỏ
+                            </StyledButton>
+                            <StyledButton
+                                onClick={handleSaveModuleEdit}
+                                variant="contained"
+                                color="primary"
+                                disabled={
+                                    !editedModule.name.trim() ||
+                                    !editedModule.totalPeriods ||
+                                    isNaN(Number(editedModule.totalPeriods)) ||
+                                    Number(editedModule.totalPeriods) < 1
+                                }
+                            >
+                                Cập nhật
+                            </StyledButton>
+                        </DialogActions>
+                    </Dialog>
                 </Container>
             </Box>
         </Box>
