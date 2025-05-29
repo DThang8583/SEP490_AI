@@ -12,12 +12,10 @@ import {
     TableCell,
     TableContainer,
     TableHead,
-    TableRow,
     Paper,
     Pagination,
     CircularProgress,
     Alert,
-    // Box,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -29,6 +27,8 @@ import {
     MenuItem,
     Stack,
     Grid,
+    Collapse,
+    TableRow,
 } from '@mui/material';
 import {
     Edit as EditIcon,
@@ -42,6 +42,11 @@ import {
     MenuBook as MenuBookIcon,
     Check as CheckIcon,
     Close as CloseIcon,
+    Info as InfoIcon,
+    AccessTime as AccessTimeIcon,
+    Class as ClassIcon,
+    DateRange as DateRangeIcon,
+    Notes as NotesIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
@@ -173,6 +178,7 @@ const CurriculumFramework = ({ sidebarOpen }) => {
     const [moduleLoading, setModuleLoading] = useState(false);
     const [moduleError, setModuleError] = useState(null);
 
+    // Giữ lại selectedModuleId để sử dụng cho edit module và add lesson
     const [selectedModuleId, setSelectedModuleId] = useState(null);
     const [moduleDetails, setModuleDetails] = useState(null);
     const [lessons, setLessons] = useState([]);
@@ -186,6 +192,12 @@ const CurriculumFramework = ({ sidebarOpen }) => {
     const [openAddLessonDialog, setOpenAddLessonDialog] = useState(false);
     const [newLessonName, setNewLessonName] = useState('');
     const [newLessonPeriods, setNewLessonPeriods] = useState('1');
+
+    // Thêm state cho lesson details
+    const [expandedLessonId, setExpandedLessonId] = useState(null);
+    const [lessonDetails, setLessonDetails] = useState({});
+    const [lessonDetailLoading, setLessonDetailLoading] = useState(false);
+    const [lessonDetailError, setLessonDetailError] = useState(null);
 
     const [openAddModuleDialog, setOpenAddModuleDialog] = useState(false);
     const [newModule, setNewModule] = useState({ name: '', book: '', semester: 1, totalPeriods: '' });
@@ -463,7 +475,7 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                 }
             );
 
-            if (response.data.code === 0) {
+            if (response.data.code === 0 || response.data.code === 22) {
                 // Đóng form edit ngay lập tức
                 setEditMode(null);
                 setEditingCurriculum(null);
@@ -498,10 +510,6 @@ const CurriculumFramework = ({ sidebarOpen }) => {
 
     const handleSemesterChange = (semester) => setCurrentSemester(semester);
 
-    const handleModuleNameClick = (moduleId) => {
-        setSelectedModuleId(selectedModuleId === moduleId ? null : moduleId);
-    };
-
     const handleEditModuleClick = (module) => {
         setSelectedModuleId(module.moduleId);
         setEditModuleMode(true);
@@ -511,6 +519,7 @@ const CurriculumFramework = ({ sidebarOpen }) => {
             semester: module.semester,
             totalPeriods: module.totalPeriods
         });
+        setModuleDetails(module);
     };
 
     const handleModuleInputChange = (e) => {
@@ -790,6 +799,62 @@ const CurriculumFramework = ({ sidebarOpen }) => {
             if (found) setUserGradeId(found.gradeId);
         }
     }, [grades, userGradeNumber]);
+
+    // Thêm function để fetch lesson details
+    const fetchLessonDetails = useCallback(async (lessonId) => {
+        console.log('fetchLessonDetails called with:', lessonId);
+        console.log('Current lessonDetails:', lessonDetails);
+
+        if (lessonDetails[lessonId]) {
+            console.log('Lesson details already exist for:', lessonId);
+            return;
+        }
+
+        setLessonDetailLoading(true);
+        setLessonDetailError(null);
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+            const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+            console.log('Calling API for lesson:', lessonId);
+            const response = await axios.get(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}/info`,
+                config
+            );
+
+            console.log('API response:', response.data);
+
+            if (response.data.code === 0) {
+                setLessonDetails(prev => ({
+                    ...prev,
+                    [lessonId]: response.data.data
+                }));
+                console.log('Lesson details saved for:', lessonId, response.data.data);
+            } else {
+                setLessonDetailError('Không thể tải thông tin chi tiết bài học: ' + response.data.message);
+            }
+        } catch (err) {
+            console.error('Error fetching lesson details:', err);
+            setLessonDetailError('Đã xảy ra lỗi khi tải thông tin chi tiết bài học: ' + err.message);
+        } finally {
+            setLessonDetailLoading(false);
+        }
+    }, [lessonDetails]);
+
+    // Thêm function để handle click vào lesson
+    const handleLessonClick = async (lessonId) => {
+        console.log('handleLessonClick called with:', lessonId);
+        console.log('Current expandedLessonId:', expandedLessonId);
+
+        if (expandedLessonId === lessonId) {
+            console.log('Collapsing lesson:', lessonId);
+            setExpandedLessonId(null);
+        } else {
+            console.log('Expanding lesson:', lessonId);
+            setExpandedLessonId(lessonId);
+            await fetchLessonDetails(lessonId);
+        }
+    };
 
     if (loading) {
         return (
@@ -1128,7 +1193,7 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                                                 fontWeight: 600,
                                                                                                 color: COLORS.text.primary,
                                                                                                 display: 'flex',
-                                                                                                alignItems: 'center'
+                                                                                                alignItems: 'center',
                                                                                             }}
                                                                                         >
                                                                                             {module.name}
@@ -1142,213 +1207,464 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                                         </TableCell>
                                                                                     </StyledTableRow>
                                                                                     <TableRow>
-                                                                                        <TableCell colSpan={3} sx={{ p: 0, border: 'none' }}>
+                                                                                        <TableCell colSpan={4} sx={{ p: 0, border: 'none' }}>
                                                                                             <Box sx={{
+                                                                                                m: 2,
                                                                                                 p: 3,
-                                                                                                bgcolor: 'rgba(0, 0, 0, 0.02)',
-                                                                                                borderRadius: '0 0 8px 8px',
-                                                                                                mx: 2,
-                                                                                                mb: 2,
-                                                                                                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
+                                                                                                bgcolor: 'rgba(6, 169, 174, 0.02)',
+                                                                                                borderRadius: 2,
+                                                                                                border: '1px solid rgba(6, 169, 174, 0.1)'
                                                                                             }}>
-                                                                                                {detailLoading ? (
-                                                                                                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                                                                                                        <CircularProgress size={30} sx={{ color: COLORS.primary }} />
+                                                                                                <Box sx={{
+                                                                                                    display: 'flex',
+                                                                                                    justifyContent: 'space-between',
+                                                                                                    alignItems: 'center',
+                                                                                                    pb: 2,
+                                                                                                    borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+                                                                                                    mb: 3
+                                                                                                }}>
+                                                                                                    <Typography variant="h6" sx={{ color: COLORS.text.primary }}>
+                                                                                                        {module.name}
+                                                                                                    </Typography>
+                                                                                                    <Box>
+                                                                                                        <IconButton
+                                                                                                            onClick={() => handleEditModuleClick(module)}
+                                                                                                            sx={{
+                                                                                                                color: COLORS.primary,
+                                                                                                                bgcolor: 'rgba(6, 169, 174, 0.08)',
+                                                                                                                mr: 1,
+                                                                                                                '&:hover': { bgcolor: 'rgba(6, 169, 174, 0.15)' }
+                                                                                                            }}
+                                                                                                        >
+                                                                                                            <EditIcon />
+                                                                                                        </IconButton>
+                                                                                                        <IconButton
+                                                                                                            onClick={() => handleDeleteModule(module.moduleId)}
+                                                                                                            sx={{
+                                                                                                                color: COLORS.error,
+                                                                                                                bgcolor: 'rgba(255, 72, 66, 0.08)',
+                                                                                                                '&:hover': { bgcolor: 'rgba(255, 72, 66, 0.15)' }
+                                                                                                            }}
+                                                                                                        >
+                                                                                                            <DeleteIcon />
+                                                                                                        </IconButton>
                                                                                                     </Box>
-                                                                                                ) : detailError ? (
-                                                                                                    <Alert severity="error">{detailError}</Alert>
-                                                                                                ) : (
-                                                                                                    <>
-                                                                                                        <Box sx={{
+                                                                                                </Box>
+
+                                                                                                <Box sx={{
+                                                                                                    display: 'flex',
+                                                                                                    justifyContent: 'space-between',
+                                                                                                    alignItems: 'center',
+                                                                                                    mb: 2
+                                                                                                }}>
+                                                                                                    <Typography
+                                                                                                        variant="h6"
+                                                                                                        sx={{
                                                                                                             display: 'flex',
-                                                                                                            justifyContent: 'space-between',
                                                                                                             alignItems: 'center',
-                                                                                                            pb: 2,
-                                                                                                            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-                                                                                                            mb: 3
-                                                                                                        }}>
-                                                                                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                                                                                <Typography variant="h6" sx={{ color: COLORS.text.primary }}>
-                                                                                                                    {module.name}
-                                                                                                                </Typography>
-                                                                                                            </Box>
-                                                                                                            <Box>
-                                                                                                                <IconButton
-                                                                                                                    onClick={() => {
-                                                                                                                        setSelectedModuleId(module.moduleId);
-                                                                                                                        handleEditModuleClick(module);
-                                                                                                                    }}
-                                                                                                                    sx={{
-                                                                                                                        color: COLORS.primary,
-                                                                                                                        bgcolor: 'rgba(6, 169, 174, 0.08)',
-                                                                                                                        mr: 1,
-                                                                                                                        '&:hover': { bgcolor: 'rgba(6, 169, 174, 0.15)' }
-                                                                                                                    }}
-                                                                                                                >
-                                                                                                                    <EditIcon />
-                                                                                                                </IconButton>
-                                                                                                                <IconButton
-                                                                                                                    onClick={() => handleDeleteModule(module.moduleId)}
-                                                                                                                    sx={{
-                                                                                                                        color: COLORS.error,
-                                                                                                                        bgcolor: 'rgba(255, 72, 66, 0.08)',
-                                                                                                                        '&:hover': { bgcolor: 'rgba(255, 72, 66, 0.15)' }
-                                                                                                                    }}
-                                                                                                                >
-                                                                                                                    <DeleteIcon />
-                                                                                                                </IconButton>
-                                                                                                            </Box>
-                                                                                                        </Box>
+                                                                                                            color: COLORS.text.primary
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        <AssignmentIcon sx={{ mr: 1, fontSize: 20, color: COLORS.secondary }} />
+                                                                                                        Danh sách bài học
+                                                                                                    </Typography>
+                                                                                                    <StyledButton
+                                                                                                        variant="contained"
+                                                                                                        color="primary"
+                                                                                                        startIcon={<AddIcon />}
+                                                                                                        onClick={() => {
+                                                                                                            setSelectedModuleId(module.moduleId);
+                                                                                                            handleOpenAddLessonDialog();
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        Thêm bài học
+                                                                                                    </StyledButton>
+                                                                                                </Box>
 
-                                                                                                        <Box>
-                                                                                                            <Box sx={{
-                                                                                                                display: 'flex',
-                                                                                                                justifyContent: 'space-between',
-                                                                                                                alignItems: 'center',
-                                                                                                                mb: 2
-                                                                                                            }}>
-                                                                                                                <Typography
-                                                                                                                    variant="h6"
-                                                                                                                    sx={{
-                                                                                                                        display: 'flex',
-                                                                                                                        alignItems: 'center',
-                                                                                                                        color: COLORS.text.primary
-                                                                                                                    }}
-                                                                                                                >
-                                                                                                                    <AssignmentIcon sx={{ mr: 1, fontSize: 20, color: COLORS.secondary }} />
-                                                                                                                    Danh sách bài học
-                                                                                                                </Typography>
-                                                                                                                <StyledButton
-                                                                                                                    variant="contained"
-                                                                                                                    color="primary"
-                                                                                                                    startIcon={<AddIcon />}
-                                                                                                                    onClick={() => {
-                                                                                                                        setSelectedModuleId(module.moduleId);
-                                                                                                                        handleOpenAddLessonDialog();
-                                                                                                                    }}
-                                                                                                                >
-                                                                                                                    Thêm bài học
-                                                                                                                </StyledButton>
-                                                                                                            </Box>
+                                                                                                <TableContainer
+                                                                                                    component={Paper}
+                                                                                                    sx={{
+                                                                                                        borderRadius: 2,
+                                                                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                                                                                                    }}
+                                                                                                >
+                                                                                                    <Table>
+                                                                                                        <TableHead>
+                                                                                                            <TableRow>
+                                                                                                                <StyledTableCell align="center" width="5%">STT</StyledTableCell>
+                                                                                                                <StyledTableCell align="left" width="55%">Tên bài học</StyledTableCell>
+                                                                                                                <StyledTableCell align="center" width="20%">Số tiết</StyledTableCell>
+                                                                                                                <StyledTableCell align="center" width="20%">Hành động</StyledTableCell>
+                                                                                                            </TableRow>
+                                                                                                        </TableHead>
+                                                                                                        <TableBody>
+                                                                                                            {module.lessons && module.lessons.length > 0 ? (
+                                                                                                                module.lessons.map((lesson, lessonIndex) => (
+                                                                                                                    <React.Fragment key={lesson.lessonId}>
+                                                                                                                        <StyledTableRow>
+                                                                                                                            <TableCell align="center">{lessonIndex + 1}</TableCell>
+                                                                                                                            <TableCell
+                                                                                                                                align="left"
+                                                                                                                                sx={{
+                                                                                                                                    cursor: 'pointer',
+                                                                                                                                    display: 'flex',
+                                                                                                                                    alignItems: 'center',
+                                                                                                                                    '&:hover': {
+                                                                                                                                        backgroundColor: 'rgba(6, 169, 174, 0.05)'
+                                                                                                                                    }
+                                                                                                                                }}
+                                                                                                                                onClick={(e) => {
+                                                                                                                                    if (editLessonMode !== lesson.lessonId) {
+                                                                                                                                        handleLessonClick(lesson.lessonId);
+                                                                                                                                    }
+                                                                                                                                }}
+                                                                                                                            >
+                                                                                                                                {editLessonMode === lesson.lessonId ? (
+                                                                                                                                    <TextField
+                                                                                                                                        value={editedLessonName}
+                                                                                                                                        onChange={handleLessonInputChange}
+                                                                                                                                        fullWidth
+                                                                                                                                        variant="outlined"
+                                                                                                                                        size="small"
+                                                                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                                                                    />
+                                                                                                                                ) : (
+                                                                                                                                    <>
+                                                                                                                                        <InfoIcon sx={{ mr: 1, color: COLORS.primary, fontSize: 18 }} />
+                                                                                                                                        {lesson.name}
+                                                                                                                                    </>
+                                                                                                                                )}
+                                                                                                                            </TableCell>
+                                                                                                                            <TableCell align="center">
+                                                                                                                                {editLessonMode === lesson.lessonId ? (
+                                                                                                                                    <TextField
+                                                                                                                                        value={editedLessonPeriods}
+                                                                                                                                        onChange={handleLessonPeriodsChange}
+                                                                                                                                        type="number"
+                                                                                                                                        variant="outlined"
+                                                                                                                                        size="small"
+                                                                                                                                        sx={{ width: '80px' }}
+                                                                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                                                                    />
+                                                                                                                                ) : (
+                                                                                                                                    <InfoChip
+                                                                                                                                        icon={<SchoolIcon />}
+                                                                                                                                        label={`${lesson.totalPeriods || 1} tiết`}
+                                                                                                                                        size="small"
+                                                                                                                                    />
+                                                                                                                                )}
+                                                                                                                            </TableCell>
+                                                                                                                            <TableCell align="center">
+                                                                                                                                {editLessonMode === lesson.lessonId ? (
+                                                                                                                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                                                                                                                        <IconButton
+                                                                                                                                            onClick={(e) => {
+                                                                                                                                                e.stopPropagation();
+                                                                                                                                                handleSaveLessonEdit(lesson.lessonId);
+                                                                                                                                            }}
+                                                                                                                                            sx={{
+                                                                                                                                                color: COLORS.success,
+                                                                                                                                                bgcolor: 'rgba(0, 171, 85, 0.08)',
+                                                                                                                                                '&:hover': { bgcolor: 'rgba(0, 171, 85, 0.15)' }
+                                                                                                                                            }}
+                                                                                                                                        >
+                                                                                                                                            <CheckIcon />
+                                                                                                                                        </IconButton>
+                                                                                                                                        <IconButton
+                                                                                                                                            onClick={(e) => {
+                                                                                                                                                e.stopPropagation();
+                                                                                                                                                handleCancelLessonEdit();
+                                                                                                                                            }}
+                                                                                                                                            sx={{
+                                                                                                                                                color: COLORS.error,
+                                                                                                                                                bgcolor: 'rgba(255, 72, 66, 0.08)',
+                                                                                                                                                '&:hover': { bgcolor: 'rgba(255, 72, 66, 0.15)' }
+                                                                                                                                            }}
+                                                                                                                                        >
+                                                                                                                                            <CloseIcon />
+                                                                                                                                        </IconButton>
+                                                                                                                                    </Box>
+                                                                                                                                ) : (
+                                                                                                                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                                                                                                                        <IconButton
+                                                                                                                                            onClick={(e) => {
+                                                                                                                                                e.stopPropagation();
+                                                                                                                                                handleEditLessonClick(lesson);
+                                                                                                                                            }}
+                                                                                                                                            sx={{
+                                                                                                                                                color: COLORS.primary,
+                                                                                                                                                bgcolor: 'rgba(6, 169, 174, 0.08)',
+                                                                                                                                                '&:hover': { bgcolor: 'rgba(6, 169, 174, 0.15)' }
+                                                                                                                                            }}
+                                                                                                                                        >
+                                                                                                                                            <EditIcon />
+                                                                                                                                        </IconButton>
+                                                                                                                                        <IconButton
+                                                                                                                                            onClick={(e) => {
+                                                                                                                                                e.stopPropagation();
+                                                                                                                                                handleDeleteLesson(lesson.lessonId, module.moduleId);
+                                                                                                                                            }}
+                                                                                                                                            sx={{
+                                                                                                                                                color: COLORS.error,
+                                                                                                                                                bgcolor: 'rgba(255, 72, 66, 0.08)',
+                                                                                                                                                '&:hover': { bgcolor: 'rgba(255, 72, 66, 0.15)' }
+                                                                                                                                            }}
+                                                                                                                                        >
+                                                                                                                                            <DeleteIcon />
+                                                                                                                                        </IconButton>
+                                                                                                                                    </Box>
+                                                                                                                                )}
+                                                                                                                            </TableCell>
+                                                                                                                        </StyledTableRow>
 
-                                                                                                            <TableContainer
-                                                                                                                component={Paper}
-                                                                                                                sx={{
-                                                                                                                    borderRadius: 2,
-                                                                                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                                                                                                                }}
-                                                                                                            >
-                                                                                                                <Table>
-                                                                                                                    <TableHead>
+                                                                                                                        {/* Lesson Details Row */}
                                                                                                                         <TableRow>
-                                                                                                                            <StyledTableCell align="center" width="5%">STT</StyledTableCell>
-                                                                                                                            <StyledTableCell align="left" width="55%">Tên bài học</StyledTableCell>
-                                                                                                                            <StyledTableCell align="center" width="20%">Số tiết</StyledTableCell>
-                                                                                                                            <StyledTableCell align="center" width="20%">Hành động</StyledTableCell>
+                                                                                                                            <TableCell colSpan={4} sx={{ p: 0, border: 'none' }}>
+                                                                                                                                <Collapse in={expandedLessonId === lesson.lessonId} timeout="auto" unmountOnExit>
+                                                                                                                                    {console.log('Rendering collapse for lesson:', lesson.lessonId, 'expandedLessonId:', expandedLessonId, 'should show:', expandedLessonId === lesson.lessonId)}
+
+                                                                                                                                    <Box sx={{
+                                                                                                                                        m: 2,
+                                                                                                                                        p: 0,
+                                                                                                                                        bgcolor: '#fff',
+                                                                                                                                        borderRadius: 2,
+                                                                                                                                        border: '1px solid rgba(0, 0, 0, 0.1)',
+                                                                                                                                        overflow: 'hidden'
+                                                                                                                                    }}>
+                                                                                                                                        {lessonDetailLoading ? (
+                                                                                                                                            <Box sx={{
+                                                                                                                                                display: 'flex',
+                                                                                                                                                justifyContent: 'center',
+                                                                                                                                                alignItems: 'center',
+                                                                                                                                                p: 3
+                                                                                                                                            }}>
+                                                                                                                                                <CircularProgress size={24} sx={{ color: COLORS.primary }} />
+                                                                                                                                                <Typography sx={{ ml: 2, color: COLORS.text.secondary }}>
+                                                                                                                                                    Đang tải thông tin...
+                                                                                                                                                </Typography>
+                                                                                                                                            </Box>
+                                                                                                                                        ) : lessonDetailError ? (
+                                                                                                                                            <Box sx={{ p: 2 }}>
+                                                                                                                                                <Alert severity="error">
+                                                                                                                                                    {lessonDetailError}
+                                                                                                                                                </Alert>
+                                                                                                                                            </Box>
+                                                                                                                                        ) : lessonDetails[lesson.lessonId] ? (
+                                                                                                                                            <>
+                                                                                                                                                {/* Header */}
+                                                                                                                                                <Box sx={{
+                                                                                                                                                    p: 2.5,
+                                                                                                                                                    bgcolor: 'rgba(25, 118, 210, 0.04)',
+                                                                                                                                                    borderBottom: '1px solid rgba(0, 0, 0, 0.08)'
+                                                                                                                                                }}>
+                                                                                                                                                    <Typography variant="h6" sx={{
+                                                                                                                                                        color: COLORS.text.primary,
+                                                                                                                                                        fontWeight: 600,
+                                                                                                                                                        fontSize: '1rem'
+                                                                                                                                                    }}>
+                                                                                                                                                        Thông tin chi tiết bài học
+                                                                                                                                                    </Typography>
+                                                                                                                                                </Box>
+
+                                                                                                                                                {/* Content */}
+                                                                                                                                                <Box sx={{ p: 2.5 }}>
+                                                                                                                                                    <Grid container spacing={2}>
+                                                                                                                                                        {/* Tên bài học */}
+                                                                                                                                                        <Grid item xs={12} md={6}>
+                                                                                                                                                            <Box sx={{
+                                                                                                                                                                p: 2,
+                                                                                                                                                                border: '1px solid rgba(0, 0, 0, 0.08)',
+                                                                                                                                                                borderRadius: 1,
+                                                                                                                                                                bgcolor: 'rgba(25, 118, 210, 0.02)'
+                                                                                                                                                            }}>
+                                                                                                                                                                <Typography variant="caption" sx={{
+                                                                                                                                                                    color: COLORS.text.secondary,
+                                                                                                                                                                    fontWeight: 600,
+                                                                                                                                                                    textTransform: 'uppercase',
+                                                                                                                                                                    fontSize: '0.7rem',
+                                                                                                                                                                    letterSpacing: 0.5
+                                                                                                                                                                }}>
+                                                                                                                                                                    Tên bài học
+                                                                                                                                                                </Typography>
+                                                                                                                                                                <Typography variant="body1" sx={{
+                                                                                                                                                                    color: COLORS.text.primary,
+                                                                                                                                                                    fontWeight: 500,
+                                                                                                                                                                    mt: 0.5
+                                                                                                                                                                }}>
+                                                                                                                                                                    {lessonDetails[lesson.lessonId].name}
+                                                                                                                                                                </Typography>
+                                                                                                                                                            </Box>
+                                                                                                                                                        </Grid>
+
+                                                                                                                                                        {/* Số tiết */}
+                                                                                                                                                        <Grid item xs={12} md={6}>
+                                                                                                                                                            <Box sx={{
+                                                                                                                                                                p: 2,
+                                                                                                                                                                border: '1px solid rgba(0, 0, 0, 0.08)',
+                                                                                                                                                                borderRadius: 1,
+                                                                                                                                                                bgcolor: 'rgba(6, 169, 174, 0.02)'
+                                                                                                                                                            }}>
+                                                                                                                                                                <Typography variant="caption" sx={{
+                                                                                                                                                                    color: COLORS.text.secondary,
+                                                                                                                                                                    fontWeight: 600,
+                                                                                                                                                                    textTransform: 'uppercase',
+                                                                                                                                                                    fontSize: '0.7rem',
+                                                                                                                                                                    letterSpacing: 0.5
+                                                                                                                                                                }}>
+                                                                                                                                                                    Số tiết
+                                                                                                                                                                </Typography>
+                                                                                                                                                                <Typography variant="body1" sx={{
+                                                                                                                                                                    color: COLORS.text.primary,
+                                                                                                                                                                    fontWeight: 500,
+                                                                                                                                                                    mt: 0.5
+                                                                                                                                                                }}>
+                                                                                                                                                                    {lessonDetails[lesson.lessonId].totalPeriods} tiết
+                                                                                                                                                                </Typography>
+                                                                                                                                                            </Box>
+                                                                                                                                                        </Grid>
+
+                                                                                                                                                        {/* Loại bài học */}
+                                                                                                                                                        <Grid item xs={12} md={6}>
+                                                                                                                                                            <Box sx={{
+                                                                                                                                                                p: 2,
+                                                                                                                                                                border: '1px solid rgba(0, 0, 0, 0.08)',
+                                                                                                                                                                borderRadius: 1,
+                                                                                                                                                                bgcolor: 'rgba(255, 171, 0, 0.02)'
+                                                                                                                                                            }}>
+                                                                                                                                                                <Typography variant="caption" sx={{
+                                                                                                                                                                    color: COLORS.text.secondary,
+                                                                                                                                                                    fontWeight: 600,
+                                                                                                                                                                    textTransform: 'uppercase',
+                                                                                                                                                                    fontSize: '0.7rem',
+                                                                                                                                                                    letterSpacing: 0.5
+                                                                                                                                                                }}>
+                                                                                                                                                                    Loại bài học
+                                                                                                                                                                </Typography>
+                                                                                                                                                                <Typography variant="body1" sx={{
+                                                                                                                                                                    color: COLORS.text.primary,
+                                                                                                                                                                    fontWeight: 500,
+                                                                                                                                                                    mt: 0.5
+                                                                                                                                                                }}>
+                                                                                                                                                                    {lessonDetails[lesson.lessonId].lessonType}
+                                                                                                                                                                </Typography>
+                                                                                                                                                            </Box>
+                                                                                                                                                        </Grid>
+
+                                                                                                                                                        {/* Tuần học */}
+                                                                                                                                                        <Grid item xs={12} md={6}>
+                                                                                                                                                            <Box sx={{
+                                                                                                                                                                p: 2,
+                                                                                                                                                                border: '1px solid rgba(0, 0, 0, 0.08)',
+                                                                                                                                                                borderRadius: 1,
+                                                                                                                                                                bgcolor: 'rgba(0, 171, 85, 0.02)'
+                                                                                                                                                            }}>
+                                                                                                                                                                <Typography variant="caption" sx={{
+                                                                                                                                                                    color: COLORS.text.secondary,
+                                                                                                                                                                    fontWeight: 600,
+                                                                                                                                                                    textTransform: 'uppercase',
+                                                                                                                                                                    fontSize: '0.7rem',
+                                                                                                                                                                    letterSpacing: 0.5
+                                                                                                                                                                }}>
+                                                                                                                                                                    Tuần học
+                                                                                                                                                                </Typography>
+                                                                                                                                                                <Typography variant="body1" sx={{
+                                                                                                                                                                    color: COLORS.text.primary,
+                                                                                                                                                                    fontWeight: 500,
+                                                                                                                                                                    mt: 0.5
+                                                                                                                                                                }}>
+                                                                                                                                                                    Tuần {lessonDetails[lesson.lessonId].week}
+                                                                                                                                                                </Typography>
+                                                                                                                                                            </Box>
+                                                                                                                                                        </Grid>
+
+                                                                                                                                                        {/* Mô tả */}
+                                                                                                                                                        <Grid item xs={12}>
+                                                                                                                                                            <Box sx={{
+                                                                                                                                                                p: 2,
+                                                                                                                                                                border: '1px solid rgba(0, 0, 0, 0.08)',
+                                                                                                                                                                borderRadius: 1,
+                                                                                                                                                                bgcolor: 'rgba(0, 0, 0, 0.01)'
+                                                                                                                                                            }}>
+                                                                                                                                                                <Typography variant="caption" sx={{
+                                                                                                                                                                    color: COLORS.text.secondary,
+                                                                                                                                                                    fontWeight: 600,
+                                                                                                                                                                    textTransform: 'uppercase',
+                                                                                                                                                                    fontSize: '0.7rem',
+                                                                                                                                                                    letterSpacing: 0.5
+                                                                                                                                                                }}>
+                                                                                                                                                                    Mô tả
+                                                                                                                                                                </Typography>
+                                                                                                                                                                <Typography variant="body2" sx={{
+                                                                                                                                                                    color: COLORS.text.primary,
+                                                                                                                                                                    lineHeight: 1.6,
+                                                                                                                                                                    mt: 0.5
+                                                                                                                                                                }}>
+                                                                                                                                                                    {lessonDetails[lesson.lessonId].description || 'Chưa có mô tả'}
+                                                                                                                                                                </Typography>
+                                                                                                                                                            </Box>
+                                                                                                                                                        </Grid>
+
+                                                                                                                                                        {/* Ghi chú (nếu có) */}
+                                                                                                                                                        {lessonDetails[lesson.lessonId].note && (
+                                                                                                                                                            <Grid item xs={12}>
+                                                                                                                                                                <Box sx={{
+                                                                                                                                                                    p: 2,
+                                                                                                                                                                    border: '1px solid rgba(255, 171, 0, 0.2)',
+                                                                                                                                                                    borderRadius: 1,
+                                                                                                                                                                    bgcolor: 'rgba(255, 171, 0, 0.05)'
+                                                                                                                                                                }}>
+                                                                                                                                                                    <Typography variant="caption" sx={{
+                                                                                                                                                                        color: COLORS.text.secondary,
+                                                                                                                                                                        fontWeight: 600,
+                                                                                                                                                                        textTransform: 'uppercase',
+                                                                                                                                                                        fontSize: '0.7rem',
+                                                                                                                                                                        letterSpacing: 0.5
+                                                                                                                                                                    }}>
+                                                                                                                                                                        Ghi chú
+                                                                                                                                                                    </Typography>
+                                                                                                                                                                    <Typography variant="body2" sx={{
+                                                                                                                                                                        color: COLORS.text.primary,
+                                                                                                                                                                        lineHeight: 1.6,
+                                                                                                                                                                        mt: 0.5,
+                                                                                                                                                                        fontStyle: 'italic'
+                                                                                                                                                                    }}>
+                                                                                                                                                                        {lessonDetails[lesson.lessonId].note}
+                                                                                                                                                                    </Typography>
+                                                                                                                                                                </Box>
+                                                                                                                                                            </Grid>
+                                                                                                                                                        )}
+                                                                                                                                                    </Grid>
+                                                                                                                                                </Box>
+                                                                                                                                            </>
+                                                                                                                                        ) : (
+                                                                                                                                            <Box sx={{
+                                                                                                                                                textAlign: 'center',
+                                                                                                                                                p: 3,
+                                                                                                                                                color: COLORS.text.secondary
+                                                                                                                                            }}>
+                                                                                                                                                <Typography>
+                                                                                                                                                    Nhấp vào tên bài học để xem thông tin chi tiết
+                                                                                                                                                </Typography>
+                                                                                                                                            </Box>
+                                                                                                                                        )}
+                                                                                                                                    </Box>
+                                                                                                                                </Collapse>
+                                                                                                                            </TableCell>
                                                                                                                         </TableRow>
-                                                                                                                    </TableHead>
-                                                                                                                    <TableBody>
-                                                                                                                        {module.lessons && module.lessons.length > 0 ? (
-                                                                                                                            module.lessons.map((lesson, index) => (
-                                                                                                                                <StyledTableRow key={lesson.lessonId}>
-                                                                                                                                    <TableCell align="center">{index + 1}</TableCell>
-                                                                                                                                    <TableCell align="left">
-                                                                                                                                        {editLessonMode === lesson.lessonId ? (
-                                                                                                                                            <TextField
-                                                                                                                                                value={editedLessonName}
-                                                                                                                                                onChange={handleLessonInputChange}
-                                                                                                                                                fullWidth
-                                                                                                                                                variant="outlined"
-                                                                                                                                                size="small"
-                                                                                                                                            />
-                                                                                                                                        ) : (
-                                                                                                                                            lesson.name
-                                                                                                                                        )}
-                                                                                                                                    </TableCell>
-                                                                                                                                    <TableCell align="center">
-                                                                                                                                        {editLessonMode === lesson.lessonId ? (
-                                                                                                                                            <TextField
-                                                                                                                                                value={editedLessonPeriods}
-                                                                                                                                                onChange={handleLessonPeriodsChange}
-                                                                                                                                                type="number"
-                                                                                                                                                variant="outlined"
-                                                                                                                                                size="small"
-                                                                                                                                                sx={{ width: '80px' }}
-                                                                                                                                            />
-                                                                                                                                        ) : (
-                                                                                                                                            <InfoChip
-                                                                                                                                                icon={<SchoolIcon />}
-                                                                                                                                                label={`${lesson.totalPeriods || 1} tiết`}
-                                                                                                                                                size="small"
-                                                                                                                                            />
-                                                                                                                                        )}
-                                                                                                                                    </TableCell>
-                                                                                                                                    <TableCell align="center">
-                                                                                                                                        {editLessonMode === lesson.lessonId ? (
-                                                                                                                                            <>
-                                                                                                                                                <IconButton
-                                                                                                                                                    onClick={() => handleSaveLessonEdit(lesson.lessonId)}
-                                                                                                                                                    sx={{
-                                                                                                                                                        color: COLORS.success,
-                                                                                                                                                        bgcolor: 'rgba(0, 171, 85, 0.08)',
-                                                                                                                                                        mr: 1,
-                                                                                                                                                        '&:hover': { bgcolor: 'rgba(0, 171, 85, 0.15)' }
-                                                                                                                                                    }}
-                                                                                                                                                >
-                                                                                                                                                    <CheckIcon />
-                                                                                                                                                </IconButton>
-                                                                                                                                                <IconButton
-                                                                                                                                                    onClick={handleCancelLessonEdit}
-                                                                                                                                                    sx={{
-                                                                                                                                                        color: COLORS.error,
-                                                                                                                                                        bgcolor: 'rgba(255, 72, 66, 0.08)',
-                                                                                                                                                        '&:hover': { bgcolor: 'rgba(255, 72, 66, 0.15)' }
-                                                                                                                                                    }}
-                                                                                                                                                >
-                                                                                                                                                    <CloseIcon />
-                                                                                                                                                </IconButton>
-                                                                                                                                            </>
-                                                                                                                                        ) : (
-                                                                                                                                            <>
-                                                                                                                                                <IconButton
-                                                                                                                                                    onClick={() => handleEditLessonClick(lesson)}
-                                                                                                                                                    sx={{
-                                                                                                                                                        color: COLORS.primary,
-                                                                                                                                                        bgcolor: 'rgba(6, 169, 174, 0.08)',
-                                                                                                                                                        mr: 1,
-                                                                                                                                                        '&:hover': { bgcolor: 'rgba(6, 169, 174, 0.15)' }
-                                                                                                                                                    }}
-                                                                                                                                                >
-                                                                                                                                                    <EditIcon />
-                                                                                                                                                </IconButton>
-                                                                                                                                                <IconButton
-                                                                                                                                                    onClick={() => handleDeleteLesson(lesson.lessonId, module.moduleId)}
-                                                                                                                                                    sx={{
-                                                                                                                                                        color: COLORS.error,
-                                                                                                                                                        bgcolor: 'rgba(255, 72, 66, 0.08)',
-                                                                                                                                                        '&:hover': { bgcolor: 'rgba(255, 72, 66, 0.15)' }
-                                                                                                                                                    }}
-                                                                                                                                                >
-                                                                                                                                                    <DeleteIcon />
-                                                                                                                                                </IconButton>
-                                                                                                                                            </>
-                                                                                                                                        )}
-                                                                                                                                    </TableCell>
-                                                                                                                                </StyledTableRow>
-                                                                                                                            ))
-                                                                                                                        ) : (
-                                                                                                                            <TableRow>
-                                                                                                                                <TableCell colSpan={4} align="center" sx={{ py: 3, color: COLORS.text.secondary }}>
-                                                                                                                                    Không có bài học nào.
-                                                                                                                                </TableCell>
-                                                                                                                            </TableRow>
-                                                                                                                        )}
-                                                                                                                    </TableBody>
-                                                                                                                </Table>
-                                                                                                            </TableContainer>
-                                                                                                        </Box>
-                                                                                                    </>
-                                                                                                )}
+                                                                                                                    </React.Fragment>
+                                                                                                                ))
+                                                                                                            ) : (
+                                                                                                                <TableRow>
+                                                                                                                    <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                                                                                                                        <Typography sx={{ color: COLORS.text.secondary }}>
+                                                                                                                            Chưa có bài học nào trong module này
+                                                                                                                        </Typography>
+                                                                                                                    </TableCell>
+                                                                                                                </TableRow>
+                                                                                                            )}
+                                                                                                        </TableBody>
+                                                                                                    </Table>
+                                                                                                </TableContainer>
                                                                                             </Box>
                                                                                         </TableCell>
                                                                                     </TableRow>
@@ -1357,8 +1673,15 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                                                                     </TableBody>
                                                                 </Table>
                                                             </TableContainer>
+                                                            )}
                                                         </>
-                                                    ) : null}
+                                                    ) : (
+                                                        <Box sx={{ p: 3, textAlign: 'center' }}>
+                                                            <Typography sx={{ color: COLORS.text.secondary }}>
+                                                                Không có module nào cho học kỳ {currentSemester}
+                                                            </Typography>
+                                                        </Box>
+                                                    )}
                                                 </CardContent>
                                             </DashboardCard>
                                         </Box>
@@ -1368,143 +1691,173 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                         </List>
                     )}
 
-                    {/* Add Lesson Dialog */}
-                    <Dialog
-                        open={openAddLessonDialog}
-                        onClose={handleCloseAddLessonDialog}
-                        PaperProps={{
-                            sx: { borderRadius: 2, boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)' }
-                        }}
-                    >
-                        <DialogTitle sx={{ bgcolor: COLORS.primary, color: '#fff', display: 'flex', alignItems: 'center' }}>
-                            <AddIcon sx={{ mr: 1 }} />
-                            Thêm bài học mới
-                        </DialogTitle>
-                        <DialogContent sx={{ pt: 3, pb: 2, px: 3, minWidth: 400 }}>
-                            <TextField
-                                label="Tên bài học"
-                                value={newLessonName}
-                                onChange={(e) => setNewLessonName(e.target.value)}
-                                fullWidth
-                                sx={{ mb: 2 }}
-                            />
-                            <TextField
-                                label="Số tiết"
-                                type="number"
-                                value={newLessonPeriods}
-                                onChange={(e) => setNewLessonPeriods(e.target.value)}
-                                fullWidth
-                            />
+                    {/* Add Module Dialog */}
+                    <Dialog open={openAddModuleDialog} onClose={handleCloseAddModuleDialog} maxWidth="sm" fullWidth>
+                        <DialogTitle>Thêm Module Mới</DialogTitle>
+                        <DialogContent>
+                            <Stack spacing={2} sx={{ mt: 1 }}>
+                                <TextField
+                                    label="Tên module"
+                                    name="name"
+                                    value={newModule.name}
+                                    onChange={handleNewModuleInputChange}
+                                    fullWidth
+                                    required
+                                />
+                                <TextField
+                                    label="Sách"
+                                    name="book"
+                                    value={newModule.book}
+                                    onChange={handleNewModuleInputChange}
+                                    fullWidth
+                                    required
+                                />
+                                <TextField
+                                    select
+                                    label="Học kỳ"
+                                    name="semester"
+                                    value={newModule.semester}
+                                    onChange={handleNewModuleInputChange}
+                                    fullWidth
+                                    required
+                                >
+                                    <MenuItem value={1}>Học kỳ 1</MenuItem>
+                                    <MenuItem value={2}>Học kỳ 2</MenuItem>
+                                </TextField>
+                                <TextField
+                                    label="Tổng số tiết"
+                                    name="totalPeriods"
+                                    type="number"
+                                    value={newModule.totalPeriods}
+                                    onChange={handleNewModuleInputChange}
+                                    fullWidth
+                                    required
+                                    inputProps={{ min: 1 }}
+                                />
+                            </Stack>
                         </DialogContent>
-                        <DialogActions sx={{ px: 3, pb: 2 }}>
-                            <StyledButton
-                                onClick={handleCloseAddLessonDialog}
-                                sx={{
-                                    color: COLORS.text.primary,
-                                    '&:hover': {
-                                        bgcolor: 'rgba(6, 169, 174, 0.08)',
-                                    }
-                                }}
-                            >
-                                Hủy
-                            </StyledButton>
-                            <StyledButton
-                                onClick={handleAddLesson}
+                        <DialogActions>
+                            <Button onClick={handleCloseAddModuleDialog}>Hủy</Button>
+                            <Button
+                                onClick={handleAddModule}
                                 variant="contained"
-                                sx={{
-                                    bgcolor: COLORS.primary,
-                                    color: '#fff',
-                                    '&:hover': {
-                                        bgcolor: COLORS.primary,
-                                    },
-                                    '&.Mui-disabled': {
-                                        bgcolor: 'rgba(6, 169, 174, 0.4)',
-                                    }
-                                }}
-                                disabled={!newLessonName.trim()}
+                                disabled={
+                                    !newModule.name.trim() ||
+                                    !newModule.book.trim() ||
+                                    !newModule.totalPeriods ||
+                                    isNaN(Number(newModule.totalPeriods)) ||
+                                    Number(newModule.totalPeriods) < 1
+                                }
                             >
                                 Thêm
-                            </StyledButton>
+                            </Button>
                         </DialogActions>
                     </Dialog>
 
-                    {/* Add Module Dialog */}
-                    <Dialog
-                        open={openAddModuleDialog}
-                        onClose={handleCloseAddModuleDialog}
-                        PaperProps={{
-                            sx: { borderRadius: 2, boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)' }
-                        }}
-                    >
-                        <DialogTitle sx={{ bgcolor: COLORS.primary, color: '#fff', display: 'flex', alignItems: 'center' }}>
-                            <AddIcon sx={{ mr: 1 }} />
-                            Thêm Module mới
-                        </DialogTitle>
-                        <DialogContent sx={{ pt: 3, pb: 2, px: 3, minWidth: 400 }}>
-                            <TextField
-                                label="Tên chủ đề"
-                                name="name"
-                                value={newModule.name}
-                                onChange={handleNewModuleInputChange}
-                                fullWidth
-                                sx={{ mb: 2, mt: 1 }}
-                            />
-                            <TextField
-                                label="Tên sách"
-                                name="book"
-                                value={newModule.book}
-                                onChange={handleNewModuleInputChange}
-                                fullWidth
-                                sx={{ mb: 2 }}
-                            />
-                            <TextField
-                                label="Học kỳ"
-                                name="semester"
-                                type="number"
-                                value={newModule.semester}
-                                onChange={handleNewModuleInputChange}
-                                fullWidth
-                                sx={{ mb: 2 }}
-                            />
-                            <TextField
-                                label="Tổng số tiết"
-                                name="totalPeriods"
-                                value={newModule.totalPeriods}
-                                onChange={handleNewModuleInputChange}
-                                fullWidth
-                            />
+                    {/* Add Lesson Dialog */}
+                    <Dialog open={openAddLessonDialog} onClose={handleCloseAddLessonDialog} maxWidth="sm" fullWidth>
+                        <DialogTitle>Thêm Bài Học Mới</DialogTitle>
+                        <DialogContent>
+                            <Stack spacing={2} sx={{ mt: 1 }}>
+                                <TextField
+                                    label="Tên bài học"
+                                    value={newLessonName}
+                                    onChange={(e) => setNewLessonName(e.target.value)}
+                                    fullWidth
+                                    required
+                                />
+                                <TextField
+                                    label="Số tiết"
+                                    type="number"
+                                    value={newLessonPeriods}
+                                    onChange={(e) => setNewLessonPeriods(e.target.value)}
+                                    fullWidth
+                                    required
+                                    inputProps={{ min: 1 }}
+                                />
+                            </Stack>
                         </DialogContent>
-                        <DialogActions sx={{ px: 3, pb: 2 }}>
-                            <StyledButton
-                                onClick={handleCloseAddModuleDialog}
-                                sx={{
-                                    color: COLORS.text.primary,
-                                    '&:hover': {
-                                        bgcolor: 'rgba(6, 169, 174, 0.08)',
-                                    }
-                                }}
-                            >
-                                Hủy
-                            </StyledButton>
-                            <StyledButton
-                                onClick={handleAddModule}
+                        <DialogActions>
+                            <Button onClick={handleCloseAddLessonDialog}>Hủy</Button>
+                            <Button
+                                onClick={handleAddLesson}
                                 variant="contained"
-                                sx={{
-                                    bgcolor: COLORS.primary,
-                                    color: '#fff',
-                                    '&:hover': {
-                                        bgcolor: COLORS.primary,
-                                    },
-                                    '&.Mui-disabled': {
-                                        bgcolor: 'rgba(6, 169, 174, 0.4)',
-                                    }
-                                }}
-                                disabled={!newModule.name.trim() || !newModule.book.trim()}
+                                disabled={
+                                    !newLessonName.trim() ||
+                                    !newLessonPeriods ||
+                                    isNaN(Number(newLessonPeriods)) ||
+                                    Number(newLessonPeriods) < 1
+                                }
                             >
                                 Thêm
-                            </StyledButton>
+                            </Button>
                         </DialogActions>
                     </Dialog>
+
+                    {/* Module Edit Dialog */}
+                    {editModuleMode && selectedModuleId && (
+                        <Dialog open={editModuleMode} onClose={handleCancelModuleEdit} maxWidth="sm" fullWidth>
+                            <DialogTitle>Chỉnh sửa Module</DialogTitle>
+                            <DialogContent>
+                                <Stack spacing={2} sx={{ mt: 1 }}>
+                                    <TextField
+                                        label="Tên module"
+                                        name="name"
+                                        value={editedModule.name}
+                                        onChange={handleModuleInputChange}
+                                        fullWidth
+                                        required
+                                    />
+                                    <TextField
+                                        label="Sách"
+                                        name="book"
+                                        value={editedModule.book}
+                                        onChange={handleModuleInputChange}
+                                        fullWidth
+                                        required
+                                    />
+                                    <TextField
+                                        select
+                                        label="Học kỳ"
+                                        name="semester"
+                                        value={editedModule.semester}
+                                        onChange={handleModuleInputChange}
+                                        fullWidth
+                                        required
+                                    >
+                                        <MenuItem value={1}>Học kỳ 1</MenuItem>
+                                        <MenuItem value={2}>Học kỳ 2</MenuItem>
+                                    </TextField>
+                                    <TextField
+                                        label="Tổng số tiết"
+                                        name="totalPeriods"
+                                        type="number"
+                                        value={editedModule.totalPeriods}
+                                        onChange={handleModuleInputChange}
+                                        fullWidth
+                                        required
+                                        inputProps={{ min: 1 }}
+                                    />
+                                </Stack>
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={handleCancelModuleEdit}>Hủy</Button>
+                                <Button
+                                    onClick={handleSaveModuleEdit}
+                                    variant="contained"
+                                    disabled={
+                                        !editedModule.name.trim() ||
+                                        !editedModule.book.trim() ||
+                                        !editedModule.totalPeriods ||
+                                        isNaN(Number(editedModule.totalPeriods)) ||
+                                        Number(editedModule.totalPeriods) < 1
+                                    }
+                                >
+                                    Cập nhật
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
+                    )}
                 </Container>
             </Box>
         </Box>
