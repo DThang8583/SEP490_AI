@@ -9,33 +9,34 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Card,
-  CardContent,
-  Grid,
-  TextField,
-  IconButton,
-  Tooltip,
-  Chip,
-  Divider,
   CircularProgress,
   Alert,
-  Stack,
+  Card,
+  CardContent,
   Button,
+  IconButton,
+  TextField,
+  InputAdornment,
+  Chip,
+  Stack,
+  Divider,
 } from '@mui/material';
+import {
+  useTheme
+} from '@mui/material/styles';
 import {
   School as SchoolIcon,
   Search as SearchIcon,
-  Refresh as RefreshIcon,
-  ArrowUpward as ArrowUpIcon,
-  ArrowDownward as ArrowDownIcon,
-  LocationOn as LocationIcon,
-  AccountBalance as SchoolBuildingIcon,
   Add as AddIcon,
+  Refresh as RefreshIcon,
+  LocationOn as LocationIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
-import Paging from '../../../Components/Common/Paging';
 
 const Schools = () => {
+  const theme = useTheme();
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -43,23 +44,43 @@ const Schools = () => {
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortColumn, setSortColumn] = useState('');
-  const [sortOrder, setSortOrder] = useState('asc');
+
+  const handleDeleteSchool = async (schoolId) => {
+    try {
+      setLoading(true); // Or a specific loading state for deletion
+      const token = localStorage.getItem('accessToken');
+      
+      const url = `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/schools/${schoolId}`;
+      
+      const response = await axios.delete(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      console.log('Delete API Response:', response.data);
+      
+      if (response.data.code === 0) {
+        // Refresh the school list after successful deletion
+        fetchSchools();
+        setError(''); // Clear any previous errors
+      } else {
+        setError(response.data.message || 'Failed to delete school');
+      }
+    } catch (error) {
+      console.error('Error deleting school:', error);
+      setError('Không thể xóa trường');
+    } finally {
+      // setLoading(false); // Loading will be set to false by fetchSchools
+    }
+  };
 
   const fetchSchools = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
       
-      let url = `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/schools?Page=${currentPage}&PageSize=${pageSize}`;
-      
-      if (searchTerm) {
-        url += `&SearchTerm=${encodeURIComponent(searchTerm)}`;
-      }
-
-      if (sortColumn) {
-        url += `&SortColumn=${encodeURIComponent(sortColumn)}&SortOrder=${encodeURIComponent(sortOrder)}`;
-      }
+      const url = `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/schools?Page=${currentPage}&PageSize=${pageSize}`;
 
       const response = await axios.get(url, {
         headers: {
@@ -67,9 +88,15 @@ const Schools = () => {
         },
       });
 
-      setSchools(response.data.data.items);
-      setTotalRecords(response.data.data.totalRecords);
-      setError('');
+      console.log('API Response:', response.data);
+      
+      if (response.data.code === 0) {
+        setSchools(response.data.data.items);
+        setTotalRecords(response.data.data.totalRecords);
+        setError('');
+      } else {
+        setError('Failed to fetch schools data');
+      }
     } catch (error) {
       console.error('Error fetching schools:', error);
       setError('Không thể tải danh sách trường');
@@ -80,484 +107,241 @@ const Schools = () => {
 
   useEffect(() => {
     fetchSchools();
-  }, [currentPage, pageSize, searchTerm, sortColumn, sortOrder]);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-    setCurrentPage(1);
-  };
-
-  const handleSort = (column) => {
-    if (sortColumn === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortOrder('asc');
-    }
-    setCurrentPage(1);
-  };
-
-  const getSortIcon = (column) => {
-    if (sortColumn !== column) return null;
-    return sortOrder === 'asc' ? <ArrowUpIcon fontSize="small" /> : <ArrowDownIcon fontSize="small" />;
-  };
+  }, [currentPage, pageSize]);
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header with Action Button */}
-      <Box 
-        sx={{ 
-          mb: 4, 
-          display: 'flex', 
-          alignItems: 'center',
+    <Box sx={{ 
+      minHeight: '100vh',
+      backgroundColor: theme.palette.background.default,
+    }}>
+      {/* Header Section */}
+      <Box sx={{ 
+        backgroundColor: theme.palette.background.paper,
+        boxShadow: theme.shadows[1],
+        py: 3,
+        px: 4,
+        mb: 4
+      }}>
+        <Box sx={{ 
+          maxWidth: '1400px',
+          margin: '0 auto',
+          display: 'flex',
           justifyContent: 'space-between',
-          gap: 2,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <SchoolIcon 
-            sx={{ 
-              fontSize: 40, 
-              color: 'primary.main', 
-              mr: 2,
-              animation: 'pulse 2s infinite',
-              '@keyframes pulse': {
-                '0%': {
-                  transform: 'scale(1)',
-                  opacity: 1,
-                },
-                '50%': {
-                  transform: 'scale(1.1)',
-                  opacity: 0.8,
-                },
-                '100%': {
-                  transform: 'scale(1)',
-                  opacity: 1,
-                },
-              },
-            }} 
-          />
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
-              Quản lý trường học
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Quản lý thông tin các trường trong hệ thống
-            </Typography>
+          alignItems: 'center'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <SchoolIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                Quản lý trường học
+              </Typography>
+              <Typography variant="subtitle1" sx={{ color: theme.palette.text.secondary }}>
+                Hệ thống quản lý thông tin trường học
+              </Typography>
+            </Box>
           </Box>
+          {totalRecords === 0 && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{
+                backgroundColor: theme.palette.primary.main,
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.dark,
+                },
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+              }}
+            >
+              Thêm trường mới
+            </Button>
+          )}
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          sx={{
-            borderRadius: 2,
-            textTransform: 'none',
-            py: 1,
-            px: 3,
-            bgcolor: 'primary.main',
-            '&:hover': {
-              bgcolor: 'primary.dark',
-              transform: 'translateY(-2px)',
-              boxShadow: 4,
-            },
-            transition: 'all 0.2s',
-          }}
-        >
-          Thêm trường mới
-        </Button>
       </Box>
 
-      {/* Total Schools Card */}
-      <Paper
-        elevation={0}
-        sx={{
-          mb: 4,
-          borderRadius: 4,
-          background: 'linear-gradient(135deg, #6B8DE6 0%, #5E76CC 100%)',
-          overflow: 'hidden',
-          position: 'relative',
-          transition: 'transform 0.3s ease-in-out',
-          '&:hover': {
-            transform: 'translateY(-5px)',
-          },
-        }}
-      >
-        {/* Decorative Elements */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: -20,
-            right: -20,
-            width: 200,
-            height: 200,
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.1)',
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: -30,
-            left: -30,
-            width: 140,
-            height: 140,
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.05)',
-          }}
-        />
-        
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={4}
-          alignItems="center"
-          sx={{ 
-            p: 4,
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          <Box
-            sx={{
-              p: 2.5,
-              borderRadius: 3,
-              bgcolor: 'rgba(255, 255, 255, 0.2)',
-              backdropFilter: 'blur(8px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <SchoolBuildingIcon sx={{ fontSize: 48, color: '#fff' }} />
-          </Box>
-          
-          <Box>
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontWeight: 500,
-                mb: 1,
-              }}
-            >
-              Tổng số trường trong hệ thống
-            </Typography>
-            <Typography 
-              variant="h2" 
-              sx={{ 
-                color: '#fff',
-                fontWeight: 700,
-                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              }}
-            >
-              {totalRecords}
-            </Typography>
-          </Box>
-        </Stack>
-      </Paper>
+      {/* Main Content */}
+      <Box sx={{ 
+        maxWidth: '1400px',
+        margin: '0 auto',
+        px: 4,
+      }}>
+        {/* error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        ) */}
 
-      {/* Search and Filter */}
-      <Paper 
-        elevation={0}
-        sx={{ 
-          p: 3, 
-          mb: 4, 
-          borderRadius: 4,
-          bgcolor: '#fff',
-          border: '1px solid',
-          borderColor: 'divider',
-          transition: 'all 0.3s',
-          '&:hover': {
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          },
-        }}
-      >
-        <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              placeholder="Tìm kiếm theo tên trường..."
-              variant="outlined"
-              value={searchTerm}
-              onChange={handleSearch}
-              InputProps={{
-                startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />,
-                sx: {
-                  borderRadius: 2.5,
-                  bgcolor: 'background.paper',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'divider',
-                    transition: 'all 0.2s',
-                  },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'primary.main',
-                    borderWidth: '2px',
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'primary.main',
-                    borderWidth: '2px',
-                  },
-                }
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} container justifyContent="flex-end">
-            <Tooltip title="Làm mới dữ liệu">
-              <IconButton 
-                onClick={() => fetchSchools()}
-                sx={{
-                  p: 2,
-                  bgcolor: 'primary.lighter',
-                  color: 'primary.main',
-                  borderRadius: 2,
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    bgcolor: 'primary.light',
-                    transform: 'rotate(180deg)',
-                  }
-                }}
-              >
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* Error Alert */}
-      {error && (
-        <Alert 
-          severity="error" 
-          sx={{ 
-            mb: 4, 
-            borderRadius: 3,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          }}
-        >
-          {error}
-        </Alert>
-      )}
-
-      {/* Schools Table */}
-      <Paper 
-        elevation={0}
-        sx={{ 
-          width: '100%', 
-          overflow: 'hidden',
-          borderRadius: 4,
-          border: '1px solid',
-          borderColor: 'divider',
-          transition: 'all 0.3s',
-          mb: 3,
-          '&:hover': {
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          },
-        }}
-      >
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.50' }}>
-                <TableCell 
-                  onClick={() => handleSort('schoolId')}
-                  sx={{ 
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      bgcolor: 'action.hover',
-                      color: 'primary.main',
-                    }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    ID
-                    {getSortIcon('schoolId')}
-                  </Box>
-                </TableCell>
-                <TableCell 
-                  onClick={() => handleSort('name')}
-                  sx={{ 
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      bgcolor: 'action.hover',
-                      color: 'primary.main',
-                    }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    Tên trường
-                    {getSortIcon('name')}
-                  </Box>
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Mô tả</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Địa chỉ</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Phường/Xã</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Quận/Huyện</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Thành phố</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
-                    <CircularProgress size={40} thickness={4} />
-                  </TableCell>
-                </TableRow>
-              ) : schools.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
-                    <Box sx={{ textAlign: 'center' }}>
-                      <SchoolIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                      <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>
-                        Không có dữ liệu
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Chưa có trường nào trong hệ thống
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                schools.map((school) => (
-                  <TableRow 
-                    key={school.schoolId}
-                    hover
-                    sx={{
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        bgcolor: 'primary.lighter',
-                        '& .MuiChip-root': {
-                          transform: 'scale(1.05)',
-                        },
-                      }
+        {/* Search and Stats Section */}
+        <Box sx={{ mb: 4 }}>
+          <Card sx={{ 
+            borderRadius: 2,
+            boxShadow: theme.shadows[2],
+            backgroundColor: theme.palette.background.paper,
+          }}>
+            <CardContent>
+              <Box sx={{ 
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 3
+              }}>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                  <Chip
+                    icon={<SchoolIcon />}
+                    label={`Tổng số: ${totalRecords} trường`}
+                    color="primary"
+                    variant="outlined"
+                  />
+                  <IconButton 
+                    onClick={fetchSchools}
+                    sx={{ 
+                      backgroundColor: theme.palette.action.hover,
+                      '&:hover': { backgroundColor: theme.palette.action.selected }
                     }}
                   >
-                    <TableCell>
-                      <Chip 
-                        label={school.schoolId}
-                        size="small"
-                        sx={{ 
-                          bgcolor: 'primary.lighter',
-                          color: 'primary.main',
-                          fontWeight: 600,
-                          transition: 'transform 0.2s',
-                          minWidth: 60,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                        {school.name}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography 
-                        variant="body2" 
-                        color="text.secondary"
-                        sx={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                        }}
-                      >
-                        {school.description}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <LocationIcon 
-                          sx={{ 
-                            fontSize: 16, 
-                            color: 'error.main',
-                            animation: 'bounce 1s infinite',
-                            '@keyframes bounce': {
-                              '0%, 100%': {
-                                transform: 'translateY(0)',
-                              },
-                              '50%': {
-                                transform: 'translateY(-2px)',
-                              },
-                            },
-                          }} 
-                        />
-                        <Typography variant="body2">{school.address}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">{school.ward}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">{school.district}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={school.city}
-                        size="small"
-                        sx={{ 
-                          bgcolor: 'success.lighter',
-                          color: 'success.dark',
-                          fontWeight: 500,
-                          transition: 'transform 0.2s',
-                        }}
-                      />
+                    <RefreshIcon />
+                  </IconButton>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* Table Section */}
+        <Paper sx={{ 
+          borderRadius: 2,
+          boxShadow: theme.shadows[2],
+          overflow: 'hidden',
+          backgroundColor: theme.palette.background.paper,
+        }}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: theme.palette.action.hover }}>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>ID</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Tên trường</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Mô tả</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Địa chỉ</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Phường/Xã</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Quận/Huyện</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Thành phố</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: theme.palette.text.primary }}>Thao tác</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                      <CircularProgress />
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+                ) : schools.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                      <Box sx={{ textAlign: 'center' }}>
+                        <SchoolIcon sx={{ fontSize: 48, color: theme.palette.text.disabled, mb: 2 }} />
+                        <Typography variant="h6" color="text.secondary">
+                          Không có dữ liệu
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Chưa có trường nào trong hệ thống
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  schools.map((school) => (
+                    <TableRow 
+                      key={school.schoolId}
+                      sx={{ 
+                        '&:hover': { 
+                          backgroundColor: theme.palette.action.hover,
+                          transition: 'background-color 0.2s'
+                        }
+                      }}
+                    >
+                      <TableCell>
+                        <Chip 
+                          label={school.schoolId}
+                          size="small"
+                          sx={{ 
+                            backgroundColor: theme.palette.primary.light,
+                            color: theme.palette.primary.dark,
+                            fontWeight: 500
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                          {school.name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {school.description}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LocationIcon sx={{ fontSize: 16, color: theme.palette.error.main }} />
+                          <Typography variant="body2" color="text.primary">{school.address}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={{ color: theme.palette.text.primary }}>{school.ward}</TableCell>
+                      <TableCell sx={{ color: theme.palette.text.primary }}>{school.district}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={school.city}
+                          size="small"
+                          sx={{ 
+                            backgroundColor: theme.palette.success.light,
+                            color: theme.palette.success.dark
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1}>
+                          <IconButton 
+                            size="small"
+                            sx={{ 
+                              color: theme.palette.primary.main,
+                              '&:hover': { backgroundColor: theme.palette.action.hover }
+                            }}
+                          >
+                          </IconButton>
+                          <IconButton 
+                            size="small"
+                            sx={{
+                              color: theme.palette.error.main,
+                              '&:hover': { backgroundColor: theme.palette.action.hover }
+                            }}
+                            onClick={() => handleDeleteSchool(school.schoolId)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
 
-      {/* Pagination Section */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 2,
-          borderRadius: 4,
-          border: '1px solid',
-          borderColor: 'divider',
-          bgcolor: '#fff',
+        {/* Pagination Info */}
+        <Box sx={{ 
+          mt: 3,
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'space-between',
-          transition: 'all 0.3s',
-          '&:hover': {
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          },
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Tổng số:
-          </Typography>
-          <Chip
-            label={`${totalRecords} trường`}
-            size="small"
-            sx={{
-              bgcolor: 'primary.lighter',
-              color: 'primary.main',
-              fontWeight: 600,
-            }}
-          />
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 2
+        }}>
         </Box>
-        
-        <Paging
-          totalRecords={totalRecords}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onPageChange={handlePageChange}
-        />
-      </Paper>
+      </Box>
     </Box>
   );
 };

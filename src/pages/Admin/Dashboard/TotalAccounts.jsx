@@ -19,6 +19,7 @@ import {
   InputAdornment,
   Chip,
   Avatar,
+  Switch,
 } from '@mui/material';
 import {
   GetApp as DownloadIcon,
@@ -205,6 +206,38 @@ const TotalAccounts = () => {
     }
   };
 
+  const handleEdit = (userId) => {
+    navigate(`/admin/edit-account/${userId}`);
+  };
+
+  const handleDelete = async (userId) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await axios.delete(
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.data.code === 0 || response.data.code === 23) {
+        setAccounts(prevAccounts => 
+          prevAccounts.map(account => 
+            account.userId === userId 
+              ? { ...account, isActive: !account.isActive }
+              : account
+          )
+        );
+      } else {
+        setError(`Không thể cập nhật trạng thái: ${response.data.message || 'Vui lòng thử lại sau.'}`);
+      }
+    } catch (err) {
+      console.error('Error updating status:', err);
+      setError(`Không thể cập nhật trạng thái: ${err.response?.data?.message || 'Vui lòng thử lại sau.'}`);
+    }
+  };
+
   return (
     <Box sx={{ 
       p: 3,
@@ -311,6 +344,7 @@ const TotalAccounts = () => {
                   </TableCell>
                   <TableCell>Số điện thoại</TableCell>
                   <TableCell>Địa chỉ</TableCell>
+                  <TableCell align="center">Thao tác</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -345,6 +379,32 @@ const TotalAccounts = () => {
                     </TableCell>
                     <TableCell>{account.phoneNumber}</TableCell>
                     <TableCell>{account.address}</TableCell>
+                    <TableCell align="center">
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <Tooltip title={account.isActive ? "Vô hiệu hóa" : "Kích hoạt"}>
+                          <Switch
+                            size="small"
+                            color="success"
+                            checked={account.isActive}
+                            onChange={() => handleDelete(account.userId)}
+                            sx={{
+                              '& .MuiSwitch-switchBase.Mui-checked': {
+                                color: '#4caf50',
+                                '& + .MuiSwitch-track': {
+                                  backgroundColor: '#4caf50',
+                                },
+                              },
+                              '& .MuiSwitch-switchBase': {
+                                color: '#fff',
+                                '& + .MuiSwitch-track': {
+                                  backgroundColor: '#ccc',
+                                },
+                              },
+                            }}
+                          />
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

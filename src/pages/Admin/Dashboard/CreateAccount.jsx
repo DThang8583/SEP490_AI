@@ -13,9 +13,12 @@ import {
   Grid,
   Paper,
 } from '@mui/material';
+import { ArrowBack } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const CreateAccount = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -81,11 +84,23 @@ const CreateAccount = () => {
         gradeId: parseInt(formData.gradeId),
       };
 
+      // Log data before sending
+      console.log('Data from API:');
+      console.log('Roles:', roles);
+      console.log('Schools:', schools);
+      console.log('Grades:', grades);
+      console.log('Selected values:', {
+        roleId: formData.roleId,
+        schoolId: formData.schoolId,
+        gradeId: formData.gradeId
+      });
+      console.log('Submit data:', submitData);
+
       const response = await axios.post(
         'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users',
         submitData
       );
-      if (response.data.code === 0) {
+      if (response.data.code === 0 || response.data.code === 21) {
         setSuccess('Tài khoản đã được tạo thành công!');
         setFormData({
           username: '',
@@ -96,19 +111,35 @@ const CreateAccount = () => {
           gradeId: 0,
         });
       } else {
+        console.log('Error response data:', response.data);
         setError('Có lỗi xảy ra khi tạo tài khoản.');
       }
     } catch (err) {
+      console.log('Error response:', err.response?.data);
+      console.log('Error details:', err);
       setError('Không thể tạo tài khoản. Vui lòng thử lại sau.');
-      console.error('Error creating account:', err);
     }
   };
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
-        Tạo Tài Khoản Mới
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate(-1)}
+          sx={{
+            color: 'rgb(102, 102, 102)',
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.02)',
+            },
+          }}
+        >
+          Quay lại
+        </Button>
+        <Typography variant="h4" component="h1">
+          Tạo Tài Khoản Mới
+        </Typography>
+      </Box>
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -14,6 +15,9 @@ import {
   CardContent,
   Grid,
   LinearProgress,
+  Pagination,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
@@ -23,72 +27,71 @@ import {
   Group as GroupIcon,
   Timer as TimerIcon,
   Assessment as AssessmentIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
+import axios from 'axios';
 
 const TotalExams = () => {
-  // Mock data
-  const exams = [
-    {
-      id: 'EX001',
-      title: 'Kiểm tra chương 1: Phương trình bậc hai',
-      teacherName: 'Nguyễn Văn A',
-      subject: 'Toán học',
-      grade: 'Lớp 1',
-      status: 'approved',
-      createdAt: '2024-03-01',
-      duration: '45 phút',
-      questions: 20,
-      difficulty: 'medium'
-    },
-    {
-      id: 'EX002',
-      title: 'Kiểm tra chương 2: Hàm số và đồ thị',
-      teacherName: 'Trần Thị B',
-      subject: 'Toán học',
-      grade: 'Lớp 2',
-      status: 'pending',
-      createdAt: '2024-03-02',
-      duration: '60 phút',
-      questions: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'EX003',
-      title: 'Kiểm tra chương 3: Hình học không gian',
-      teacherName: 'Lê Văn C',
-      subject: 'Toán học',
-      grade: 'Lớp 3',
-      status: 'approved',
-      createdAt: '2024-03-03',
-      duration: '90 phút',
-      questions: 30,
-      difficulty: 'hard'
-    },
-    {
-      id: 'EX004',
-      title: 'Kiểm tra 15 phút: Giới hạn hàm số',
-      teacherName: 'Phạm Thị D',
-      subject: 'Toán học',
-      grade: 'Lớp 4',
-      status: 'rejected',
-      createdAt: '2024-03-04',
-      duration: '15 phút',
-      questions: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'EX005',
-      title: 'Kiểm tra học kỳ: Đạo hàm và ứng dụng',
-      teacherName: 'Hoàng Văn E',
-      subject: 'Toán học',
-      grade: 'Lớp 5',
-      status: 'approved',
-      createdAt: '2024-03-05',
-      duration: '90 phút',
-      questions: 40,
-      difficulty: 'hard'
+  const navigate = useNavigate();
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchExams = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/quizzes`,
+        {
+          params: {
+            Page: page,
+            PageSize: pageSize,
+            searchTerm: searchTerm,
+          }
+        }
+      );
+      
+      if (response.data.code === 0) {
+        setExams(response.data.data.items);
+        setTotalPages(response.data.data.totalPages);
+        setTotalRecords(response.data.data.totalRecords);
+      }
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    if (page !== 1) {
+      setPage(1);
+    } else {
+      fetchExams();
+    }
+  }, [page, pageSize, searchTerm]);
+
+  useEffect(() => {
+    if (page === 1) {
+      fetchExams();
+    }
+  }, [page, pageSize, searchTerm]);
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
+
+  const handleRowClick = (quizId) => {
+    navigate(`/admin/exams/${quizId}`);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
 
   const getStatusChip = (status) => {
     switch (status) {
@@ -160,27 +163,9 @@ const TotalExams = () => {
   const stats = [
     {
       title: 'Tổng số đề thi',
-      value: '32',
+      value: totalRecords.toString(),
       icon: <QuizIcon sx={{ fontSize: 40 }} />,
       color: 'primary'
-    },
-    {
-      title: 'Số giáo viên tham gia',
-      value: '8',
-      icon: <GroupIcon sx={{ fontSize: 40 }} />,
-      color: 'success'
-    },
-    {
-      title: 'Thời gian trung bình',
-      value: '60 phút',
-      icon: <TimerIcon sx={{ fontSize: 40 }} />,
-      color: 'warning'
-    },
-    {
-      title: 'Tổng câu hỏi',
-      value: '450',
-      icon: <AssessmentIcon sx={{ fontSize: 40 }} />,
-      color: 'info'
     }
   ];
 
@@ -221,27 +206,39 @@ const TotalExams = () => {
         ))}
       </Grid>
 
+      <Box sx={{ mb: 3, width: '100%' }}>
+        <TextField
+          fullWidth
+          label="Tìm kiếm đề thi"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+        {loading && <LinearProgress />}
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Tên đề thi</TableCell>
-                <TableCell>Giáo viên</TableCell>
-                <TableCell>Khối lớp</TableCell>
-                <TableCell>Thời gian</TableCell>
-                <TableCell>Số câu hỏi</TableCell>
-                <TableCell>Độ khó</TableCell>
-                <TableCell>Trạng thái</TableCell>
-                <TableCell>Ngày tạo</TableCell>
+                <TableCell>Tên bài học</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {exams.map((exam) => (
                 <TableRow 
-                  key={exam.id}
+                  key={exam.quizId}
                   hover
+                  onClick={() => handleRowClick(exam.quizId)}
                   sx={{
                     '&:last-child td, &:last-child th': { border: 0 },
                     cursor: 'pointer',
@@ -251,26 +248,26 @@ const TotalExams = () => {
                     }
                   }}
                 >
-                  <TableCell>{exam.id}</TableCell>
+                  <TableCell>{exam.quizId}</TableCell>
                   <TableCell>
                     <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                      {exam.title}
+                      {exam.quizName}
                     </Typography>
                   </TableCell>
-                  <TableCell>{exam.teacherName}</TableCell>
-                  <TableCell>{exam.grade}</TableCell>
-                  <TableCell>{exam.duration}</TableCell>
-                  <TableCell>{exam.questions}</TableCell>
-                  <TableCell>{getDifficultyChip(exam.difficulty)}</TableCell>
-                  <TableCell>{getStatusChip(exam.status)}</TableCell>
-                  <TableCell>
-                    {new Date(exam.createdAt).toLocaleDateString('vi-VN')}
-                  </TableCell>
+                  <TableCell>{exam.lessonName}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+          <Pagination 
+            count={totalPages} 
+            page={page} 
+            onChange={handlePageChange}
+            color="primary"
+          />
+        </Box>
       </Paper>
     </Box>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -9,231 +9,231 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  CircularProgress,
+  Alert,
   Chip,
-  IconButton,
-  Tooltip,
-  Card,
-  CardContent,
-  Grid,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-  Pending as PendingIcon,
-  TrendingUp as TrendingUpIcon,
-  School as SchoolIcon,
-  Person as PersonIcon,
-  AccessTime as AccessTimeIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
+import axios from 'axios';
+import Paging from '../../../Components/Common/Paging';
+import { useTheme } from '@mui/material/styles';
 
 const TotalLessons = () => {
-  // Mock data
-  const lessons = [
-    {
-      id: 'LS001',
-      title: 'Phương trình bậc hai',
-      teacherName: 'Nguyễn Văn A',
-      subject: 'Toán học',
-      grade: 'Lớp 1',
-      status: 'approved',
-      createdAt: '2024-03-01',
-      views: 245,
-      duration: '45 phút'
-    },
-    {
-      id: 'LS002',
-      title: 'Hàm số và đồ thị',
-      teacherName: 'Trần Thị B',
-      subject: 'Toán học',
-      grade: 'Lớp 2',
-      status: 'pending',
-      createdAt: '2024-03-02',
-      views: 180,
-      duration: '40 phút'
-    },
-    {
-      id: 'LS003',
-      title: 'Hình học không gian',
-      teacherName: 'Lê Văn C',
-      subject: 'Toán học',
-      grade: 'Lớp 3',
-      status: 'rejected',
-      createdAt: '2024-03-03',
-      views: 0,
-      duration: '50 phút'
-    },
-    {
-      id: 'LS004',
-      title: 'Giới hạn của hàm số',
-      teacherName: 'Phạm Thị D',
-      subject: 'Toán học',
-      grade: 'Lớp 4',
-      status: 'approved',
-      createdAt: '2024-03-04',
-      views: 320,
-      duration: '45 phút'
-    },
-    {
-      id: 'LS005',
-      title: 'Đạo hàm và ứng dụng',
-      teacherName: 'Hoàng Văn E',
-      subject: 'Toán học',
-      grade: 'Lớp 5',
-      status: 'approved',
-      createdAt: '2024-03-05',
-      views: 290,
-      duration: '55 phút'
-    }
-  ];
+  const [lessonPlans, setLessonPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const theme = useTheme();
 
-  const getStatusChip = (status) => {
-    switch (status) {
-      case 'approved':
-        return (
-          <Chip
-            icon={<CheckCircleIcon />}
-            label="Đã duyệt"
-            color="success"
-            size="small"
-            sx={{ minWidth: 100 }}
-          />
-        );
-      case 'rejected':
-        return (
-          <Chip
-            icon={<CancelIcon />}
-            label="Từ chối"
-            color="error"
-            size="small"
-            sx={{ minWidth: 100 }}
-          />
-        );
-      default:
-        return (
-          <Chip
-            icon={<PendingIcon />}
-            label="Chờ duyệt"
-            color="warning"
-            size="small"
-            sx={{ minWidth: 100 }}
-          />
-        );
+  const fetchLessonPlans = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('accessToken');
+
+      // Fetch all lesson plans to get the total count of non-drafts
+      const totalCountResponse = await axios.get(
+        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: {
+            Page: 1,
+            PageSize: 999, // Fetch all to count non-drafts
+            SearchTerm: searchTerm, // Apply search term to total count fetch as well
+          },
+        }
+      );
+
+      let nonDraftTotal = 0;
+      if (totalCountResponse.data?.code === 0 && totalCountResponse.data?.data?.items) {
+        nonDraftTotal = totalCountResponse.data.data.items.filter(plan => plan.status !== 'Draft').length;
+      }
+      setTotalCount(nonDraftTotal);
+
+      // Fetch lesson plans for the current page
+      const paginatedResponse = await axios.get(
+        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: {
+            Page: page,
+            PageSize: itemsPerPage,
+            SearchTerm: searchTerm,
+          },
+        }
+      );
+
+      if (paginatedResponse.data?.code === 0 && paginatedResponse.data?.data?.items) {
+         // Filter drafts from the current page's items before setting the state
+        const filteredLessonPlans = paginatedResponse.data.data.items.filter(plan => plan.status !== 'Draft');
+        setLessonPlans(filteredLessonPlans);
+      } else {
+        setLessonPlans([]);
+      }
+
+    } catch (err) {
+      console.error('Error fetching lesson plans:', err);
+      setError('Không thể tải danh sách giáo án. Vui lòng thử lại sau.');
+      setLessonPlans([]);
+      setTotalCount(0);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const stats = [
-    {
-      title: 'Tổng số Giáo án',
-      value: '45',
-      icon: <SchoolIcon sx={{ fontSize: 40 }} />,
-      color: 'primary'
-    },
-    {
-      title: 'Giáo viên tham gia',
-      value: '12',
-      icon: <PersonIcon sx={{ fontSize: 40 }} />,
-      color: 'success'
-    },
-    {
-      title: 'Thời lượng trung bình',
-      value: '45 phút',
-      icon: <AccessTimeIcon sx={{ fontSize: 40 }} />,
-      color: 'warning'
-    },
-    {
-      title: 'Lượt xem trung bình',
-      value: '258',
-      icon: <TrendingUpIcon sx={{ fontSize: 40 }} />,
-      color: 'info'
-    }
-  ];
+  useEffect(() => {
+    fetchLessonPlans();
+  }, [page, itemsPerPage, searchTerm]);
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setPage(1);
+  };
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+    setPage(1); // Reset to first page when searching
+  };
+
+  const getStatusChip = (status) => {
+    const statusConfig = {
+      'Pending': { color: 'warning', label: 'Chờ duyệt' },
+      'Approved': { color: 'success', label: 'Đã duyệt' },
+      'Rejected': { color: 'error', label: 'Từ chối' },
+      'Draft': { color: 'default', label: 'Bản nháp' },
+    };
+
+    const config = statusConfig[status] || { color: 'default', label: status };
+    // Only return the chip if the status is not 'Draft'
+    if (status === 'Draft') return null;
+    return (
+      <Chip
+        label={config.label}
+        color={config.color}
+        size="small"
+      />
+    );
+  };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        Quản lý Giáo án Toán học
+    <Box sx={{ 
+      p: 3,
+      pb: 8,
+      minHeight: 'calc(100vh - 64px)',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
+        Danh sách giáo án
       </Typography>
 
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        {stats.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card>
-              <CardContent sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between'
-              }}>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    {stat.title}
-                  </Typography>
-                  <Typography variant="h4" sx={{ mt: 1, fontWeight: 600 }}>
-                    {stat.value}
-                  </Typography>
-                </Box>
-                <Box sx={{ 
-                  color: `${stat.color}.main`,
-                  bgcolor: `${stat.color}.lighter`,
-                  p: 1,
-                  borderRadius: 2
-                }}>
-                  {stat.icon}
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Tìm kiếm theo tên giáo viên, tiết học, mô-đun..."
+          value={searchTerm}
+          onChange={handleSearch}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+          sx={{ maxWidth: '500px' }}
+        />
+        <Paper 
+          elevation={2}
+          sx={{ 
+            p: 2,
+            minWidth: '200px',
+            textAlign: 'center',
+            backgroundColor: "#666600",
+            borderRadius: 2,
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: theme.shadows[2],
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              boxShadow: theme.shadows[4],
+            }
+          }}
+        >
+          <Typography variant="subtitle2" color="black" gutterBottom>
+            Tổng số giáo án
+          </Typography>
+          <Typography variant="h4" color="black" sx={{ fontWeight: 'bold' }}>
+            {totalCount} {/* This will now show the total non-draft count */}
+          </Typography>
+        </Paper>
+      </Box>
 
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Tên Giáo án</TableCell>
-                <TableCell>Giáo viên</TableCell>
-                <TableCell>Khối lớp</TableCell>
-                <TableCell>Thời lượng</TableCell>
-                <TableCell>Lượt xem</TableCell>
-                <TableCell>Trạng thái</TableCell>
-                <TableCell>Ngày tạo</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {lessons.map((lesson) => (
-                <TableRow 
-                  key={lesson.id}
-                  hover
-                  sx={{
-                    '&:last-child td, &:last-child th': { border: 0 },
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      bgcolor: 'action.hover',
-                    }
-                  }}
-                >
-                  <TableCell>{lesson.id}</TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                      {lesson.title}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{lesson.teacherName}</TableCell>
-                  <TableCell>{lesson.grade}</TableCell>
-                  <TableCell>{lesson.duration}</TableCell>
-                  <TableCell>{lesson.views}</TableCell>
-                  <TableCell>{getStatusChip(lesson.status)}</TableCell>
-                  <TableCell>
-                    {new Date(lesson.createdAt).toLocaleDateString('vi-VN')}
-                  </TableCell>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      ) : (
+        <Paper sx={{ width: '100%', overflow: 'hidden', flex: 1 }}>
+          <TableContainer>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Giáo viên</TableCell>
+                  <TableCell>Tiết học</TableCell>
+                  <TableCell>Mô-đun</TableCell>
+                  <TableCell>Khối</TableCell>
+                  <TableCell>Trạng thái</TableCell>
+                  <TableCell>Ngày tạo</TableCell>
+                  <TableCell>Lý do từ chối</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+              </TableHead>
+              <TableBody>
+                {/* Render only non-draft lesson plans from the paginated response */}
+                {lessonPlans.map((plan) => (
+                   <TableRow hover key={plan.lessonPlanId}>
+                    <TableCell>{plan.lessonPlanId}</TableCell>
+                    <TableCell>{plan.fullname}</TableCell>
+                    <TableCell>{plan.lesson}</TableCell>
+                    <TableCell>{plan.module}</TableCell>
+                    <TableCell>{plan.grade}</TableCell>
+                    <TableCell>{getStatusChip(plan.status)}</TableCell>
+                    <TableCell>{plan.createdAt}</TableCell>
+                    <TableCell>{plan.disapprovedReason || '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Paging
+            totalItems={totalCount} 
+            itemsPerPage={itemsPerPage}
+            currentPage={page}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            itemsPerPageOptions={[5, 10, 25, 50]}
+          />
+        </Paper>
+      )}
     </Box>
   );
 };

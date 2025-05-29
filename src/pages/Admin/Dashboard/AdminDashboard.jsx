@@ -31,6 +31,8 @@ import DashboardOverview from './DashboardOverview';
 import AdminNavbar from '../../../Components/Admin/AdminNavbar';
 import Schools from './Schools';
 import CreateAccount from './CreateAccount';
+import AdminProfile from './AdminProfile';
+import QuizDetail from './QuizDetail';
 
 const drawerWidth = 280;
 
@@ -54,31 +56,25 @@ const AdminDashboard = () => {
     { 
       text: 'Quản lý tài khoản', 
       icon: <GroupIcon />, 
-      path: '/admin/accounts',
+      path: '/admin/quan-ly-tai-khoan',
       description: 'Quản lý người dùng hệ thống'
     },
     { 
       text: 'Quản lý Giáo án', 
       icon: <MenuBookIcon />, 
-      path: '/admin/lessons',
+      path: '/admin/quan-ly-giao-an',
       description: 'Quản lý nội dung Giáo án'
     },
     { 
       text: 'Quản lý đề thi', 
       icon: <QuizIcon />, 
-      path: '/admin/exams',
+      path: '/admin/quan-ly-bai-tap',
       description: 'Quản lý ngân hàng đề thi'
-    },
-    { 
-      text: 'Báo cáo thống kê', 
-      icon: <AssessmentIcon />, 
-      path: '/admin/reports',
-      description: 'Xem báo cáo và thống kê'
     },
     { 
       text: 'Quản lý trường học', 
       icon: <SchoolIcon />, 
-      path: '/admin/schools',
+      path: '/admin/quan-ly-truong',
       description: 'Quản lý thông tin trường học'
     },
   ];
@@ -260,12 +256,13 @@ const AdminDashboard = () => {
       >
         <Routes>
           <Route path="/" element={<DashboardOverview />} />
-          <Route path="/accounts" element={<TotalAccounts />} />
-          <Route path="/lessons" element={<TotalLessons />} />
-          <Route path="/exams" element={<TotalExams />} />
-          <Route path="/reports" element={<TotalExams />} />
-          <Route path="/schools" element={<Schools />} />
+          <Route path="/quan-ly-tai-khoan" element={<TotalAccounts />} />
+          <Route path="/quan-ly-giao-an" element={<TotalLessons />} />
+          <Route path="/quan-ly-bai-tap" element={<TotalExams />} />
+          <Route path="/quan-ly-truong" element={<Schools />} />
           <Route path="/create-account" element={<CreateAccount />} />
+          <Route path="/profile" element={<AdminProfile />} />
+          <Route path="/admin/exams/:id" element={<QuizDetail />} />
         </Routes>
       </Box>
     </Box>

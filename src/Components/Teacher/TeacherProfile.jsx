@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Container,
@@ -45,8 +45,8 @@ const float = keyframes`
   100% { transform: translateY(0px); }
 `;
 
-const Profile = () => {
-  const { userInfo } = useAuth();
+const TeacherProfile = () => {
+  const { userInfo, updateUserInfo } = useAuth();
   const { isDarkMode } = useTheme();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -71,6 +71,7 @@ const Profile = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = React.useRef(null);
+  const [usernameOrEmailInput, setUsernameOrEmailInput] = useState('');
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -134,6 +135,11 @@ const Profile = () => {
             wardId: userData.wardId,
           });
           
+          // Update AuthContext with the full user data including imgURL
+          if (updateUserInfo) {
+            updateUserInfo(userData);
+          }
+          
           // Cập nhật form data
           setFormData({
             fullName: userData.fullname,
@@ -150,6 +156,19 @@ const Profile = () => {
           throw new Error(response.data?.message || 'Có lỗi xảy ra');
         }
       } catch (error) {
+        console.error('Error updating profile:', {
+          message: error.message,
+          code: error.code,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          config: {
+            url: error.config?.url,
+            method: error.config?.method,
+            headers: error.config?.headers,
+            data: error.config?.data
+          }
+        });
         setError(error.response?.data?.message || 'Không thể tải thông tin người dùng');
         setLoading(false);
       }
@@ -187,7 +206,14 @@ const Profile = () => {
       }
       
       // Chuyển đổi định dạng dateOfBirth
-      const formattedDateOfBirth = format(new Date(formData.dateOfBirth), 'yyyy-MM-dd');
+      const dateObj = new Date(formData.dateOfBirth);
+
+      if (isNaN(dateObj.getTime())) {
+        setError('Ngày sinh không hợp lệ. Vui lòng nhập đúng định dạng.');
+        return;
+      }
+
+      const formattedDateOfBirth = format(dateObj, 'yyyy-MM-dd');
 
       // Chuẩn bị dữ liệu gửi đi
       const updateData = {
@@ -215,7 +241,7 @@ const Profile = () => {
       );
 
       // Check for success response
-      if (response.status === 200 && response.data.code === 0) {
+      if (response.status === 200 && response.data.code === 0 || response.data.code === 22) {
         setSuccess('Cập nhật thông tin thành công');
         setEditMode(false);
         
@@ -230,32 +256,93 @@ const Profile = () => {
           gender: formData.gender === 'Male' ? 1 : 2,
         }));
       } else {
-        setSuccess(response.data?.message || 'Có lỗi xảy ra');
+        setError(response.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin.');
       }
     } catch (error) {
-      setError('Không thể cập nhật thông tin');
+      console.error('Error updating profile:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data
+        }
+      });
+      setError(error.response?.data?.message || 'Đã xảy ra lỗi khi cập nhật thông tin.');
     }
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setError('Mật khẩu mới không khớp');
       return;
     }
-    setSuccess('Đổi mật khẩu thành công');
-    setChangePasswordMode(false);
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
+
+    try {
+      // Lấy username hoặc email từ trường nhập liệu
+      if (!usernameOrEmailInput) {
+          setError('Vui lòng nhập Username hoặc Email.');
+          return;
+      }
+      const usernameOrEmail = usernameOrEmailInput;
+      const accessToken = localStorage.getItem('accessToken');
+
+      if (!accessToken) {
+          setError('Vui lòng đăng nhập lại để đổi mật khẩu.');
+          return;
+      }
+
+      const response = await axios.put(
+          'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users',
+          {
+              usernameOrEmail: usernameOrEmail,
+              newPassword: passwordData.newPassword,
+              confirmedPassword: passwordData.confirmPassword,
+          },
+          {
+              headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+              },
+          }
+      );
+
+      console.log('Change Password API Response:', response);
+      console.log('Change Password API Response Code:', response.data?.code);
+
+      // Giả định code 0 hoặc 22 là thành công dựa trên các API khác
+      if (response.data && (response.data.code === 0 || response.data.code === 22)) {
+        setSuccess('Đổi mật khẩu thành công');
+        setChangePasswordMode(false);
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+        // Xóa thông báo lỗi nếu có
+        setError('');
+      } else {
+        // Xử lý phản hồi lỗi từ API
+        setError(response.data?.message || 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
+        setSuccess(''); // Xóa thông báo thành công nếu có
+      }
+
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setError(error.response?.data?.message || 'Đã xảy ra lỗi khi gọi API đổi mật khẩu.');
+      setSuccess(''); // Xóa thông báo thành công nếu có
+    }
   };
 
   const handleImageClick = () => {
     fileInputRef.current.click();
   };
 
-  const handleImageChange = (event) => {
+  const handleImageChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
       try {
@@ -272,20 +359,78 @@ const Profile = () => {
           return;
         }
 
-        // Hiển thị preview
+        // Hiển thị preview ngay lập tức
         const reader = new FileReader();
         reader.onloadend = () => {
           setImagePreview(reader.result);
-          setSuccess('Cập nhật ảnh đại diện thành công');
+          // Cập nhật profile state tạm thời với ảnh mới để hiển thị ngay
           setProfile(prev => ({
             ...prev,
             imgURL: reader.result
           }));
+          
+          // Cập nhật AuthContext với ảnh mới ngay lập tức
+          if (updateUserInfo) {
+              updateUserInfo({
+                  ...userInfo,
+                  imgURL: reader.result
+              });
+          }
         };
         reader.readAsDataURL(file);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Lấy token
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          setError('Vui lòng đăng nhập lại để tải ảnh lên.');
+          return;
+        }
+
+        console.log('Attempting image upload...');
+        // Gọi API để tải ảnh lên
+        const uploadResponse = await axios.post(
+          `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/profile-img`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        console.log('Upload API Response:', uploadResponse);
+        console.log('Upload API Response Code:', uploadResponse.data?.code);
+
+        // Check for success response (adjust based on actual API response structure)
+        if (uploadResponse.status === 200 && (uploadResponse.data.code === 0 || uploadResponse.data.code === 22)) {
+          console.log('Image upload successful, setting success state.');
+          // Ảnh đã được hiển thị preview, chỉ cần hiển thị thông báo thành công từ API
+          setSuccess('Cập nhật ảnh đại diện thành công');
+          // Nếu API trả về URL ảnh mới, bạn có thể cập nhật lại state profile và AuthContext tại đây
+          if (uploadResponse.data.data?.imgURL) {
+            setProfile(prev => ({ ...prev, imgURL: uploadResponse.data.data.imgURL }));
+            if (updateUserInfo) {
+              updateUserInfo({
+                ...userInfo,
+                imgURL: uploadResponse.data.data.imgURL
+              });
+            }
+          }
+        } else {
+          // Xử lý phản hồi lỗi từ API
+          console.log('Image upload API returned error code/status.', uploadResponse.data);
+          setError(uploadResponse.data?.message || 'Không thể tải ảnh lên.');
+          // Có thể rollback ảnh preview về ảnh cũ nếu upload lỗi nặng
+        }
+
       } catch (error) {
-        console.error('Error handling image:', error);
-        setError('Không thể cập nhật ảnh đại diện');
+        console.error('Error uploading image:', error);
+        setError(error.response?.data?.message || 'Đã xảy ra lỗi khi tải ảnh lên.');
+        // Có thể rollback ảnh preview về ảnh cũ nếu có lỗi
       }
     }
   };
@@ -707,11 +852,10 @@ const Profile = () => {
           <DialogContent>
             <TextField
               fullWidth
-              label="Mật khẩu hiện tại"
-              type="password"
-              value={passwordData.currentPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-              sx={{ mt: 2 }}
+              label="Username hoặc Email"
+              value={usernameOrEmailInput}
+              onChange={(e) => setUsernameOrEmailInput(e.target.value)}
+              sx={{ mt: 1, mb: 2 }}
             />
             <TextField
               fullWidth
@@ -764,4 +908,4 @@ const Profile = () => {
   );
 };
 
-export default Profile; 
+export default TeacherProfile; 

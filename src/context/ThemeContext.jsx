@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -7,7 +7,16 @@ const ThemeContext = createContext();
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // Lấy theme từ localStorage khi khởi tạo
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme ? JSON.parse(savedTheme) : false;
+  });
+
+  // Lưu theme vào localStorage mỗi khi thay đổi
+  useEffect(() => {
+    localStorage.setItem('theme', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
 
   const theme = createTheme({
     palette: {

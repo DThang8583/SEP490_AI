@@ -53,7 +53,6 @@ const float = keyframes`
 `;
 
 const lessonCategories = [
-  { text: "Các Giáo án", path: "/các-Giáo-án", icon: <Calculate /> },
   { 
     text: "Giáo án đang chờ duyệt", 
     path: "/pending-lessons",
@@ -81,9 +80,10 @@ const lessonCategories = [
 ];
 
 const menuItems = [
-  { text: "Bài học", path: "/lessons" },
-  { text: "Bài tập", path: "/bai-tap" },
-  { text: "Hỗ trợ", path: "/support" },
+  { text: "Các Giáo án", path: "/các-Giáo-án", icon: <Calculate />, requiresLogin: true },
+  { text: "Bài học", path: "/lessons", requiresLogin: true },
+  { text: "Bài tập", path: "/bai-tap", requiresLogin: true },
+  { text: "Hỗ trợ", path: "/support", requiresLogin: true },
 ];
 
 const settings = [
@@ -96,13 +96,9 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [anchorElUser, setAnchorElUser] = useState(null);
   const { isLoggedIn, userInfo, logout } = useAuth();
-  const [userProfile, setUserProfile] = useState(null);
   
   // Add console.log for user role
   useEffect(() => {
-    console.log('User Info:', userInfo);
-    console.log('User Role:', userInfo?.role);
-    console.log('Is Logged In:', isLoggedIn);
   }, [userInfo, isLoggedIn]);
 
   const theme = useTheme();
@@ -111,51 +107,6 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
  
-      useEffect(() => {
-        const fetchUserProfile = async () => {
-          console.log("Fetching user profile..."); // Kiểm tra xem hàm có chạy không
-    
-          if (!isLoggedIn) {
-            console.warn("User is not logged in");
-            return;
-          }
-    
-          if (!userInfo?.id) {
-            console.warn("User ID is missing");
-            return;
-          }
-    
-          try {
-            const token = localStorage.getItem("accessToken");
-            console.log("Token:", token);
-            if (!token) {
-              console.warn("No access token found");
-              return;
-            }
-    
-            const response = await axios.get(
-              `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/${userInfo.id}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-    
-            console.log("API Response:", response.data);
-            if (response.data?.data?.imgURL) {
-              setUserProfile(response.data.data);
-            } else {
-              console.warn("No image URL found in response");
-            }
-          } catch (error) {
-            console.error("Error fetching user profile:", error.response?.data || error.message);
-          }
-        };
-    
-        fetchUserProfile();
-      }, [isLoggedIn, userInfo?.userId]);
-
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget.parentElement);
   };
@@ -191,8 +142,6 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path
 
   const isTeacher = userInfo?.role === 'Giáo viên';
-  console.log('Is Teacher:', isTeacher);
-
   const NavButton = ({ text, path, icon, isDropdown }) => (
     <React.Fragment>
       <Button
@@ -320,7 +269,7 @@ const Navbar = () => {
           {!isMobile && (
             <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
               {menuItems.map((item) => (
-                (!item.requiresTeacher || (isLoggedIn && isTeacher)) && (
+                (!item.requiresLogin || isLoggedIn) && (
                   <NavButton
                     key={item.text}
                     text={item.text}
@@ -329,24 +278,23 @@ const Navbar = () => {
                     isDropdown={item.text === "Bài học"}
                   />
                 )
-                
               ))}
               {isLoggedIn && isTeacher && (
-            <Button
-              variant="contained"
-              startIcon={<AutoAwesome />}
-              onClick={() => handleNavigation('/CreateLesson')}
-              sx={{
-                ml: 2,
-                backgroundColor: '#FF6B6B',
-                '&:hover': {
-                  backgroundColor: '#FF5252',
-                }
-              }}
-            >
-              Tạo Giáo án bằng AI
-            </Button>
-          )}
+                <Button
+                  variant="contained"
+                  startIcon={<AutoAwesome />}
+                  onClick={() => handleNavigation('/CreateLesson')}
+                  sx={{
+                    ml: 2,
+                    backgroundColor: '#FF6B6B',
+                    '&:hover': {
+                      backgroundColor: '#FF5252',
+                    }
+                  }}
+                >
+                  Tạo Giáo án bằng AI
+                </Button>
+              )}
             </Box>
           )}
 
@@ -370,8 +318,8 @@ const Navbar = () => {
                   <Tooltip title="Mở cài đặt">
                     <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                       <Avatar
-                        alt={userProfile?.fullname || "User"}
-                        src={userProfile?.imgURL}
+                        alt={userInfo?.fullname || "User"}
+                        src={userInfo?.imgURL}
                         sx={{
                           width: 40,
                           height: 40,
@@ -447,11 +395,75 @@ const Navbar = () => {
           </Typography>
           <List>
             {menuItems.map((item) =>
-              item.text === "Bài học" ? (
-                <React.Fragment key={item.text}>
+              (!item.requiresLogin || isLoggedIn) && (
+                item.text === "Các Giáo án" ? (
                   <ListItem
                     button
-                    onClick={handleMenu}
+                    key={item.text}
+                    onClick={() => handleNavigation(item.path)}
+                    sx={{
+                      color: isActive(item.path)
+                        ? "#FF6B6B"
+                        : theme.palette.text.primary,
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 107, 107, 0.1)",
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: "#FF6B6B" }}>{item.icon}</ListItemIcon>
+                    <ListItemText primary={item.text} />
+                  </ListItem>
+                ) : item.text === "Bài học" ? (
+                  <React.Fragment key={item.text}>
+                    <ListItem
+                      button
+                      onClick={handleMenu}
+                      sx={{
+                        color: isActive(item.path)
+                          ? "#FF6B6B"
+                          : theme.palette.text.primary,
+                        "&:hover": {
+                          backgroundColor: "rgba(255, 107, 107, 0.1)",
+                        },
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          color: isActive(item.path)
+                            ? "#FF6B6B"
+                            : theme.palette.text.primary,
+                        }}
+                      >
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText primary={item.text} />
+                      <KeyboardArrowDown />
+                    </ListItem>
+                    {lessonCategories.map((category) => (
+                      <ListItem
+                        button
+                        key={category.text}
+                        onClick={() => handleNavigation(category.path)}
+                        sx={{
+                          pl: 4,
+                          color: theme.palette.text.primary,
+                          "&:hover": {
+                            backgroundColor: "rgba(255, 107, 107, 0.1)",
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ color: "#FF6B6B" }}>
+                          {category.icon}
+                        </ListItemIcon>
+                        <ListItemText primary={category.text} />
+                      </ListItem>
+                    ))}
+                  </React.Fragment>
+                ) : (
+                  <ListItem
+                    button
+                    key={item.text}
+                    onClick={() => handleNavigation(item.path)}
                     sx={{
                       color: isActive(item.path)
                         ? "#FF6B6B"
@@ -471,53 +483,8 @@ const Navbar = () => {
                       {item.icon}
                     </ListItemIcon>
                     <ListItemText primary={item.text} />
-                    <KeyboardArrowDown />
                   </ListItem>
-                  {lessonCategories.map((category) => (
-                    <ListItem
-                      button
-                      key={category.text}
-                      onClick={() => handleNavigation(category.path)}
-                      sx={{
-                        pl: 4,
-                        color: theme.palette.text.primary,
-                        "&:hover": {
-                          backgroundColor: "rgba(255, 107, 107, 0.1)",
-                        },
-                      }}
-                    >
-                      <ListItemIcon sx={{ color: "#FF6B6B" }}>
-                        {category.icon}
-                      </ListItemIcon>
-                      <ListItemText primary={category.text} />
-                    </ListItem>
-                  ))}
-                </React.Fragment>
-              ) : (
-                <ListItem
-                  button
-                  key={item.text}
-                  onClick={() => handleNavigation(item.path)}
-                  sx={{
-                    color: isActive(item.path)
-                      ? "#FF6B6B"
-                      : theme.palette.text.primary,
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 107, 107, 0.1)",
-                    },
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      color: isActive(item.path)
-                        ? "#FF6B6B"
-                        : theme.palette.text.primary,
-                    }}
-                  >
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItem>
+                )
               )
             )}
             <Divider sx={{ my: 1 }} />
@@ -554,8 +521,8 @@ const Navbar = () => {
                   <ListItemIcon sx={{ color: theme.palette.text.primary }}>
                     {setting.name === "Hồ sơ" ? (
                       <Avatar
-                        alt={userProfile?.fullname || "User"}
-                        src={userProfile?.imgURL}
+                        alt={userInfo?.fullname || "User"}
+                        src={userInfo?.imgURL}
                         sx={{
                           width: 32,
                           height: 32,
@@ -653,8 +620,8 @@ const Navbar = () => {
             <ListItemIcon sx={{ color: isDarkMode ? "#ffffff" : "#2D3436" }}>
               {setting.name === "Hồ sơ" ? (
                 <Avatar
-                  alt={userProfile?.fullname || "User"}
-                  src={userProfile?.imgURL}
+                  alt={userInfo?.fullname || "User"}
+                  src={userInfo?.imgURL}
                   sx={{
                     width: 32,
                     height: 32,

@@ -71,7 +71,7 @@ const ExamDetail = () => {
   }, [id]);
 
   const handleBack = () => {
-    navigate('/de-on');
+    navigate(-1);
   };
 
   return (

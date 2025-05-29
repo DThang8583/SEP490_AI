@@ -366,7 +366,7 @@ const Reason = () => {
 
               <Button
                 component={Link}
-                to="/register"
+                to="/login"
                 variant="contained"
                 size="large"
                 sx={{
@@ -385,7 +385,7 @@ const Reason = () => {
                   },
                 }}
               >
-                Bắt đầu học ngay
+                Tạo bài giảng ngay
               </Button>
             </Box>
           </Grid>
