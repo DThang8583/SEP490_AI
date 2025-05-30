@@ -31,6 +31,7 @@ import {
     TableRow,
     ListItem,
     ListItemText,
+    Link,
 } from '@mui/material';
 import {
     Edit as EditIcon,
@@ -50,6 +51,7 @@ import {
     DateRange as DateRangeIcon,
     Notes as NotesIcon,
     Visibility as VisibilityIcon,
+    Gavel as GavelIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
@@ -167,7 +169,7 @@ const CurriculumFramework = () => {
 
     // State to manage selected semester
     const [selectedSemester, setSelectedSemester] = useState(1);
-    
+
     // State to manage expanded module rows
     const [expandedModuleId, setExpandedModuleId] = useState(null);
 
@@ -195,7 +197,7 @@ const CurriculumFramework = () => {
             const response = await axios.get(
                 `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${moduleId}`
             );
-            
+
             if (response.data.code === 0) {
                 console.log('Module Details:', response.data.data);
                 setModuleDetails(response.data.data);
@@ -216,7 +218,7 @@ const CurriculumFramework = () => {
             if (response.data.code === 0 && response.data.data.lessons) {
                 console.log(`Lessons for module ${moduleId}:`, response.data.data.lessons);
                 // We need to update the modules state to include lessons for this module
-                setModules(prevModules => 
+                setModules(prevModules =>
                     prevModules.map(module =>
                         module.moduleId === moduleId
                             ? { ...module, lessons: response.data.data.lessons } // Add lessons to the module object
@@ -224,7 +226,7 @@ const CurriculumFramework = () => {
                     )
                 );
             } else if (response.data.code !== 0) {
-                 console.error(`Error fetching lessons for module ${moduleId}:`, response.data.message);
+                console.error(`Error fetching lessons for module ${moduleId}:`, response.data.message);
             }
         } catch (error) {
             console.error(`Error fetching lessons for module ${moduleId}:`, error);
@@ -233,24 +235,24 @@ const CurriculumFramework = () => {
 
     const handleViewDetailsIconClick = useCallback(async (moduleId) => {
         try {
-             const response = await axios.get(
+            const response = await axios.get(
                 `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${moduleId}`
             );
-            
+
             if (response.data.code === 0) {
                 console.log('Module Details from icon click:', response.data.data);
                 setSelectedModule(response.data.data); // Set selected module details
                 setModuleDetails(response.data.data);
                 setOpenModuleDialog(true); // Open the details dialog
-                 setIsEditingModule(false); // Ensure view mode when opening
-                 setEditableModuleData(null); // Clear editable data
+                setIsEditingModule(false); // Ensure view mode when opening
+                setEditableModuleData(null); // Clear editable data
             } else {
                 console.error(`Error fetching module details from icon click:`, response.data.message);
                 alert(`Lỗi khi lấy chi tiết module: ${response.data.message}`);
             }
         } catch (error) {
             console.error(`Error fetching module details from icon click:`, error);
-             alert(`Đã xảy ra lỗi khi lấy chi tiết module.`);
+            alert(`Đã xảy ra lỗi khi lấy chi tiết module.`);
         }
     }, [setOpenModuleDialog]); // Added setOpenModuleDialog to dependencies
 
@@ -262,7 +264,7 @@ const CurriculumFramework = () => {
             setExpandedModuleId(module.moduleId); // Expand this row
             // Fetch lessons if not already fetched for this module
             if (!module.lessons) {
-                 fetchLessons(module.moduleId);
+                fetchLessons(module.moduleId);
             }
         }
         // Removed fetching details here, as it's now handled by icon click
@@ -273,8 +275,8 @@ const CurriculumFramework = () => {
         setOpenModuleDialog(false);
         setModuleDetails(null);
         setSelectedModule(null); // Clear selected module
-         setIsEditingModule(false); // Reset to view mode
-         setEditableModuleData(null); // Clear editable data
+        setIsEditingModule(false); // Reset to view mode
+        setEditableModuleData(null); // Clear editable data
     };
 
     const handleEditClick = () => {
@@ -290,8 +292,8 @@ const CurriculumFramework = () => {
     const handleSaveClick = async () => {
         if (editableModuleData && editableModuleData.moduleId) {
 
-            const correspondingCurriculum = curricula.find(curr => 
-                 curr.name.includes(editableModuleData.curriculum)
+            const correspondingCurriculum = curricula.find(curr =>
+                curr.name.includes(editableModuleData.curriculum)
             );
 
             if (!correspondingCurriculum) {
@@ -324,13 +326,13 @@ const CurriculumFramework = () => {
                 if (response.data.code === 0 || response.data.code === 22) {
                     console.log(`Module ${editableModuleData.moduleId} updated successfully:`, response.data.data);
                     // Update the modules state
-                     setModules(prevModules => 
-                         prevModules.map(module =>
-                             module.moduleId === editableModuleData.moduleId
-                                 ? { ...module, ...dataToUpdate, book: 'Cánh Diều' } // Merge updated data and ensure book name is correct
-                                 : module
-                         )
-                     );
+                    setModules(prevModules =>
+                        prevModules.map(module =>
+                            module.moduleId === editableModuleData.moduleId
+                                ? { ...module, ...dataToUpdate, book: 'Cánh Diều' } // Merge updated data and ensure book name is correct
+                                : module
+                        )
+                    );
                     // Close dialog
                     setOpenModuleDialog(false);
                     // Reset editing state
@@ -355,14 +357,14 @@ const CurriculumFramework = () => {
             const response = await axios.get(
                 `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades/${gradeNumber}/modules`
             );
-            
+
             if (response.data.code === 0 && response.data.data.modules) {
                 const fetchedModuleList = response.data.data.items || response.data.data.modules || []; // Ensure we get the list correctly
 
                 // Fetch details for each module to get semester information
                 const modulesWithDetails = await Promise.all(fetchedModuleList.map(async (module) => {
                     try {
-                         const detailResponse = await axios.get(
+                        const detailResponse = await axios.get(
                             `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${module.moduleId}`
                         );
                         if (detailResponse.data.code === 0) {
@@ -387,16 +389,16 @@ const CurriculumFramework = () => {
                     semester: module.semester,
                     totalPeriods: module.totalPeriods
                 })));
-                
+
                 setModules(sortedModules);
             } else if (response.data.code !== 0) {
-                 console.error('Error fetching module list:', response.data.message);
-                 setModules([]); // Set modules to empty array on error
+                console.error('Error fetching module list:', response.data.message);
+                setModules([]); // Set modules to empty array on error
             }
 
         } catch (error) {
             console.error('Error fetching modules list:', error);
-             setModules([]); // Set modules to empty array on error
+            setModules([]); // Set modules to empty array on error
         }
     }, []);
 
@@ -438,7 +440,7 @@ const CurriculumFramework = () => {
             const gradeNumber = await getUserGradeNumber();
             console.log('Grade Number before setting state:', gradeNumber);
             setUserGradeNumber(gradeNumber);
-            
+
             // Fetch modules after getting grade number
             if (gradeNumber) {
                 await fetchModules(gradeNumber);
@@ -656,87 +658,234 @@ const CurriculumFramework = () => {
                     {!error && userGradeNumber && ( // Only show if no error and grade number is available
                         <Box>
                             {/* Existing curricula list code - Keeping this for now as it seems separate from modules */}
-                             {curricula.length > 0 ? (
+                            {curricula.length > 0 ? (
                                 <Box sx={{ mt: 4 }}>
-                                     <Typography variant="h6" sx={{
+                                    <Typography variant="h6" sx={{
                                         mb: 2,
                                         color: theme.palette.text.primary,
                                         fontWeight: 600
-                                     }}>
+                                    }}>
                                         Khung chương trình chi tiết
-                                </Typography>
-                        <List sx={{ bgcolor: 'transparent', p: 0 }}>
-                            {curricula.map((curriculum) => (
-                                <Box key={curriculum.curriculumId}>
-                                    <CurriculumCard>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                                            <Box>
+                                    </Typography>
+                                    <List sx={{ bgcolor: 'transparent', p: 0 }}>
+                                        {curricula.map((curriculum) => (
+                                            <Box key={curriculum.curriculumId}>
+                                                <CurriculumCard>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                                                        <Box>
                                                             <Typography sx={{
                                                                 fontWeight: 600,
                                                                 fontSize: '1.25rem',
                                                                 mb: 1.5,
                                                                 color: theme.palette.text.primary
-                                                             }}>
-                                                    {curriculum.name} ({curriculum.year})
-                                                </Typography>
+                                                            }}>
+                                                                {curriculum.name} ({curriculum.year})
+                                                            </Typography>
                                                             <Typography variant="body2" sx={{
                                                                 color: theme.palette.text.secondary,
                                                                 mb: 1,
                                                                 lineHeight: 1.6
-                                                             }}>
-                                                    {curriculum.description}
-                                                </Typography>
+                                                            }}>
+                                                                {curriculum.description}
+                                                            </Typography>
                                                             <Typography variant="body2" sx={{
                                                                 color: theme.palette.text.secondary,
                                                                 lineHeight: 1.6
-                                                             }}>
-                                                    Tổng số tiết cả năm: {curriculum.totalPeriods}
-                                                </Typography>
-                                            </Box>
-                                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                                <StyledButton
-                                                    variant="outlined"
-                                                    onClick={() => handleViewCurriculumDetail(curriculum.curriculumId)}
-                                                    sx={{
+                                                            }}>
+                                                                Tổng số tiết cả năm: {curriculum.totalPeriods}
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                                            <StyledButton
+                                                                variant="outlined"
+                                                                onClick={() => handleViewCurriculumDetail(curriculum.curriculumId)}
+                                                                sx={{
                                                                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-                                                        '&:hover': {
+                                                                    '&:hover': {
                                                                         boxShadow: '0 6px 16px rgba(0, 0, 0, 0.1)',
-                                                            transform: 'translateY(-2px)'
-                                                        },
-                                                        transition: 'all 0.2s ease',
+                                                                        transform: 'translateY(-2px)'
+                                                                    },
+                                                                    transition: 'all 0.2s ease',
                                                                     border: `1px solid ${COLORS.primary}`,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '8px'
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '8px'
+                                                                }}
+                                                            >
+                                                                <MenuBookIcon sx={{ fontSize: 24, color: COLORS.primary }} />
+                                                                Xem nội dung cần đạt
+                                                            </StyledButton>
+                                                        </Box>
+                                                    </Box>
+                                                </CurriculumCard>
+                                            </Box>
+                                        ))}
+                                    </List>
+                                </Box>
+                            ) : (!error && curricula.length === 0 && // Only show message if no error and no curricula
+                                <DashboardCard>
+                                    <CardContent sx={{ py: 4, textAlign: 'center' }}>
+                                        <Typography sx={{ color: theme.palette.text.secondary }}>
+                                            Không có khung chương trình chi tiết nào cho Khối {userGradeNumber}.
+                                        </Typography>
+                                    </CardContent>
+                                </DashboardCard>
+                            )}
+
+                            <Box sx={{ mt: 4, mb: 4 }}>
+                                <DashboardCard sx={{
+                                    bgcolor: theme.palette.mode === 'dark'
+                                        ? 'rgba(18, 18, 18, 0.95)'
+                                        : COLORS.background.paper,
+                                    border: theme.palette.mode === 'dark'
+                                        ? `1px solid rgba(255, 255, 255, 0.12)`
+                                        : 'none',
+                                }}>
+                                    <CardContent sx={{ p: 3 }}>
+                                        <Typography variant="h6" sx={{
+                                            mb: 3,
+                                            color: theme.palette.text.primary,
+                                            fontWeight: 600,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1
+                                        }}>
+                                            <GavelIcon sx={{ color: COLORS.primary }} />
+                                            Văn bản do Bộ Giáo dục và Đào tạo ban hành
+                                        </Typography>
+
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                            <Box sx={{
+                                                p: 3,
+                                                bgcolor: theme.palette.mode === 'dark'
+                                                    ? 'rgba(45, 45, 45, 0.9)'
+                                                    : 'rgba(6, 169, 174, 0.05)',
+                                                border: theme.palette.mode === 'dark'
+                                                    ? `2px solid rgba(6, 169, 174, 0.6)`
+                                                    : `1px solid rgba(6, 169, 174, 0.2)`,
+                                                borderRadius: 2,
+                                                borderLeft: `4px solid ${COLORS.primary}`,
+                                                transition: 'all 0.2s ease',
+                                                boxShadow: theme.palette.mode === 'dark'
+                                                    ? '0 4px 20px rgba(0, 0, 0, 0.3)'
+                                                    : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                                '&:hover': {
+                                                    bgcolor: theme.palette.mode === 'dark'
+                                                        ? 'rgba(55, 55, 55, 0.9)'
+                                                        : 'rgba(6, 169, 174, 0.08)',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: theme.palette.mode === 'dark'
+                                                        ? '0 6px 24px rgba(0, 0, 0, 0.4)'
+                                                        : '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                                }
+                                            }}>
+                                                <Typography variant="body2" sx={{
+                                                    color: theme.palette.mode === 'dark' ? '#E0E0E0' : theme.palette.text.primary,
+                                                    lineHeight: 1.6,
+                                                    mb: 1.5,
+                                                    fontWeight: 500
+                                                }}>
+                                                    <Box component="span" sx={{
+                                                        color: theme.palette.mode === 'dark' ? '#4CAF50' : '#2E7D32',
+                                                        fontWeight: 700,
+                                                        fontSize: '0.95rem'
+                                                    }}>
+                                                        Thông tư số 27/2020/TT-BGDĐT
+                                                    </Box>{' '}
+                                                    ban hành ngày 04 tháng 09 năm 2020 của Bộ Giáo dục và Đào tạo:
+                                                </Typography>
+                                                <Link
+                                                    href="https://moet.gov.vn/van-ban/vanban/Pages/chi-tiet-van-ban.aspx?ItemID=1365"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    sx={{
+                                                        color: theme.palette.mode === 'dark' ? '#42A5F5' : COLORS.primary,
+                                                        textDecoration: 'none',
+                                                        fontSize: '0.875rem',
+                                                        wordBreak: 'break-all',
+                                                        fontWeight: 600,
+                                                        display: 'block',
+                                                        '&:hover': {
+                                                            textDecoration: 'underline',
+                                                            color: theme.palette.mode === 'dark' ? '#64B5F6' : '#0288D1'
+                                                        }
                                                     }}
                                                 >
-                                                    <MenuBookIcon sx={{ fontSize: 24, color: COLORS.primary }} />
-                                                    Xem nội dung cần đạt
-                                                </StyledButton>
+                                                    https://moet.gov.vn/van-ban/vanban/Pages/chi-tiet-van-ban.aspx?ItemID=1365
+                                                </Link>
+                                            </Box>
+
+                                            <Box sx={{
+                                                p: 3,
+                                                bgcolor: theme.palette.mode === 'dark'
+                                                    ? 'rgba(45, 45, 45, 0.9)'
+                                                    : 'rgba(6, 169, 174, 0.05)',
+                                                border: theme.palette.mode === 'dark'
+                                                    ? `2px solid rgba(6, 169, 174, 0.6)`
+                                                    : `1px solid rgba(6, 169, 174, 0.2)`,
+                                                borderRadius: 2,
+                                                borderLeft: `4px solid ${COLORS.primary}`,
+                                                transition: 'all 0.2s ease',
+                                                boxShadow: theme.palette.mode === 'dark'
+                                                    ? '0 4px 20px rgba(0, 0, 0, 0.3)'
+                                                    : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                                '&:hover': {
+                                                    bgcolor: theme.palette.mode === 'dark'
+                                                        ? 'rgba(55, 55, 55, 0.9)'
+                                                        : 'rgba(6, 169, 174, 0.08)',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: theme.palette.mode === 'dark'
+                                                        ? '0 6px 24px rgba(0, 0, 0, 0.4)'
+                                                        : '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                                }
+                                            }}>
+                                                <Typography variant="body2" sx={{
+                                                    color: theme.palette.mode === 'dark' ? '#E0E0E0' : theme.palette.text.primary,
+                                                    lineHeight: 1.6,
+                                                    mb: 1.5,
+                                                    fontWeight: 500
+                                                }}>
+                                                    <Box component="span" sx={{
+                                                        color: theme.palette.mode === 'dark' ? '#4CAF50' : '#2E7D32',
+                                                        fontWeight: 700,
+                                                        fontSize: '0.95rem'
+                                                    }}>
+                                                        Công văn 2345/BGDĐT-GDTH
+                                                    </Box>{' '}
+                                                    ban hành ngày 07 tháng 06 năm 2021 của Bộ Giáo dục và Đào tạo:
+                                                </Typography>
+                                                <Link
+                                                    href="https://moet.gov.vn/van-ban/vbdh/Pages/chi-tiet-van-ban.aspx?ItemID=2967"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    sx={{
+                                                        color: theme.palette.mode === 'dark' ? '#42A5F5' : COLORS.primary,
+                                                        textDecoration: 'none',
+                                                        fontSize: '0.875rem',
+                                                        wordBreak: 'break-all',
+                                                        fontWeight: 600,
+                                                        display: 'block',
+                                                        '&:hover': {
+                                                            textDecoration: 'underline',
+                                                            color: theme.palette.mode === 'dark' ? '#64B5F6' : '#0288D1'
+                                                        }
+                                                    }}
+                                                >
+                                                    https://moet.gov.vn/van-ban/vbdh/Pages/chi-tiet-van-ban.aspx?ItemID=2967
+                                                </Link>
                                             </Box>
                                         </Box>
-                                    </CurriculumCard>
-                                </Box>
-                            ))}
-                        </List>
-                                 </Box>
-                             ) : ( !error && curricula.length === 0 && // Only show message if no error and no curricula
-                                 <DashboardCard>
-                                     <CardContent sx={{ py: 4, textAlign: 'center' }}>
-                                         <Typography sx={{ color: theme.palette.text.secondary }}>
-                                             Không có khung chương trình chi tiết nào cho Khối {userGradeNumber}.
-                                         </Typography>
-                                     </CardContent>
-                                 </DashboardCard>
-                             )}
+                                    </CardContent>
+                                </DashboardCard>
+                            </Box>
 
                             {/* Textbook and Semester Selection */}
                             <Box sx={{ mt: 4, mb: 3, textAlign: 'center' }}>
                                 <Typography variant="h6" sx={{
                                     color: theme.palette.text.primary,
                                     mb: 2,
-                                    display: 'flex', 
-                                    alignItems: 'center', 
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     justifyContent: 'center',
                                     fontWeight: 600
                                 }}>
@@ -772,11 +921,11 @@ const CurriculumFramework = () => {
 
                             {/* Display Modules in Table */}
                             {modulesBySemester.length > 0 ? (
-                                <TableContainer 
-                                    component={Paper} 
+                                <TableContainer
+                                    component={Paper}
                                     sx={{
-                                        boxShadow: '0 4px 20px rgba(0,0,0,0.05)', 
-                                        borderRadius: 2, 
+                                        boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                                        borderRadius: 2,
                                         overflow: 'hidden',
                                         bgcolor: theme.palette.background.paper,
                                     }}
@@ -788,27 +937,27 @@ const CurriculumFramework = () => {
                                                     width: '80px',
                                                     color: theme.palette.text.secondary,
                                                     borderBottomColor: theme.palette.divider
-                                                 }}>STT</StyledTableCell>
+                                                }}>STT</StyledTableCell>
                                                 <StyledTableCell sx={{
                                                     color: theme.palette.text.secondary,
                                                     borderBottomColor: theme.palette.divider
                                                 }}>Tên chủ đề</StyledTableCell>
                                                 <StyledTableCell sx={{
-                                                     width: '120px',
-                                                     color: theme.palette.text.secondary,
-                                                     borderBottomColor: theme.palette.divider,
-                                                     textAlign: 'center'
+                                                    width: '120px',
+                                                    color: theme.palette.text.secondary,
+                                                    borderBottomColor: theme.palette.divider,
+                                                    textAlign: 'center'
                                                 }}>Thao tác</StyledTableCell>
                                                 <StyledTableCell align="right" sx={{
-                                                     color: theme.palette.text.secondary,
-                                                     borderBottomColor: theme.palette.divider
+                                                    color: theme.palette.text.secondary,
+                                                    borderBottomColor: theme.palette.divider
                                                 }}>Số tiết</StyledTableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
                                             {modulesBySemester.map((module, index) => (
                                                 <React.Fragment key={module.moduleId}>
-                                                    <StyledTableRow 
+                                                    <StyledTableRow
                                                         onClick={() => handleModuleClick(module)}
                                                         sx={{
                                                             '&:last-child td, &:last-child th': { border: 0 },
@@ -824,25 +973,25 @@ const CurriculumFramework = () => {
                                                             border: 'none'
                                                         }}>{index + 1}</TableCell>
                                                         <TableCell sx={{
-                                                            display: 'flex', 
-                                                            alignItems: 'center', 
-                                                            gap: 1, 
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 1,
                                                             color: theme.palette.text.primary,
                                                             border: 'none'
-                                                         }}>
+                                                        }}>
                                                             <MenuBookIcon sx={{ mr: 1, color: COLORS.primary, fontSize: 20 }} />
                                                             <Box sx={{ flexGrow: 1 }}>
-                                                              {module.name}
+                                                                {module.name}
                                                             </Box>
-                                                         </TableCell>
+                                                        </TableCell>
                                                         <TableCell sx={{
                                                             color: theme.palette.text.primary,
                                                             border: 'none',
                                                             textAlign: 'center'
-                                                         }}>
+                                                        }}>
                                                             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                                                                <IconButton 
-                                                                    size="small" 
+                                                                <IconButton
+                                                                    size="small"
                                                                     onClick={(event) => {
                                                                         event.stopPropagation();
                                                                         handleViewDetailsIconClick(module.moduleId);
@@ -872,19 +1021,19 @@ const CurriculumFramework = () => {
                                                                     <DeleteIcon fontSize="small" />
                                                                 </IconButton>
                                                             </Box>
-                                                         </TableCell>
+                                                        </TableCell>
                                                         <TableCell align="right" sx={{
-                                                             color: theme.palette.text.primary,
-                                                              border: 'none'
+                                                            color: theme.palette.text.primary,
+                                                            border: 'none'
                                                         }}>
                                                             <InfoChip
-                                                                 icon={<AccessTimeIcon fontSize="small" sx={{ color: COLORS.primary }} />}
-                                                                 label={`${module.totalPeriods} tiết`}
-                                                                 sx={{ 
+                                                                icon={<AccessTimeIcon fontSize="small" sx={{ color: COLORS.primary }} />}
+                                                                label={`${module.totalPeriods} tiết`}
+                                                                sx={{
                                                                     bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
                                                                     color: theme.palette.text.primary,
                                                                     '.MuiChip-icon': { color: COLORS.primary }
-                                                                 }}
+                                                                }}
                                                             />
                                                         </TableCell>
                                                     </StyledTableRow>
@@ -896,9 +1045,9 @@ const CurriculumFramework = () => {
                                                                         Bài học:
                                                                     </Typography>
                                                                     {module.lessons ? (
-                                                                        <LessonDetails 
-                                                                            lessons={module.lessons} 
-                                                                            theme={theme} 
+                                                                        <LessonDetails
+                                                                            lessons={module.lessons}
+                                                                            theme={theme}
                                                                             colors={COLORS} // Pass COLORS instead of colors
                                                                             moduleId={module.moduleId} // Pass module ID
                                                                             fetchLessons={fetchLessons} // Pass fetchLessons handler
@@ -919,17 +1068,17 @@ const CurriculumFramework = () => {
                                 </TableContainer>
                             ) : (
                                 modulesBySemester.length === 0 && (
-                                <Typography sx={{ textAlign: 'center', color: theme.palette.text.secondary, my: 4 }}>
-                                    Không tìm thấy module nào cho Học kỳ {selectedSemester}.
-                                </Typography>
+                                    <Typography sx={{ textAlign: 'center', color: theme.palette.text.secondary, my: 4 }}>
+                                        Không tìm thấy module nào cho Học kỳ {selectedSemester}.
+                                    </Typography>
                                 )
                             )}
 
                         </Box>
                     )}
 
-                    <Dialog 
-                        open={openModuleDialog} 
+                    <Dialog
+                        open={openModuleDialog}
                         onClose={handleCloseModuleDialog}
                         maxWidth="sm"
                         fullWidth
@@ -944,45 +1093,45 @@ const CurriculumFramework = () => {
                                 <Box sx={{ mt: 2 }}>
                                     {isEditingModule ? (
                                         <Grid container spacing={2}>
-                                             <Grid item xs={12}>
-                                                <TextField
-                                                     fullWidth
-                                                    label="Tên chủ đề"
-                                                     value={editableModuleData?.name || ''}
-                                                     onChange={(e) => setEditableModuleData({ ...editableModuleData, name: e.target.value })}
-                                                     variant="outlined"
-                                                     sx={{ mb: 2 }}
-                                                />
-                                            </Grid>
-                                             <Grid item xs={12}>
-                                                <TextField
-                                                     fullWidth
-                                                    label="Mô tả"
-                                                     value={editableModuleData?.desciption || ''}
-                                                     onChange={(e) => setEditableModuleData({ ...editableModuleData, desciption: e.target.value })}
-                                                     variant="outlined"
-                                                     multiline
-                                                     rows={3}
-                                                     sx={{ mb: 2 }}
-                                                />
-                                            </Grid>
-                                             <Grid item xs={12} sm={6}>
+                                            <Grid item xs={12}>
                                                 <TextField
                                                     fullWidth
-                                                     label="Học kỳ"
-                                                    type="number"
-                                                     value={editableModuleData?.semester || ''}
-                                                     onChange={(e) => setEditableModuleData({ ...editableModuleData, semester: e.target.value })}
-                                                     variant="outlined"
-                                                     inputProps={{ min: 1, max: 2 }}
+                                                    label="Tên chủ đề"
+                                                    value={editableModuleData?.name || ''}
+                                                    onChange={(e) => setEditableModuleData({ ...editableModuleData, name: e.target.value })}
+                                                    variant="outlined"
+                                                    sx={{ mb: 2 }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Mô tả"
+                                                    value={editableModuleData?.desciption || ''}
+                                                    onChange={(e) => setEditableModuleData({ ...editableModuleData, desciption: e.target.value })}
+                                                    variant="outlined"
+                                                    multiline
+                                                    rows={3}
+                                                    sx={{ mb: 2 }}
                                                 />
                                             </Grid>
                                             <Grid item xs={12} sm={6}>
                                                 <TextField
                                                     fullWidth
-                                                     label="Tổng số tiết"
+                                                    label="Học kỳ"
                                                     type="number"
-                                                     value={editableModuleData?.totalPeriods || ''}
+                                                    value={editableModuleData?.semester || ''}
+                                                    onChange={(e) => setEditableModuleData({ ...editableModuleData, semester: e.target.value })}
+                                                    variant="outlined"
+                                                    inputProps={{ min: 1, max: 2 }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Tổng số tiết"
+                                                    type="number"
+                                                    value={editableModuleData?.totalPeriods || ''}
                                                     onChange={(e) => {
                                                         const value = e.target.value;
                                                         const intValue = parseInt(value, 10);
@@ -999,14 +1148,14 @@ const CurriculumFramework = () => {
                                     ) : (
                                         <Box>
                                             <Box sx={{ mb: 3 }}>
-                                                <Typography variant="h5" sx={{ 
-                                                    fontWeight: 'bold', 
+                                                <Typography variant="h5" sx={{
+                                                    fontWeight: 'bold',
                                                     color: COLORS.primary,
-                                                    mb: 1 
+                                                    mb: 1
                                                 }}>
                                                     {moduleDetails.name}
                                                 </Typography>
-                                                <Typography variant="body1" sx={{ 
+                                                <Typography variant="body1" sx={{
                                                     color: theme.palette.text.secondary,
                                                     mb: 2
                                                 }}>
@@ -1020,54 +1169,54 @@ const CurriculumFramework = () => {
                                                         <InfoChip
                                                             icon={<SchoolIcon />}
                                                             label={`Học kỳ: ${moduleDetails.semester}`}
-                                                             sx={{ 
+                                                            sx={{
                                                                 bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
                                                                 color: theme.palette.text.primary,
                                                                 '.MuiChip-icon': { color: COLORS.primary }
-                                                             }}
+                                                            }}
                                                         />
                                                         <InfoChip
                                                             icon={<AccessTimeIcon />}
                                                             label={`Số tiết: ${moduleDetails.totalPeriods}`}
-                                                             sx={{ 
+                                                            sx={{
                                                                 bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
                                                                 color: theme.palette.text.primary,
                                                                 '.MuiChip-icon': { color: COLORS.primary }
-                                                             }}
+                                                            }}
                                                         />
                                                         <InfoChip
                                                             icon={<MenuBookIcon />}
                                                             label={`Chương trình: ${moduleDetails.curriculum}`}
-                                                             sx={{ 
+                                                            sx={{
                                                                 bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
                                                                 color: theme.palette.text.primary,
                                                                 '.MuiChip-icon': { color: COLORS.primary }
-                                                             }}
+                                                            }}
                                                         />
                                                         <InfoChip
                                                             icon={<ClassIcon />}
                                                             label={`Khối: ${moduleDetails.gradeNumber}`}
-                                                             sx={{ 
+                                                            sx={{
                                                                 bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
                                                                 color: theme.palette.text.primary,
                                                                 '.MuiChip-icon': { color: COLORS.primary }
-                                                             }}
+                                                            }}
                                                         />
                                                         <InfoChip
                                                             icon={<ImportContactsIcon />}
                                                             label={`Sách: ${moduleDetails.book}`}
-                                                             sx={{ 
+                                                            sx={{
                                                                 bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
                                                                 color: theme.palette.text.primary,
                                                                 '.MuiChip-icon': { color: COLORS.primary }
-                                                             }}
+                                                            }}
                                                         />
                                                     </Box>
                                                 </Grid>
                                             </Grid>
 
                                             <Box sx={{ mt: 3, p: 2, bgcolor: theme.palette.background.secondary, borderRadius: 2 }}>
-                                                <Typography variant="subtitle2" sx={{ 
+                                                <Typography variant="subtitle2" sx={{
                                                     color: theme.palette.text.secondary,
                                                     mb: 2,
                                                     display: 'flex',
@@ -1078,32 +1227,32 @@ const CurriculumFramework = () => {
                                                     Thông tin chi tiết
                                                 </Typography>
                                                 <Grid container spacing={1}>
-                                                    <Grid item xs={12} sm={6}> 
+                                                    <Grid item xs={12} sm={6}>
                                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                                                             <strong>Mô tả:</strong> {moduleDetails.desciption}
                                                         </Typography>
                                                     </Grid>
-                                                     <Grid item xs={12} sm={6}> 
+                                                    <Grid item xs={12} sm={6}>
                                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                                                             <strong>Học kỳ:</strong> {moduleDetails.semester}
                                                         </Typography>
                                                     </Grid>
-                                                     <Grid item xs={12} sm={6}> 
+                                                    <Grid item xs={12} sm={6}>
                                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                                                             <strong>Tổng số tiết:</strong> {moduleDetails.totalPeriods}
                                                         </Typography>
                                                     </Grid>
-                                                     <Grid item xs={12} sm={6}> 
+                                                    <Grid item xs={12} sm={6}>
                                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                                                             <strong>Chương trình:</strong> {moduleDetails.curriculum}
                                                         </Typography>
                                                     </Grid>
-                                                     <Grid item xs={12} sm={6}> 
+                                                    <Grid item xs={12} sm={6}>
                                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                                                             <strong>Khối:</strong> {moduleDetails.gradeNumber}
                                                         </Typography>
                                                     </Grid>
-                                                     <Grid item xs={12} sm={6}> 
+                                                    <Grid item xs={12} sm={6}>
                                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                                                             <strong>Sách:</strong> {moduleDetails.book}
                                                         </Typography>
@@ -1127,19 +1276,19 @@ const CurriculumFramework = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Button 
-                                         onClick={handleEditClick}
-                                         sx={{
+                                    <Button
+                                        onClick={handleEditClick}
+                                        sx={{
                                             color: COLORS.primary,
                                             '&:hover': {
-                                                 backgroundColor: COLORS.hover.primary
-                                             }
-                                         }}
-                                     >
+                                                backgroundColor: COLORS.hover.primary
+                                            }
+                                        }}
+                                    >
                                         Chỉnh sửa
                                     </Button>
-                                    <Button 
-                                        onClick={handleCloseModuleDialog} 
+                                    <Button
+                                        onClick={handleCloseModuleDialog}
                                         sx={{
                                             color: COLORS.primary,
                                             '&:hover': {
