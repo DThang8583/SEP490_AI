@@ -38,7 +38,6 @@ const CurriculumDetail = () => {
     const [curriculumFormData, setCurriculumFormData] = useState({
         name: '',
         description: '',
-        totalPeriods: 0
     });
 
     useEffect(() => {
@@ -195,7 +194,7 @@ const CurriculumDetail = () => {
 
     // Handle Edit Curriculum
     const handleEditCurriculum = async () => {
-        if (!curriculumFormData.name.trim() || !curriculumFormData.description.trim() || !curriculumFormData.totalPeriods) {
+        if (!curriculumFormData.name.trim() || !curriculumFormData.description.trim()) {
             alert('Vui lòng điền đầy đủ thông tin');
             return;
         }
@@ -205,13 +204,10 @@ const CurriculumDetail = () => {
             const response = await axios.put(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums/${id}`, {
                 name: curriculumFormData.name,
                 description: curriculumFormData.description,
-                totalPeriods: parseInt(curriculumFormData.totalPeriods),
-                gradeId: curriculum.gradeId,
                 schoolYearId: curriculum.schoolYearId
             });
-            console.log(schoolYearId);
             console.log('Edit curriculum response code:', response.data.code);
-            if (response.data.code === 0) {
+            if (response.data.code === 0 || response.data.code === 22) {
                 alert('Cập nhật thông tin chương trình thành công!');
                 setShowEditCurriculumModal(false);
                 await refreshCurriculumData();
@@ -230,7 +226,6 @@ const CurriculumDetail = () => {
         setCurriculumFormData({
             name: curriculum.name,
             description: curriculum.description,
-            totalPeriods: curriculum.totalPeriods
         });
         setShowEditCurriculumModal(true);
     };
@@ -437,7 +432,6 @@ const CurriculumDetail = () => {
                                     { label: 'Tên chương trình', value: curriculum.name },
                                     { label: 'Mô tả', value: curriculum.description },
                                     { label: 'Năm học', value: curriculum.year },
-                                    { label: 'Tổng số tiết', value: curriculum.totalPeriods }
                                 ].map((item, index) => (
                                     <tr key={index}>
                                         <td style={{
@@ -1042,34 +1036,6 @@ const CurriculumDetail = () => {
                                 rows={4}
                                 value={curriculumFormData.description}
                                 onChange={(e) => setCurriculumFormData({ ...curriculumFormData, description: e.target.value })}
-                                margin="normal"
-                                variant="outlined"
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        '& fieldset': {
-                                            borderColor: '#06A9AE',
-                                        },
-                                        '&:hover fieldset': {
-                                            borderColor: '#05969A',
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: '#06A9AE',
-                                        },
-                                    },
-                                    '& .MuiInputLabel-root': {
-                                        color: '#06A9AE',
-                                    },
-                                    '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#06A9AE',
-                                    }
-                                }}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Tổng số tiết"
-                                type="number"
-                                value={curriculumFormData.totalPeriods}
-                                onChange={(e) => setCurriculumFormData({ ...curriculumFormData, totalPeriods: e.target.value })}
                                 margin="normal"
                                 variant="outlined"
                                 sx={{
