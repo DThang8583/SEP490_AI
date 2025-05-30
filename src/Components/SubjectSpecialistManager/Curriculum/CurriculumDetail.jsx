@@ -161,7 +161,6 @@ const CurriculumDetail = () => {
             console.log('Delete response code:', response.data.code);
             if (response.data.code === 0 || response.data.code === 31) {
                 alert('Xóa nội dung cần đạt thành công!');
-                setIsSubmitting(false);
                 await refreshCurriculumData();
             } else {
                 alert('Lỗi khi xóa: ' + (response.data.message || 'Unknown error'));
