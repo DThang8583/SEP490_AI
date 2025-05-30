@@ -146,7 +146,7 @@ const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
           }
         />
         <Route
-          path="/admin/exams/:id"
+          path="/admin/exams/:quizId"
           element={
             <PrivateRoute>
               <QuizDetail />

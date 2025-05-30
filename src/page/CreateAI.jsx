@@ -93,6 +93,16 @@ const CreateAI = () => {
       try {
         const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades');
         setGrades(response.data.data || []);
+
+        // Get grade from localStorage and set corresponding gradeId
+        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+        if (userInfo?.grade) {
+          const gradeNumber = userInfo.grade.replace('Lớp ', '');
+          const matchingGrade = response.data.data.find(g => g.gradeNumber === parseInt(gradeNumber));
+          if (matchingGrade) {
+            setSelectedGrade(matchingGrade.gradeId);
+          }
+        }
       } catch (err) {
         console.error('Error fetching grades:', err);
         setError('Không thể tải danh sách lớp. Vui lòng thử lại.');
@@ -352,9 +362,8 @@ const CreateAI = () => {
                     <InputLabel>Lớp</InputLabel>
                     <Select
                       value={selectedGrade || ''}
-                      onChange={handleGradeChange}
                       label="Lớp"
-                      required
+                      disabled={true}
                       sx={{
                         backgroundColor: isDarkMode
                           ? "rgba(255, 255, 255, 0.05)"

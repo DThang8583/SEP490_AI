@@ -1,6 +1,6 @@
 // src/Components/SubjectSpecialistManager/Sidebar.jsx
 import React, { useState, useEffect } from 'react';
-import { Drawer, ListItem, Toolbar, Box, Snackbar, Alert, Typography, Avatar, Divider, List, Tooltip } from '@mui/material';
+import { Drawer, ListItem, Toolbar, Box, Snackbar, Alert, Typography, Avatar, Divider, List, Tooltip, IconButton } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../api';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -12,7 +12,10 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SchoolIcon from '@mui/icons-material/School';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const Sidebar = ({ open }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
@@ -20,6 +23,7 @@ const Sidebar = ({ open }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { logout } = useAuth();
+    const { isDarkMode, toggleTheme } = useTheme();
 
     const handleNavigation = (path, action) => {
         action ? action() : navigate(path);
@@ -68,13 +72,13 @@ const Sidebar = ({ open }) => {
                     zIndex: 1100,
                     '& .MuiDrawer-paper': {
                         width: isCollapsed ? 76 : 260,
-                        background: '#06A9AE',
+                        background: isDarkMode ? '#1E1E1E' : '#06A9AE',
                         borderRight: 'none',
                         color: '#fff',
                         position: 'fixed',
                         height: '100vh',
                         transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                        boxShadow: isDarkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.15)',
                         overflow: 'hidden',
                         cursor: 'pointer',
                     },
@@ -96,8 +100,8 @@ const Sidebar = ({ open }) => {
                     }} onClick={() => navigate('/manager/dashboard')}>
                         <Avatar
                             sx={{
-                                bgcolor: 'white',
-                                color: '#1565C0',
+                                bgcolor: isDarkMode ? '#2D3436' : 'white',
+                                color: isDarkMode ? '#06A9AE' : '#1565C0',
                                 width: 40,
                                 height: 40,
                                 mr: isCollapsed ? 0 : 2,
@@ -119,6 +123,7 @@ const Sidebar = ({ open }) => {
                                 whiteSpace: 'nowrap',
                                 transition: 'opacity 0.3s, width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                                 cursor: 'pointer',
+                                color: isDarkMode ? '#ffffff' : '#ffffff',
                             }}
                         >
                             Manager
@@ -126,7 +131,7 @@ const Sidebar = ({ open }) => {
                     </Box>
                 </Toolbar>
 
-                <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', mt: 1, mb: 2 }} />
+                <Divider sx={{ bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)', mt: 1, mb: 2 }} />
 
                 <Box sx={{
                     display: 'flex',
@@ -155,7 +160,11 @@ const Sidebar = ({ open }) => {
                                             mb: 1,
                                             px: isCollapsed ? 1 : 1.5,
                                             py: 1.5,
-                                            background: isActive ? 'rgba(255,255,255,0.15)' : 'transparent',
+                                            background: isActive 
+                                                ? isDarkMode 
+                                                    ? 'rgba(255,255,255,0.1)' 
+                                                    : 'rgba(255,255,255,0.15)'
+                                                : 'transparent',
                                             backdropFilter: 'blur(10px)',
                                             position: 'relative',
                                             overflow: 'hidden',
@@ -175,7 +184,9 @@ const Sidebar = ({ open }) => {
                                                 borderRadius: '0 4px 4px 0',
                                             } : {},
                                             '&:hover': {
-                                                background: 'rgba(255,255,255,0.1)',
+                                                background: isDarkMode 
+                                                    ? 'rgba(255,255,255,0.05)' 
+                                                    : 'rgba(255,255,255,0.1)',
                                                 transform: 'translateY(-2px)',
                                                 transition: 'all 0.3s',
                                             }
@@ -218,7 +229,70 @@ const Sidebar = ({ open }) => {
                     </List>
 
                     <List sx={{ width: '100%', p: 0, mt: 'auto' }}>
-                        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', my: 2 }} />
+                        <Divider sx={{ bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)', my: 2 }} />
+
+                        {/* Theme Toggle Button */}
+                        <Tooltip
+                            title={isCollapsed ? (isDarkMode ? 'Chế độ sáng' : 'Chế độ tối') : ''}
+                            placement="right"
+                            arrow
+                        >
+                            <ListItem
+                                button
+                                onClick={toggleTheme}
+                                sx={{
+                                    borderRadius: '12px',
+                                    mb: 1,
+                                    px: 2,
+                                    py: 1.5,
+                                    background: isDarkMode 
+                                        ? 'rgba(255, 255, 255, 0.05)' 
+                                        : 'rgba(255, 255, 255, 0.1)',
+                                    backdropFilter: 'blur(10px)',
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                        background: isDarkMode 
+                                            ? 'rgba(255, 255, 255, 0.15)' 
+                                            : 'rgba(255, 255, 255, 0.25)',
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: isDarkMode 
+                                            ? '0 4px 8px rgba(0,0,0,0.3)' 
+                                            : '0 4px 8px rgba(0,0,0,0.2)',
+                                        transition: 'all 0.3s',
+                                    }
+                                }}
+                            >
+                                <Box sx={{
+                                    color: 'white',
+                                    minWidth: 35,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    mr: isCollapsed ? 0 : 2.5,
+                                    transition: 'margin 0.4s, color 0.3s',
+                                    cursor: 'pointer',
+                                }}>
+                                    {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
+                                </Box>
+
+                                <Typography
+                                    sx={{
+                                        fontSize: '0.95rem',
+                                        fontWeight: 600,
+                                        opacity: isCollapsed ? 0 : 1,
+                                        maxWidth: isCollapsed ? 0 : '220px',
+                                        overflow: 'hidden',
+                                        whiteSpace: 'nowrap',
+                                        color: '#FFFFFF',
+                                        transition: 'opacity 0.4s, max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s',
+                                        cursor: 'pointer',
+                                        marginRight: 1
+                                    }}
+                                >
+                                    {isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'}
+                                </Typography>
+                            </ListItem>
+                        </Tooltip>
 
                         {profileItems.map((item) => {
                             const isActive = location.pathname === item.path;
@@ -237,13 +311,31 @@ const Sidebar = ({ open }) => {
                                             mb: 1,
                                             px: 2,
                                             py: 1.5,
-                                            background: item.text === 'Đăng xuất' ? 'rgba(255, 255, 255, 0.1)' : (isActive ? 'rgba(255,255,255,0.15)' : 'transparent'),
+                                            background: item.text === 'Đăng xuất' 
+                                                ? isDarkMode 
+                                                    ? 'rgba(255, 255, 255, 0.05)' 
+                                                    : 'rgba(255, 255, 255, 0.1)'
+                                                : (isActive 
+                                                    ? isDarkMode 
+                                                        ? 'rgba(255,255,255,0.1)' 
+                                                        : 'rgba(255,255,255,0.15)'
+                                                    : 'transparent'),
                                             backdropFilter: 'blur(10px)',
                                             cursor: 'pointer',
                                             '&:hover': {
-                                                background: item.text === 'Đăng xuất' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255,255,255,0.1)',
+                                                background: item.text === 'Đăng xuất' 
+                                                    ? isDarkMode 
+                                                        ? 'rgba(255, 255, 255, 0.15)' 
+                                                        : 'rgba(255, 255, 255, 0.25)'
+                                                    : isDarkMode 
+                                                        ? 'rgba(255,255,255,0.05)' 
+                                                        : 'rgba(255,255,255,0.1)',
                                                 transform: item.text === 'Đăng xuất' ? 'translateY(-2px)' : 'none',
-                                                boxShadow: item.text === 'Đăng xuất' ? '0 4px 8px rgba(0,0,0,0.2)' : 'none',
+                                                boxShadow: item.text === 'Đăng xuất' 
+                                                    ? isDarkMode 
+                                                        ? '0 4px 8px rgba(0,0,0,0.3)' 
+                                                        : '0 4px 8px rgba(0,0,0,0.2)'
+                                                    : 'none',
                                                 transition: 'all 0.3s',
                                             }
                                         }}
@@ -295,7 +387,12 @@ const Sidebar = ({ open }) => {
                     severity="success"
                     variant="filled"
                     onClose={() => setSnackbarOpen(false)}
-                    sx={{ width: '100%', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+                    sx={{ 
+                        width: '100%', 
+                        boxShadow: isDarkMode 
+                            ? '0 4px 12px rgba(0,0,0,0.3)' 
+                            : '0 4px 12px rgba(0,0,0,0.15)'
+                    }}
                 >
                     Đăng xuất thành công!
                 </Alert>

@@ -148,12 +148,22 @@ const PendingLessons = () => {
               );
               if (gradesResponse.data.code === 0) {
                   setGrades(gradesResponse.data.data || []); 
+
+                  // Get grade from localStorage and set corresponding gradeId
+                  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+                  if (userInfo?.grade) {
+                    const gradeNumber = userInfo.grade.replace('Lớp ', '');
+                    const matchingGrade = gradesResponse.data.data.find(g => g.gradeNumber === parseInt(gradeNumber));
+                    if (matchingGrade) {
+                      setGradeIdFilter(matchingGrade.gradeId);
+                    }
+                  }
               } else {
                   console.error("Failed to fetch grades for filter:", gradesResponse.data.message);
                   setGrades([]);
               }
 
-              // Fetch Modules based on selected Grade (or all if no grade selected initially)
+              // Fetch Modules based on selected Grade
               if (gradeIdFilter) {
                   const modulesResponse = await axios.get(
                       `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades/${gradeIdFilter}/modules`,
@@ -166,9 +176,6 @@ const PendingLessons = () => {
                       setModules([]);
                   }
               } else {
-                 // If no grade is selected, clear modules or fetch all if the API supports it
-                 // Based on the provided APIs, fetching modules requires a gradeId.
-                 // So, we'll clear the modules list if no grade is selected.
                  setModules([]);
               }
 
@@ -259,15 +266,9 @@ const PendingLessons = () => {
                 <FormControl fullWidth size="small">
                    <Select
                       value={gradeIdFilter}
-                      onChange={(e) => {
-                         setGradeIdFilter(e.target.value);
-                         setModuleIdFilter(''); // Reset module filter when grade changes
-                         setCurrentPage(1); // Reset page to 1
-                      }}
-                      disabled={loadingFilterOptions}
-                      displayEmpty // Add displayEmpty prop here
+                      disabled={true}
+                      displayEmpty
                    >
-                      <MenuItem value="">Tất cả Lớp</MenuItem> 
                       {grades.map((grade) => (
                          <MenuItem key={grade.gradeId} value={grade.gradeId}>{`Lớp ${grade.gradeNumber}`}</MenuItem>
                       ))}
