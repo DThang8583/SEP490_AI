@@ -58,7 +58,13 @@ const ExamList = () => {
     const fetchQuizzes = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/quizzes?Page=${page}&PageSize=${pageSize}`);
+        const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/quizzes`, {
+          params: {
+            Page: page,
+            PageSize: pageSize,
+            SearchTerm: searchTerm
+          }
+        });
         console.log("API Quizzes response:", response.data);
         
         if (response.data && response.data.code === 0 && response.data.data) {
@@ -78,7 +84,7 @@ const ExamList = () => {
     };
 
     fetchQuizzes();
-  }, [page, pageSize]);
+  }, [page, pageSize, searchTerm]);
 
   const handleQuizClick = (quizId) => {
     navigate(`/bai-tap/${quizId}`);
@@ -94,8 +100,8 @@ const ExamList = () => {
   };
 
   const handleSearch = () => {
-    // Có thể thêm logic tìm kiếm ở đây
-    console.log("Tìm kiếm với từ khóa:", searchTerm);
+    setPage(1); // Reset về trang 1 khi tìm kiếm
+    // The search will be triggered automatically by the useEffect due to searchTerm change
   };
 
   return (
@@ -122,7 +128,7 @@ const ExamList = () => {
             WebkitTextFillColor: 'transparent',
           }}
         >
-          Danh sách bài kiểm tra
+          Danh sách bài bài tập đã tạo
         </Typography>
 
         {/* Search and Filter Section */}
@@ -229,14 +235,14 @@ const ExamList = () => {
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <SchoolIcon fontSize="small" color="action" />
                             <Typography variant="body2" color="text.secondary">
-                              ID: {quiz.quizId}
+                              {JSON.parse(localStorage.getItem('userInfo'))?.fullName || 'Unknown User'}
                             </Typography>
                           </Box>
                           
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <AssignmentIcon fontSize="small" color="action" />
                             <Typography variant="body2" color="text.secondary">
-                              Bài kiểm tra
+                             {quiz.lessonName}
                             </Typography>
                           </Box>
                         </Stack>

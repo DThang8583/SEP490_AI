@@ -128,11 +128,6 @@ const ExamDetail = () => {
                 <Divider sx={{ mb: 2 }} />
                 
                 <Stack spacing={2}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="body1" color="text.secondary">
-                      ID: {quizData.quizId}
-                    </Typography>
-                  </Box>
                   
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="body1" color="text.secondary">
@@ -179,11 +174,7 @@ const ExamDetail = () => {
                               gap: 1,
                             }}
                           >
-                            {answer.isCorrect ? (
-                              <CheckCircleIcon color="success" />
-                            ) : (
-                              <CancelIcon color="error" />
-                            )}
+                            {answer.isCorrect }
                             <Typography variant="body1">
                               {answer.answer}
                             </Typography>

@@ -117,6 +117,11 @@ const TeacherProfile = () => {
           // Kiểm tra và cập nhật dateOfBirth
           const validDateOfBirth = userData.dateOfBirth === '01/01/0001' ? '2025-04-10' : userData.dateOfBirth;
           
+          // Save gradeId to localStorage
+          if (userData.grade) {
+            localStorage.setItem('Grade', userData.grade);
+          }
+          console.log("gradeId",userData.grade)
           // Cập nhật profile với dữ liệu từ API
           setProfile({
             id: userData.userId,

@@ -22,13 +22,11 @@ const GeneratedQuiz = () => {
     const { isDarkMode } = useCustomTheme();
     const theme = useTheme();
 
-    // Get the generated content from location state
     const generatedContent = location.state?.content;
     const exerciseName = location.state?.exerciseName;
     const lessonId = location.state?.lessonId;
 
-    console.log('GeneratedQuiz loaded.');
-    console.log('generatedContent:', generatedContent);
+    console.log('Raw generatedContent:', JSON.stringify(generatedContent));
     console.log('exerciseName:', exerciseName);
     console.log('lessonId:', lessonId);
 
@@ -51,115 +49,139 @@ const GeneratedQuiz = () => {
         );
     }
 
-    // Split content into questions
-    const questions = generatedContent.split(/\d+\./).filter(q => q.trim());
+    const questions = generatedContent.split(/(?=Câu \d+:)/).filter(q => q.trim());
 
-    // Helper function to format the question text
     const formatQuestion = (text) => {
-        return text
-            // Thêm dòng trống sau câu hỏi
-            .replace(/([^A-D]\.\s*$)/g, '$1\n\n    ')
-            // Đảm bảo A./B./C./D. xuống dòng mới và có khoảng trắng phù hợp
-            .replace(/(?<!\n)([A-D]\.\s)/g, '\n\n    $1')
-            // Đảm bảo "Đáp án đúng:" xuống dòng mới
-            .replace(/(?<!\n)(Đáp án đúng:)/g, '\n$1')
-            // Xóa dòng trống dư
-            .replace(/\n{4,}/g, '\n\n')
-            .trim();
+        const lines = text.trim().split('\n').map(line => line.trim()).filter(line => line);
+        const questionText = lines[0].trim();
+        const answerLines = [];
+        let correctAnswerLine = '';
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (line.match(/^[A-D]\.\s*.+/)) {
+                answerLines.push(line);
+            } else if (line.startsWith('Đáp án đúng:') || line === 'Đáp án đúng') {
+                if (line === 'Đáp án đúng' && i + 1 < lines.length && lines[i + 1].match(/^[A-D]\.\s*.+/)) {
+                    correctAnswerLine = `Đáp án đúng: ${lines[i + 1].charAt(0)}`;
+                } else {
+                    correctAnswerLine = line;
+                }
+            }
+        }
+
+        const formatted = [
+            questionText,
+            ...answerLines.map(line => `    ${line}`),
+            correctAnswerLine || '(Chưa có đáp án đúng)'
+        ].filter(line => line).join('\n');
+
+        return formatted;
     };
 
     const parseQuizContent = (content) => {
         const questions = [];
-        // Tách các câu hỏi bằng số thứ tự câu
-        const questionBlocks = content.split(/\d+\./).filter(block => block.trim());
-
+        const questionBlocks = content.split(/(?=Câu \d+:)/).filter(block => block.trim());
+    
         questionBlocks.forEach(block => {
-            const lines = block.trim().split('\n');
-            let questionName = '';
+            const lines = block.trim().split('\n').map(line => line.trim()).filter(line => line);
+            if (lines.length < 5) {
+                console.warn(`Câu hỏi "${lines[0]}" không hợp lệ: thiếu đủ dòng (cần ít nhất 5).`);
+                return;
+            }
+    
+            const questionName = lines[0].replace(/^Câu \d+:/, '').trim();
             const quizAnswers = [];
+            let correctAnswer = '';
             let correctAnswerText = '';
-
-            // Tìm dòng chứa đáp án đúng trong khối câu hỏi hiện tại
-            const correctAnswerLines = lines.filter(line => {
-                const trimmedLine = line.trim();
-                return trimmedLine.startsWith('Đáp án đúng:');
+    
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                if (line.match(/^[A-D]\.\s*.+/)) {
+                    quizAnswers.push({
+                        answer: line.trim(),
+                        isCorrect: false,
+                    });
+                } else if (line.startsWith('Đáp án đúng:') || line === 'Đáp án đúng') {
+                    if (line === 'Đáp án đúng' && i + 1 < lines.length && lines[i + 1].match(/^[A-D]\.\s*.+/)) {
+                        correctAnswer = lines[i + 1].charAt(0);
+                        correctAnswerText = lines[i + 1].trim();
+                    } else {
+                        correctAnswer = line.replace('Đáp án đúng:', '').trim();
+                        const matchingAnswer = quizAnswers.find(ans => ans.answer.charAt(0) === correctAnswer);
+                        correctAnswerText = matchingAnswer ? matchingAnswer.answer : '';
+                    }
+                }
+            }
+    
+            // Thêm dòng phân cách vào cuối quizAnswers
+            quizAnswers.push({
+                answer: '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------',
+                isCorrect: false,
             });
-
-            // Lấy đáp án đúng cuối cùng trong khối câu hỏi
-            if (correctAnswerLines.length > 0) {
-                correctAnswerText = correctAnswerLines[correctAnswerLines.length - 1].trim();
+    
+            if (quizAnswers.length !== 5) {  // Bây giờ phải có 5, vì thêm dòng phân cách
+                console.warn(`Câu hỏi "${questionName}": Yêu cầu đúng 4 đáp án + 1 phân cách, hiện có ${quizAnswers.length}.`);
+                // bạn có thể bỏ qua cảnh báo này nếu không muốn
             }
-
-            // Lấy nội dung câu hỏi (bỏ qua các dòng chứa đáp án và đáp án đúng)
-            questionName = lines
-                .filter(line => {
-                    const trimmedLine = line.trim();
-                    return !trimmedLine.match(/^[A-D]\.\s/) && 
-                           !trimmedLine.startsWith('Đáp án đúng:') &&
-                           !trimmedLine.match(/^Đáp án đúng$/);
-                })
-                .join('\n')
-                .trim();
-
-            // Thu thập tất cả các lựa chọn trả lời (A, B, C, D)
-            const answerOptions = lines
-                .filter(line => {
-                    const trimmedLine = line.trim();
-                    return (trimmedLine.match(/^[A-D]\.\s/) || 
-                           trimmedLine.match(/^[A-D]\./)) && 
-                           !trimmedLine.startsWith('Đáp án đúng:');
-                })
-                .map(line => {
-                    // Giữ nguyên công thức LaTeX trong đáp án
-                    return line.trim();
-                });
-
-            // Kết hợp tất cả các lựa chọn thành một chuỗi
-            const combinedAnswers = answerOptions.join('          ');
-
-            // Thêm đáp án đúng ngay sau câu hỏi
-            if (correctAnswerText) {
-                quizAnswers.push({
-                    answer: correctAnswerText,
-                    isCorrect: true
-                });
+    
+            if (correctAnswer) {
+                const correctIndex = quizAnswers.findIndex(ans => ans.answer.startsWith(`${correctAnswer}.`));
+                if (correctIndex !== -1) {
+                    quizAnswers[correctIndex].isCorrect = true;
+                } else {
+                    console.warn(`Câu hỏi "${questionName}": Không tìm thấy đáp án đúng "${correctAnswer}".`);
+                    return;
+                }
+            } else {
+                console.warn(`Câu hỏi "${questionName}": Thiếu đáp án đúng hợp lệ.`);
+                return;
             }
-
-            // Thêm các lựa chọn trả lời
-            if (combinedAnswers) {
-                quizAnswers.push({
-                    answer: combinedAnswers,
-                    isCorrect: false
-                });
-            }
-
-            if (questionName || quizAnswers.length > 0) {
-                questions.push({
-                    questionName: questionName,
-                    quizAnswers: quizAnswers
-                });
-            }
+    
+            questions.push({
+                questionName,
+                quizAnswers,
+            });
         });
-
+    
         return questions;
     };
+    
 
     const handleSaveQuiz = async () => {
         setGeneratingSave(true);
         setSaveSuccess('');
         setSaveError('');
+
         const quizData = {
-            quizName: exerciseName || 'Bài tập mới', // Use exerciseName if available, otherwise a default name
-            lessonId: parseInt(lessonId), // Ensure lessonId is an integer
+            quizName: exerciseName || 'Bài tập mới',
+            lessonId: parseInt(lessonId) || 1,
             quizQuestions: parseQuizContent(generatedContent),
         };
 
-        console.log('Saving Quiz Data:', quizData);
+        if (!quizData.lessonId || isNaN(quizData.lessonId)) {
+            setSaveError('Mã bài học không hợp lệ.');
+            setGeneratingSave(false);
+            return;
+        }
+        if (quizData.quizQuestions.length === 0) {
+            setSaveError('Không có câu hỏi nào được tạo.');
+            setGeneratingSave(false);
+            return;
+        }
+        const hasInvalidQuestions = quizData.quizQuestions.some(
+            question => !question.quizAnswers.some(answer => answer.isCorrect)
+        );
+        if (hasInvalidQuestions) {
+            setSaveError('Một số câu hỏi thiếu đáp án đúng hợp lệ.');
+            setGeneratingSave(false);
+            return;
+        } 
 
-        // Perform API call here
+        console.log('Quiz data trước khi gửi API:', JSON.stringify(quizData, null, 2));
+
         const token = localStorage.getItem('accessToken');
         if (!token) {
-            console.error("Authentication token not found.");
             setSaveError('Authentication token not found. Please login again.');
             setGeneratingSave(false);
             return;
@@ -172,17 +194,14 @@ const GeneratedQuiz = () => {
                 { headers: { 'Authorization': `Bearer ${token}` } }
             );
 
-            if (response.data.code === 0 || response.data.code === 22) {
-                console.log('Quiz saved successfully:', response.data);
+            if (response.data.code === 0 || response.data.code === 21) {
                 setSaveSuccess('Bài tập đã được lưu thành công!');
-                // Optionally navigate away or reset state after success
             } else {
-                console.error('Failed to save quiz:', response.data.message);
                 setSaveError(response.data.message || 'Đã xảy ra lỗi khi lưu bài tập.');
             }
         } catch (error) {
-            console.error('Error saving quiz:', error);
-            setSaveError('Đã xảy ra lỗi kết nối hoặc máy chủ.');
+            console.error('Lỗi API:', error.response?.data || error.message);
+            setSaveError(error.response?.data?.message || 'Đã xảy ra lỗi kết nối hoặc máy chủ.');
         } finally {
             setGeneratingSave(false);
         }
@@ -200,7 +219,6 @@ const GeneratedQuiz = () => {
         >
             <Container maxWidth="md">
                 <Stack spacing={3}>
-                    {/* Header */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                         <Button
                             startIcon={<ArrowBack />}
@@ -242,7 +260,6 @@ const GeneratedQuiz = () => {
                         )}
                     </Box>
 
-                    {/* Quiz Content */}
                     {saveSuccess && <Alert severity="success" sx={{ mb: 2 }}>{saveSuccess}</Alert>}
                     {saveError && <Alert severity="error" sx={{ mb: 2 }}>{saveError}</Alert>}
                     <Paper
@@ -261,7 +278,6 @@ const GeneratedQuiz = () => {
                         }}
                     >
                         <Stack spacing={4}>
-                            {/* Display Exercise Name */}
                             {exerciseName && (
                                 <Typography
                                     variant="h5"
@@ -279,16 +295,6 @@ const GeneratedQuiz = () => {
 
                             {questions.map((question, index) => (
                                 <Box key={index}>
-                                    <Typography
-                                        variant="h6"
-                                        sx={{
-                                            mb: 2,
-                                            color: isDarkMode ? 'rgb(255, 255, 255)' : 'rgb(33, 33, 33)',
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        Câu {index + 1}:
-                                    </Typography>
                                     <Box
                                         sx={{
                                             pl: 2,
@@ -297,8 +303,7 @@ const GeneratedQuiz = () => {
                                         }}
                                     >
                                         {formatQuestion(question).split('\n').map((line, lineIndex) => {
-                                            // Style the answer options differently
-                                            if (line.match(/^[A-D]\./)) {
+                                            if (line.match(/^[A-D]\.\s*.+/)) {
                                                 return (
                                                     <Typography
                                                         key={lineIndex}
@@ -312,8 +317,7 @@ const GeneratedQuiz = () => {
                                                     </Typography>
                                                 );
                                             }
-                                            // Style the "Đáp án:" line differently
-                                            if (line.startsWith('Đáp án:')) {
+                                            if (line.match(/Đáp án đúng:\s*[A-D]/) || line === '(Chưa có đáp án đúng)') {
                                                 return (
                                                     <Typography
                                                         key={lineIndex}
@@ -328,7 +332,6 @@ const GeneratedQuiz = () => {
                                                     </Typography>
                                                 );
                                             }
-                                            // Regular question text
                                             return (
                                                 <Typography key={lineIndex} sx={{ mb: 1 }}>
                                                     {line}
@@ -349,4 +352,4 @@ const GeneratedQuiz = () => {
     );
 };
 
-export default GeneratedQuiz; 
+export default GeneratedQuiz;

@@ -43,56 +43,47 @@ const parseContent = (generatedText) => {
     return match && match[1] ? match[1].trim() : '';
   };
 
-  // Helper to extract duration from a title line like "(5 phút)"
-  const extractDuration = (titleLine) => {
-    const durationMatch = titleLine.match(/(([0-9\s]+? phút))/i); // Capture content inside parentheses like "5 phút"
-    return durationMatch && durationMatch[1] ? durationMatch[1].trim() : '';
-  };
-  
   // Define regex patterns for main sections
-  const goalRegex = /1\.\s*Mục tiêu:\s*([\s\S]*?)(?=\n\s*2\.\s*Giáo viên chuẩn bị:|$)/i;
-  const supplyRegex = /2\.\s*Giáo viên chuẩn bị:\s*([\s\S]*?)(?=\n\s*3\.\s*Tiến trình Giáo án:|$)/i;
+  const goalRegex = /I\.\s*Yêu cầu cần đạt:\s*([\s\S]*?)(?=\n\s*II\.\s*Đồ dùng dạy học:|$)/i;
+  const supplyRegex = /II\.\s*Đồ dùng dạy học:\s*([\s\S]*?)(?=\n\s*III\.\s*Các hoạt động dạy học chủ yếu:|$)/i;
 
-  // Regex patterns to find each activity block. Capture Group 1 = Title line, Capture Group 2 = Content after "Cách tiến hành:"
-  const activity1BlockRegex = /3\.\s*Tiến trình Giáo án:[\s\S]*?(a\)\s*Hoạt động 1:[^\n]*?)[\s\S]*?Cách tiến hành:[\s\S]*?([\s\S]*?)(?=\s*b\)\s*Hoạt động 2:|$)/i; 
-  const activity2BlockRegex = /(b\)\s*Hoạt động 2:[^\n]*?)[\s\S]*?Cách tiến hành:[\s\S]*?([\s\S]*?)(?=\s*c\)\s*Hoạt động 3:|$)/i;
-  const activity3BlockRegex = /(c\)\s*Hoạt động 3:[^\n]*?)[\s\S]*?Cách tiến hành:[\s\S]*?([\s\S]*?)(?=\s*d\)\s*Hoạt động 4:|$)/i;
-  const activity4BlockRegex = /(d\)\s*Hoạt động 4:[^\n]*?)[\s\S]*?Cách tiến hành:[\s\S]*?([\s\S]*?)(?=\s*(?:Lưu ý:|$|\n\n))/i;
+  // Regex patterns for activity sections
+  const startUpRegex = /A\.\s*Hoạt động MỞ ĐẦU\s*\(([^)]+)\):\s*([\s\S]*?)(?=\n\s*B\.\s*Hoạt động HÌNH THÀNH KIẾN THỨC:|$)/i;
+  const knowledgeRegex = /B\.\s*Hoạt động HÌNH THÀNH KIẾN THỨC\s*\(([^)]+)\):\s*([\s\S]*?)(?=\n\s*C\.\s*Hoạt động LUYỆN TẬP, THỰC HÀNH:|$)/i;
+  const practiceRegex = /C\.\s*Hoạt động LUYỆN TẬP, THỰC HÀNH\s*\(([^)]+)\):\s*([\s\S]*?)(?=\n\s*D\.\s*Hoạt động VẬN DỤNG, TRẢI NGHIỆM:|$)/i;
+  const applyRegex = /D\.\s*Hoạt động VẬN DỤNG, TRẢI NGHIỆM\s*\(([^)]+)\):\s*([\s\S]*?)(?=\n\s*(?:Ghi chú:|$))/i;
 
-  // For debugging
-  console.log("Original text:", text);
-  
+  // Extract main sections
   sections.goal = extractContent(goalRegex);
   sections.schoolSupply = extractContent(supplyRegex);
-  
-  // Parse activities and their durations
-  const match1 = text.match(activity1BlockRegex);
-  if (match1) {
-    sections.startUp = match1[2] ? match1[2].trim() : ''; // match1[2] is the content after "Cách tiến hành:"
+
+  // Extract activity sections with their content
+  const startUpMatch = text.match(startUpRegex);
+  if (startUpMatch) {
+    sections.startUp = startUpMatch[2] ? startUpMatch[2].trim() : '';
   }
 
-  const match2 = text.match(activity2BlockRegex);
-  if (match2) {
-    sections.knowledge = match2[2] ? match2[2].trim() : ''; // match2[2] is the content
+  const knowledgeMatch = text.match(knowledgeRegex);
+  if (knowledgeMatch) {
+    sections.knowledge = knowledgeMatch[2] ? knowledgeMatch[2].trim() : '';
   }
 
-  const match3 = text.match(activity3BlockRegex);
-  if (match3) {
-    sections.practice = match3[2] ? match3[2].trim() : ''; // match3[2] is the content
+  const practiceMatch = text.match(practiceRegex);
+  if (practiceMatch) {
+    sections.practice = practiceMatch[2] ? practiceMatch[2].trim() : '';
   }
 
-  const match4 = text.match(activity4BlockRegex);
-  if (match4) {
-    sections.apply = match4[2] ? match4[2].trim() : ''; // match4[2] is the content
+  const applyMatch = text.match(applyRegex);
+  if (applyMatch) {
+    sections.apply = applyMatch[2] ? applyMatch[2].trim() : '';
   }
-  
+
   // Log the parsed sections for debugging
   console.log("Parsed sections:", sections);
 
-  // Basic check if extraction failed significantly
-  if (!sections.goal || !sections.schoolSupply || !sections.startUp || !sections.knowledge || !sections.practice || !sections.apply ) {
-      console.warn("Parsing might have failed or is incomplete. Check AI output format against expected structure.", sections);
-      // Fallback or error handling might be needed here
+  // Basic validation
+  if (!sections.goal || !sections.schoolSupply || !sections.startUp || !sections.knowledge || !sections.practice || !sections.apply) {
+    console.warn("Parsing might have failed or is incomplete. Check AI output format against expected structure.", sections);
   }
 
   return sections;
@@ -155,7 +146,7 @@ const AIRender = () => {
     }
 
     setIsSending(true);
-    setSnackbar({ open: false, message: '', severity: 'info' }); // Clear previous snackbar
+    setSnackbar({ open: false, message: '', severity: 'info' });
 
     try {
       const parsedData = parseContent(content);
@@ -166,18 +157,18 @@ const AIRender = () => {
       }
 
       const apiBody = {
+        startUp: parsedData.startUp,
+        knowLedge: parsedData.knowledge,
         goal: parsedData.goal,
         schoolSupply: parsedData.schoolSupply,
-        startUp: parsedData.startUp,
-        knowledge: parsedData.knowledge,
         practice: parsedData.practice,
         apply: parsedData.apply,
-        userId: parseInt(userId, 10), // Ensure userId is a number
-        promptId: parseInt(promptId, 10), // Ensure promptId is a number
-        duration: "35", // This is likely the total duration, not individual
+        userId: parseInt(userId, 10),
+        duration:0,
+        promptId: parseInt(promptId, 10)
       };
 
-      console.log("Sending to API for draft:", JSON.stringify(apiBody, null, 2)); // More detailed log
+      console.log("Sending to API for draft:", JSON.stringify(apiBody, null, 2));
 
       // Get token for authenticated request
       const token = localStorage.getItem('accessToken');
@@ -232,7 +223,7 @@ const AIRender = () => {
     }
 
     setIsSending(true);
-    setSnackbar({ open: false, message: '', severity: 'info' }); // Clear previous snackbar
+    setSnackbar({ open: false, message: '', severity: 'info' });
 
     try {
       const parsedData = parseContent(content);
@@ -243,18 +234,17 @@ const AIRender = () => {
       }
 
       const apiBody = {
+        startUp: parsedData.startUp,
+        knowLedge: parsedData.knowledge,
         goal: parsedData.goal,
         schoolSupply: parsedData.schoolSupply,
-        startUp: parsedData.startUp,
-        knowledge: parsedData.knowledge,
         practice: parsedData.practice,
         apply: parsedData.apply,
-        userId: parseInt(userId, 10), // Ensure userId is a number
-        promptId: parseInt(promptId, 10), // Ensure promptId is a number
-        duration: "35", // This is likely the total duration, not individual
+        userId: parseInt(userId, 10),
+        promptId: parseInt(promptId, 10)
       };
 
-      console.log("Sending to API for manager:", JSON.stringify(apiBody, null, 2)); // More detailed log
+      console.log("Sending to API for manager:", JSON.stringify(apiBody, null, 2));
 
       // Get token for authenticated request
       const token = localStorage.getItem('accessToken');
