@@ -85,10 +85,6 @@ const TotalExams = () => {
     setPage(value);
   };
 
-  const handleRowClick = (quizId) => {
-    navigate(`/admin/exams/${quizId}`);
-  };
-
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
   };
@@ -238,7 +234,6 @@ const TotalExams = () => {
                 <TableRow 
                   key={exam.quizId}
                   hover
-                  onClick={() => handleRowClick(exam.quizId)}
                   sx={{
                     '&:last-child td, &:last-child th': { border: 0 },
                     cursor: 'pointer',

@@ -36,54 +36,63 @@ const parseContent = (generatedText) => {
 
   // Normalize line breaks and remove potential leading/trailing spaces
   const text = generatedText.replace(/\r\n/g, '\n').trim();
+  console.log("Input text:", text); // Debug log
 
   // Helper to extract content based on a regex with a capturing group
-  const extractContent = (regex) => {
+  const extractContent = (regex, sectionName) => {
     const match = text.match(regex);
-    return match && match[1] ? match[1].trim() : '';
+    const content = match && match[1] ? match[1].trim() : '';
+    console.log(`${sectionName} content:`, content); // Debug log
+    return content;
   };
 
-  // Define regex patterns for main sections
-  const goalRegex = /I\.\s*Yêu cầu cần đạt:\s*([\s\S]*?)(?=\n\s*II\.\s*Đồ dùng dạy học:|$)/i;
-  const supplyRegex = /II\.\s*Đồ dùng dạy học:\s*([\s\S]*?)(?=\n\s*III\.\s*Các hoạt động dạy học chủ yếu:|$)/i;
+  // Define regex patterns for main sections with more flexible matching
+  const goalRegex = /I\.\s*Yêu cầu cần đạt:?\s*([\s\S]*?)(?=\n\s*II\.\s*Đồ dùng dạy học:|$)/i;
+  const supplyRegex = /II\.\s*Đồ dùng dạy học:?\s*([\s\S]*?)(?=\n\s*III\.\s*Các hoạt động dạy học chủ yếu:|$)/i;
 
-  // Regex patterns for activity sections
-  const startUpRegex = /A\.\s*Hoạt động MỞ ĐẦU\s*\(([^)]+)\):\s*([\s\S]*?)(?=\n\s*B\.\s*Hoạt động HÌNH THÀNH KIẾN THỨC:|$)/i;
-  const knowledgeRegex = /B\.\s*Hoạt động HÌNH THÀNH KIẾN THỨC\s*\(([^)]+)\):\s*([\s\S]*?)(?=\n\s*C\.\s*Hoạt động LUYỆN TẬP, THỰC HÀNH:|$)/i;
-  const practiceRegex = /C\.\s*Hoạt động LUYỆN TẬP, THỰC HÀNH\s*\(([^)]+)\):\s*([\s\S]*?)(?=\n\s*D\.\s*Hoạt động VẬN DỤNG, TRẢI NGHIỆM:|$)/i;
-  const applyRegex = /D\.\s*Hoạt động VẬN DỤNG, TRẢI NGHIỆM\s*\(([^)]+)\):\s*([\s\S]*?)(?=\n\s*(?:Ghi chú:|$))/i;
+  // Regex patterns for activity sections with more flexible matching
+  const startUpRegex = /A\.\s*Hoạt động MỞ ĐẦU\s*(?:\([^)]+\))?:?\s*([\s\S]*?)(?=\n\s*B\.\s*Hoạt động HÌNH THÀNH KIẾN THỨC:|$)/i;
+  const knowledgeRegex = /B\.\s*Hoạt động HÌNH THÀNH KIẾN THỨC\s*(?:\([^)]+\))?:?\s*([\s\S]*?)(?=\n\s*C\.\s*Hoạt động LUYỆN TẬP, THỰC HÀNH:|$)/i;
+  const practiceRegex = /C\.\s*Hoạt động LUYỆN TẬP, THỰC HÀNH\s*(?:\([^)]+\))?:?\s*([\s\S]*?)(?=\n\s*D\.\s*Hoạt động VẬN DỤNG, TRẢI NGHIỆM:|$)/i;
+  const applyRegex = /D\.\s*Hoạt động VẬN DỤNG, TRẢI NGHIỆM\s*(?:\([^)]+\))?:?\s*([\s\S]*?)(?=\n\s*(?:Ghi chú:|$))/i;
 
   // Extract main sections
-  sections.goal = extractContent(goalRegex);
-  sections.schoolSupply = extractContent(supplyRegex);
+  sections.goal = extractContent(goalRegex, "Goal");
+  sections.schoolSupply = extractContent(supplyRegex, "School Supply");
 
-  // Extract activity sections with their content
-  const startUpMatch = text.match(startUpRegex);
-  if (startUpMatch) {
-    sections.startUp = startUpMatch[2] ? startUpMatch[2].trim() : '';
-  }
+  // Extract activity sections
+  sections.startUp = extractContent(startUpRegex, "Start Up");
+  sections.knowledge = extractContent(knowledgeRegex, "Knowledge");
+  sections.practice = extractContent(practiceRegex, "Practice");
+  sections.apply = extractContent(applyRegex, "Apply");
 
-  const knowledgeMatch = text.match(knowledgeRegex);
-  if (knowledgeMatch) {
-    sections.knowledge = knowledgeMatch[2] ? knowledgeMatch[2].trim() : '';
-  }
+  // Clean up sections to remove any duplicate content
+  const cleanSection = (content) => {
+    if (!content) return '';
+    // Remove any section headers that might have been included
+    return content.replace(/^[A-D]\.\s*Hoạt động.*?(?=\n|$)/gim, '').trim();
+  };
 
-  const practiceMatch = text.match(practiceRegex);
-  if (practiceMatch) {
-    sections.practice = practiceMatch[2] ? practiceMatch[2].trim() : '';
-  }
-
-  const applyMatch = text.match(applyRegex);
-  if (applyMatch) {
-    sections.apply = applyMatch[2] ? applyMatch[2].trim() : '';
-  }
+  sections.startUp = cleanSection(sections.startUp);
+  sections.knowledge = cleanSection(sections.knowledge);
+  sections.practice = cleanSection(sections.practice);
+  sections.apply = cleanSection(sections.apply);
 
   // Log the parsed sections for debugging
   console.log("Parsed sections:", sections);
 
-  // Basic validation
-  if (!sections.goal || !sections.schoolSupply || !sections.startUp || !sections.knowledge || !sections.practice || !sections.apply) {
-    console.warn("Parsing might have failed or is incomplete. Check AI output format against expected structure.", sections);
+  // More detailed validation
+  const missingSections = [];
+  if (!sections.goal) missingSections.push("Yêu cầu cần đạt");
+  if (!sections.schoolSupply) missingSections.push("Đồ dùng dạy học");
+  if (!sections.startUp) missingSections.push("Hoạt động MỞ ĐẦU");
+  if (!sections.knowledge) missingSections.push("Hoạt động HÌNH THÀNH KIẾN THỨC");
+  if (!sections.practice) missingSections.push("Hoạt động LUYỆN TẬP, THỰC HÀNH");
+  if (!sections.apply) missingSections.push("Hoạt động VẬN DỤNG, TRẢI NGHIỆM");
+
+  if (missingSections.length > 0) {
+    console.warn("Missing sections:", missingSections);
+    throw new Error(`Không thể phân tích các phần sau: ${missingSections.join(", ")}. Vui lòng kiểm tra định dạng giáo án.`);
   }
 
   return sections;
@@ -93,12 +102,10 @@ const AIRender = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
-  // Get promptId from location state
-  const { content: initialContent, promptId } = location.state || {}; 
-  console.log("promptId from location state:", promptId); // Log promptId here
-  const [content, setContent] = useState(initialContent || "");
+
+  const [content, setContent] = useState(location.state?.content || "");
   const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState(initialContent || "");
+  const [draft, setDraft] = useState(location.state?.content || "");
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [isSending, setIsSending] = useState(false); // Loading state for API call
   const [userId, setUserId] = useState(null); // State for userId
@@ -123,25 +130,17 @@ const AIRender = () => {
     }
   }, []); // Empty dependency array ensures this runs only once on mount
 
-  // Redirect if no content is passed, potentially add check for promptId too
+  // Redirect if no content is passed
   useEffect(() => {
-    if (!initialContent) {
+    if (!location.state?.content) {
         navigate("/CreateLesson");
     }
-  }, [initialContent, navigate]); // Dependencies added
+  }, [location.state?.content, navigate]); // Dependencies added
 
-  if (!initialContent) {
-    // Return null or a loading indicator while redirecting
-    return null;
-  }
 
   const handleSaveDraft = async () => {
     if (!userId) {
        setSnackbar({ open: true, message: 'Không thể lưu: Thiếu thông tin người dùng.', severity: 'error' });
-       return;
-    }
-    if (!promptId) {
-       setSnackbar({ open: true, message: 'Không thể lưu: Thiếu thông tin prompt.', severity: 'error' });
        return;
     }
 
@@ -160,12 +159,11 @@ const AIRender = () => {
         startUp: parsedData.startUp,
         knowLedge: parsedData.knowledge,
         goal: parsedData.goal,
-        schoolSupply: parsedData.schoolSupply,
+        schoolSupply: parsedData.schoolSupply,  
         practice: parsedData.practice,
         apply: parsedData.apply,
         userId: parseInt(userId, 10),
-        duration:0,
-        promptId: parseInt(promptId, 10)
+        duration:"",
       };
 
       console.log("Sending to API for draft:", JSON.stringify(apiBody, null, 2));
@@ -217,10 +215,6 @@ const AIRender = () => {
        setSnackbar({ open: true, message: 'Không thể gửi: Thiếu thông tin người dùng.', severity: 'error' });
        return;
     }
-    if (!promptId) {
-       setSnackbar({ open: true, message: 'Không thể gửi: Thiếu thông tin prompt.', severity: 'error' });
-       return;
-    }
 
     setIsSending(true);
     setSnackbar({ open: false, message: '', severity: 'info' });
@@ -241,7 +235,7 @@ const AIRender = () => {
         practice: parsedData.practice,
         apply: parsedData.apply,
         userId: parseInt(userId, 10),
-        promptId: parseInt(promptId, 10)
+        duration:"",
       };
 
       console.log("Sending to API for manager:", JSON.stringify(apiBody, null, 2));
@@ -489,7 +483,7 @@ const AIRender = () => {
               variant="contained"
               startIcon={isSending ? <CircularProgress size={20} color="inherit" /> : <Send />}
               onClick={handleSendToManager}
-              disabled={isSending || !userId || !promptId} // Disable if sending or missing data
+              disabled={isSending || !userId} // Disable if sending or missing data
               sx={{
                 backgroundColor: '#F44336',
                 color: '#ffffff',

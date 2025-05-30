@@ -19,21 +19,14 @@ import {
     Stack,
     Alert,
     Fade,
-    Divider,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle
 } from '@mui/material';
 import {
     Search as SearchIcon,
-    Check as CheckIcon,
-    Close as CloseIcon,
     School as SchoolIcon,
-    ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { useTheme } from '../../../context/ThemeContext';
+import ContentApprovalDetail from './ContentApprovalDetail';
 
 const TEACHER_LESSONS_API = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans';
 const USERS_API = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users';
@@ -75,32 +68,36 @@ const STATUS_COLORS = {
 };
 
 // Styled components
-const ActionButton = styled(Button)({
-    borderRadius: 16,
-    padding: '6px 16px',
-    textTransform: 'none',
-    fontWeight: 600,
-    fontSize: '0.875rem',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-    '&:hover': {
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-    },
-});
-
-const SearchTextField = styled(TextField)({
+const SearchTextField = styled(TextField)(({ isDarkMode }) => ({
     marginBottom: 16,
     '& .MuiOutlinedInput-root': {
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
         transition: 'all 0.3s ease',
         '&:hover': {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+            boxShadow: isDarkMode 
+                ? '0 4px 12px rgba(0, 0, 0, 0.2)' 
+                : '0 4px 12px rgba(0, 0, 0, 0.08)',
         },
         '&.Mui-focused': {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+            boxShadow: isDarkMode 
+                ? '0 4px 12px rgba(0, 0, 0, 0.2)' 
+                : '0 4px 12px rgba(0, 0, 0, 0.08)',
+        },
+        '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+        },
+        '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+        },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: isDarkMode ? '#06A9AE' : '#06A9AE',
         },
     },
-});
+    '& .MuiInputBase-input': {
+        color: isDarkMode ? '#fff' : '#212B36',
+    },
+}));
 
 const StatusChip = styled(Chip)(({ status }) => ({
     backgroundColor: STATUS_COLORS[status]?.bgColor,
@@ -110,315 +107,8 @@ const StatusChip = styled(Chip)(({ status }) => ({
     padding: '0 8px',
 }));
 
-const DetailSection = styled(Box)({
-    backgroundColor: 'rgba(0, 0, 0, 0.01)',
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 8,
-});
-
-const DetailHeading = styled(Typography)({
-    fontWeight: 600,
-    color: COLORS.text.primary,
-    marginBottom: 8,
-});
-
-const DetailContent = styled(Typography)({
-    color: COLORS.text.secondary,
-    whiteSpace: 'pre-wrap',
-    fontSize: '0.9rem',
-});
-
-// Detail View Component
-const LessonDetailView = ({ lessonId, onBack, onApprove, onReject }) => {
-    const [lessonDetail, setLessonDetail] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [openRejectDialog, setOpenRejectDialog] = useState(false);
-    const [rejectReason, setRejectReason] = useState('');
-
-    useEffect(() => {
-        const fetchDetail = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get(`${TEACHER_LESSONS_API}/${lessonId}`);
-                setLessonDetail(response.data.data);
-            } catch (err) {
-                setError('Không thể tải thông tin chi tiết. Vui lòng thử lại sau.');
-                console.error('Error fetching lesson detail:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDetail();
-    }, [lessonId]);
-
-    const handleOpenRejectDialog = () => {
-        setOpenRejectDialog(true);
-    };
-
-    const handleCloseRejectDialog = () => {
-        setOpenRejectDialog(false);
-        setRejectReason('');
-    };
-
-    const handleRejectConfirm = () => {
-        if (rejectReason.trim() === '') {
-            return; // Don't allow empty reason
-        }
-
-        // Pass the reason to parent component for rejection
-        onReject(lessonDetail.lessonPlanId, rejectReason.trim());
-        handleCloseRejectDialog();
-    };
-
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-                <CircularProgress size={50} sx={{ color: COLORS.primary }} />
-            </Box>
-        );
-    }
-
-    if (error) {
-        return (
-            <Box sx={{ p: 3 }}>
-                <Button
-                    variant="outlined"
-                    startIcon={<ArrowBackIcon />}
-                    onClick={onBack}
-                    sx={{ mb: 2 }}
-                >
-                    Quay lại
-                </Button>
-                <Alert severity="error" sx={{ mb: 3, borderLeft: `4px solid ${COLORS.error}`, borderRadius: 2 }}>
-                    {error}
-                </Alert>
-            </Box>
-        );
-    }
-
-    if (!lessonDetail) {
-        return (
-            <Box sx={{ p: 3 }}>
-                <Button
-                    variant="outlined"
-                    startIcon={<ArrowBackIcon />}
-                    onClick={onBack}
-                    sx={{ mb: 2 }}
-                >
-                    Quay lại
-                </Button>
-                <Typography color="text.secondary">Không tìm thấy thông tin giáo án</Typography>
-            </Box>
-        );
-    }
-
-    return (
-        <Fade in timeout={500}>
-            <Box sx={{ py: 3, px: { xs: 2, md: 3 } }}>
-                <Paper
-                    sx={{
-                        p: 3,
-                        borderRadius: 2,
-                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
-                        background: COLORS.background.paper,
-                        mb: 3
-                    }}
-                >
-                    {/* Header with back button */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<ArrowBackIcon />}
-                            onClick={onBack}
-                            sx={{ mr: 2 }}
-                        >
-                            Quay lại
-                        </Button>
-
-                        <Typography variant="h6" sx={{ fontWeight: 700, flex: 1 }}>
-                            Chi tiết giáo án
-                        </Typography>
-
-                        <StatusChip
-                            label={STATUS_COLORS[lessonDetail.status]?.label || lessonDetail.status}
-                            status={lessonDetail.status}
-                            size="small"
-                            sx={{ fontSize: '0.875rem' }}
-                        />
-                    </Box>
-
-                    <Divider sx={{ mb: 3 }} />
-
-                    {/* Summary information */}
-                    <Box sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' },
-                        gap: 3,
-                        mb: 3,
-                        bgcolor: 'rgba(0, 0, 0, 0.02)',
-                        p: 2,
-                        borderRadius: 2
-                    }}>
-                        <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>Giáo viên</Typography>
-                            <Typography variant="body1" fontWeight={600}>{lessonDetail.fullname}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>Chủ đề</Typography>
-                            <Typography variant="body1" fontWeight={600}>{lessonDetail.module}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>Khối</Typography>
-                            <Typography variant="body1" fontWeight={600}>{lessonDetail.grade}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>Bài</Typography>
-                            <Typography variant="body1" fontWeight={600}>{lessonDetail.lesson}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>Số tiết</Typography>
-                            <Typography variant="body1" fontWeight={600}>{lessonDetail.totalPeriods}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>Ngày tạo</Typography>
-                            <Typography variant="body1" fontWeight={600}>{lessonDetail.createdAt}</Typography>
-                        </Box>
-                    </Box>
-
-                    {/* Detail sections */}
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: COLORS.text.primary }}>
-                        Nội dung giáo án
-                    </Typography>
-
-                    <DetailSection>
-                        <DetailHeading variant="subtitle1">Khởi động</DetailHeading>
-                        <DetailContent>{lessonDetail.startUp}</DetailContent>
-                    </DetailSection>
-
-                    <DetailSection>
-                        <DetailHeading variant="subtitle1">Kiến thức</DetailHeading>
-                        <DetailContent>{lessonDetail.knowledge}</DetailContent>
-                    </DetailSection>
-
-                    <DetailSection>
-                        <DetailHeading variant="subtitle1">Mục tiêu</DetailHeading>
-                        <DetailContent>{lessonDetail.goal}</DetailContent>
-                    </DetailSection>
-
-                    <DetailSection>
-                        <DetailHeading variant="subtitle1">Đồ dùng học tập</DetailHeading>
-                        <DetailContent>{lessonDetail.schoolSupply}</DetailContent>
-                    </DetailSection>
-
-                    <DetailSection>
-                        <DetailHeading variant="subtitle1">Thực hành</DetailHeading>
-                        <DetailContent>{lessonDetail.practice}</DetailContent>
-                    </DetailSection>
-
-                    <DetailSection>
-                        <DetailHeading variant="subtitle1">Ứng dụng</DetailHeading>
-                        <DetailContent>{lessonDetail.apply}</DetailContent>
-                    </DetailSection>
-                </Paper>
-
-                {/* Action buttons at the bottom */}
-                <Paper sx={{
-                    p: 3,
-                    borderRadius: 2,
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                    background: COLORS.background.paper,
-                    display: 'flex',
-                    justifyContent: 'center'
-                }}>
-                    <Stack direction="row" spacing={2}>
-                        <ActionButton
-                            variant="contained"
-                            color="success"
-                            startIcon={<CheckIcon />}
-                            onClick={() => onApprove(lessonDetail.lessonPlanId)}
-                            disabled={lessonDetail.status === "Approved"}
-                            sx={{ px: 4, py: 1 }}
-                        >
-                            Duyệt
-                        </ActionButton>
-                        <ActionButton
-                            variant="contained"
-                            color="error"
-                            startIcon={<CloseIcon />}
-                            onClick={handleOpenRejectDialog}
-                            disabled={lessonDetail.status === "Rejected"}
-                            sx={{ px: 4, py: 1 }}
-                        >
-                            Từ chối
-                        </ActionButton>
-                    </Stack>
-                </Paper>
-
-                {/* Reject Reason Dialog */}
-                <Dialog
-                    open={openRejectDialog}
-                    onClose={handleCloseRejectDialog}
-                    PaperProps={{
-                        style: {
-                            borderRadius: '16px',
-                            padding: '8px',
-                            maxWidth: '500px',
-                        }
-                    }}
-                >
-                    <DialogTitle sx={{
-                        fontWeight: 600,
-                        color: COLORS.error,
-                        textAlign: 'center',
-                        pt: 3
-                    }}>
-                        Từ chối giáo án
-                    </DialogTitle>
-                    <DialogContent>
-                        <DialogContentText sx={{ mb: 2 }}>
-                            Vui lòng nhập lý do từ chối giáo án này:
-                        </DialogContentText>
-                        <TextField
-                            autoFocus
-                            fullWidth
-                            multiline
-                            rows={4}
-                            label="Lý do từ chối"
-                            variant="outlined"
-                            value={rejectReason}
-                            onChange={(e) => setRejectReason(e.target.value)}
-                            sx={{ mt: 1 }}
-                        />
-                    </DialogContent>
-                    <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'center' }}>
-                        <Button
-                            onClick={handleCloseRejectDialog}
-                            variant="outlined"
-                            sx={{ borderRadius: 2, px: 3 }}
-                        >
-                            Hủy
-                        </Button>
-                        <Button
-                            onClick={handleRejectConfirm}
-                            color="error"
-                            variant="contained"
-                            disabled={rejectReason.trim() === ''}
-                            sx={{ borderRadius: 2, px: 3 }}
-                        >
-                            Xác nhận
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            </Box>
-        </Fade>
-    );
-};
-
 const ContentApproval = () => {
+    const { isDarkMode } = useTheme();
     // State variables
     const [lessons, setLessons] = useState([]);
     const [filteredLessons, setFilteredLessons] = useState([]);
@@ -606,7 +296,9 @@ const ContentApproval = () => {
                 sx={{
                     width: 'calc(100% - 78px)',  // Account for sidebar width (78px)
                     height: '100vh',
-                    background: COLORS.background.default,
+                    background: isDarkMode 
+                        ? 'linear-gradient(135deg, #1E1E1E 0%, #2D3436 100%)'
+                        : COLORS.background.default,
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -620,7 +312,7 @@ const ContentApproval = () => {
             >
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                     <CircularProgress size={50} sx={{ color: COLORS.primary }} />
-                    <Typography variant="body1" sx={{ color: COLORS.text.secondary }}>
+                    <Typography variant="body1" sx={{ color: isDarkMode ? '#fff' : COLORS.text.secondary }}>
                         Đang tải thông tin...
                     </Typography>
                 </Box>
@@ -633,7 +325,9 @@ const ContentApproval = () => {
             sx={{
                 width: 'calc(100% - 78px)',  // Account for sidebar width (78px)
                 height: '100vh',
-                background: COLORS.background.default,
+                background: isDarkMode 
+                    ? 'linear-gradient(135deg, #1E1E1E 0%, #2D3436 100%)'
+                    : COLORS.background.default,
                 position: 'fixed',
                 top: 0,
                 left: '78px',  // Leave space for sidebar (78px)
@@ -645,7 +339,7 @@ const ContentApproval = () => {
             }}
         >
             {selectedLessonId ? (
-                <LessonDetailView
+                <ContentApprovalDetail
                     lessonId={selectedLessonId}
                     onBack={handleBackToList}
                     onApprove={handleApprove}
@@ -658,25 +352,37 @@ const ContentApproval = () => {
                             sx={{
                                 p: 3,
                                 borderRadius: 2,
-                                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
-                                background: COLORS.background.paper
+                                boxShadow: isDarkMode 
+                                    ? '0 8px 24px rgba(0, 0, 0, 0.2)' 
+                                    : '0 8px 24px rgba(0, 0, 0, 0.08)',
+                                background: isDarkMode ? '#1E1E1E' : COLORS.background.paper
                             }}
                         >
                             <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
-                                <SchoolIcon sx={{ fontSize: 36, color: COLORS.primary, mr: 2 }} />
+                                <SchoolIcon sx={{ 
+                                    fontSize: 36, 
+                                    color: COLORS.primary, 
+                                    mr: 2 
+                                }} />
                                 <Box>
                                     <Typography
                                         variant="h5"
                                         component="h2"
                                         sx={{
                                             fontWeight: 700,
-                                            color: COLORS.text.primary
+                                            color: isDarkMode ? '#fff' : COLORS.text.primary
                                         }}
                                     >
                                         Duyệt nội dung
                                     </Typography>
                                     {userGrade && (
-                                        <Typography variant="subtitle1" sx={{ color: COLORS.text.secondary, mt: 0.5 }}>
+                                        <Typography 
+                                            variant="subtitle1" 
+                                            sx={{ 
+                                                color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary, 
+                                                mt: 0.5 
+                                            }}
+                                        >
                                             Quản lý nội dung khối {userGrade}
                                         </Typography>
                                     )}
@@ -686,7 +392,12 @@ const ContentApproval = () => {
                             {error && (
                                 <Alert
                                     severity="error"
-                                    sx={{ mb: 3, borderLeft: `4px solid ${COLORS.error}`, borderRadius: 2 }}
+                                    sx={{ 
+                                        mb: 3, 
+                                        borderLeft: `4px solid ${COLORS.error}`, 
+                                        borderRadius: 2,
+                                        bgcolor: isDarkMode ? 'rgba(255, 72, 66, 0.15)' : 'rgba(255, 72, 66, 0.08)'
+                                    }}
                                 >
                                     {error}
                                 </Alert>
@@ -700,10 +411,13 @@ const ContentApproval = () => {
                                     variant="outlined"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
+                                    isDarkMode={isDarkMode}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                <SearchIcon sx={{ color: COLORS.text.secondary }} />
+                                                <SearchIcon sx={{ 
+                                                    color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary 
+                                                }} />
                                             </InputAdornment>
                                         ),
                                     }}
@@ -716,15 +430,22 @@ const ContentApproval = () => {
                                     sx={{
                                         p: 4,
                                         textAlign: 'center',
-                                        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                                        backgroundColor: isDarkMode 
+                                            ? 'rgba(255, 255, 255, 0.05)' 
+                                            : 'rgba(255, 255, 255, 0.5)',
                                         borderRadius: 2,
                                         borderStyle: 'dashed',
                                         borderWidth: 1,
-                                        borderColor: '#ddd',
+                                        borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#ddd',
                                         mb: 3
                                     }}
                                 >
-                                    <Typography variant="body1" color={COLORS.text.secondary}>
+                                    <Typography 
+                                        variant="body1" 
+                                        sx={{ 
+                                            color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary 
+                                        }}
+                                    >
                                         {searchTerm
                                             ? `Không tìm thấy giáo án nào với từ khóa "${searchTerm}"`
                                             : `Không có giáo án nào cần duyệt cho khối ${userGrade}.`}
@@ -736,17 +457,48 @@ const ContentApproval = () => {
                                         borderRadius: 2,
                                         mb: 3,
                                         overflowX: 'auto',
-                                        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)'
+                                        boxShadow: isDarkMode 
+                                            ? '0 2px 10px rgba(0, 0, 0, 0.2)' 
+                                            : '0 2px 10px rgba(0, 0, 0, 0.05)'
                                     }}
                                 >
                                     <Table>
                                         <TableHead>
-                                            <TableRow sx={{ backgroundColor: COLORS.background.secondary }}>
-                                                <TableCell sx={{ fontWeight: 600, color: COLORS.text.primary }}>Giáo viên</TableCell>
-                                                <TableCell sx={{ fontWeight: 600, color: COLORS.text.primary }}>Bài</TableCell>
-                                                <TableCell sx={{ fontWeight: 600, color: COLORS.text.primary }}>Chủ đề</TableCell>
-                                                <TableCell sx={{ fontWeight: 600, color: COLORS.text.primary }}>Trạng thái</TableCell>
-                                                <TableCell sx={{ fontWeight: 600, color: COLORS.text.primary }}>Ngày tạo</TableCell>
+                                            <TableRow sx={{ 
+                                                backgroundColor: isDarkMode 
+                                                    ? 'rgba(255,255,255,0.05)' 
+                                                    : COLORS.background.secondary 
+                                            }}>
+                                                <TableCell sx={{ 
+                                                    fontWeight: 600, 
+                                                    color: isDarkMode ? '#fff' : COLORS.text.primary 
+                                                }}>
+                                                    Giáo viên
+                                                </TableCell>
+                                                <TableCell sx={{ 
+                                                    fontWeight: 600, 
+                                                    color: isDarkMode ? '#fff' : COLORS.text.primary 
+                                                }}>
+                                                    Bài
+                                                </TableCell>
+                                                <TableCell sx={{ 
+                                                    fontWeight: 600, 
+                                                    color: isDarkMode ? '#fff' : COLORS.text.primary 
+                                                }}>
+                                                    Chủ đề
+                                                </TableCell>
+                                                <TableCell sx={{ 
+                                                    fontWeight: 600, 
+                                                    color: isDarkMode ? '#fff' : COLORS.text.primary 
+                                                }}>
+                                                    Trạng thái
+                                                </TableCell>
+                                                <TableCell sx={{ 
+                                                    fontWeight: 600, 
+                                                    color: isDarkMode ? '#fff' : COLORS.text.primary 
+                                                }}>
+                                                    Ngày tạo
+                                                </TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -757,14 +509,28 @@ const ContentApproval = () => {
                                                     sx={{
                                                         cursor: 'pointer',
                                                         '&:hover': {
-                                                            backgroundColor: 'rgba(0, 0, 0, 0.01)'
+                                                            backgroundColor: isDarkMode 
+                                                                ? 'rgba(255,255,255,0.05)' 
+                                                                : 'rgba(0, 0, 0, 0.01)'
                                                         }
                                                     }}
                                                     onClick={() => handleLessonSelect(lesson.lessonPlanId)}
                                                 >
-                                                    <TableCell>{lesson.fullname}</TableCell>
-                                                    <TableCell>{lesson.lesson}</TableCell>
-                                                    <TableCell>{lesson.module}</TableCell>
+                                                    <TableCell sx={{ 
+                                                        color: isDarkMode ? '#fff' : 'inherit' 
+                                                    }}>
+                                                        {lesson.fullname}
+                                                    </TableCell>
+                                                    <TableCell sx={{ 
+                                                        color: isDarkMode ? '#fff' : 'inherit' 
+                                                    }}>
+                                                        {lesson.lesson}
+                                                    </TableCell>
+                                                    <TableCell sx={{ 
+                                                        color: isDarkMode ? '#fff' : 'inherit' 
+                                                    }}>
+                                                        {lesson.module}
+                                                    </TableCell>
                                                     <TableCell>
                                                         <StatusChip
                                                             label={STATUS_COLORS[lesson.status]?.label || lesson.status}
@@ -772,7 +538,11 @@ const ContentApproval = () => {
                                                             size="small"
                                                         />
                                                     </TableCell>
-                                                    <TableCell>{lesson.createdAt}</TableCell>
+                                                    <TableCell sx={{ 
+                                                        color: isDarkMode ? '#fff' : 'inherit' 
+                                                    }}>
+                                                        {lesson.createdAt}
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -791,7 +561,7 @@ const ContentApproval = () => {
                                         sx={{
                                             '& .MuiPaginationItem-root': {
                                                 fontWeight: 600,
-                                                color: COLORS.text.secondary,
+                                                color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary,
                                             },
                                             '& .Mui-selected': {
                                                 backgroundColor: `${COLORS.primary} !important`,
@@ -801,7 +571,9 @@ const ContentApproval = () => {
                                                 },
                                             },
                                             '& .MuiPaginationItem-page:hover': {
-                                                backgroundColor: `${COLORS.primary}20`,
+                                                backgroundColor: isDarkMode 
+                                                    ? 'rgba(6, 169, 174, 0.2)' 
+                                                    : `${COLORS.primary}20`,
                                             },
                                         }}
                                     />

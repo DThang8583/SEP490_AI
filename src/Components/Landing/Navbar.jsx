@@ -281,7 +281,7 @@ const Navbar = () => {
                   />
                 )
               ))}
-              {isLoggedIn && isTeacher && (
+              {/* {isLoggedIn && isTeacher && (
                 <Button
                   variant="contained"
                   startIcon={<AutoAwesome />}
@@ -296,7 +296,7 @@ const Navbar = () => {
                 >
                   Tạo Giáo án bằng AI
                 </Button>
-              )}
+              )} */}
             </Box>
           )}
 

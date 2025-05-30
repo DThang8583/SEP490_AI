@@ -21,25 +21,30 @@ import {
     Dashboard as DashboardIcon,
     Assignment
 } from '@mui/icons-material';
+import { useTheme } from '../../context/ThemeContext';
 
 // Styled components with better shadows and interactions
-const DashboardCard = styled(Card)(({ theme }) => ({
+const DashboardCard = styled(Card)(({ theme, isDarkMode }) => ({
     borderRadius: 12,
     overflow: 'hidden',
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
+    boxShadow: isDarkMode 
+        ? '0 8px 24px rgba(0, 0, 0, 0.2)' 
+        : '0 8px 24px rgba(0, 0, 0, 0.08)',
     transition: 'all 0.3s ease',
     height: '100%',
     position: 'relative',
+    background: isDarkMode ? '#1E1E1E' : theme.palette.background.paper,
     '&:hover': {
         transform: 'translateY(-5px)',
-        boxShadow: '0 12px 30px rgba(0, 0, 0, 0.12)',
+        boxShadow: isDarkMode 
+            ? '0 12px 30px rgba(0, 0, 0, 0.3)' 
+            : '0 12px 30px rgba(0, 0, 0, 0.12)',
     },
-    background: theme.palette.background.paper,
 }));
 
-const CardHeader = styled(Box)(({ theme, bgcolor }) => ({
+const CardHeader = styled(Box)(({ theme, bgcolor, isDarkMode }) => ({
     padding: theme.spacing(2),
-    background: bgcolor || theme.palette.primary.main,
+    background: isDarkMode ? '#2D3436' : (bgcolor || theme.palette.primary.main),
     color: '#fff',
     display: 'flex',
     alignItems: 'center',
@@ -47,6 +52,7 @@ const CardHeader = styled(Box)(({ theme, bgcolor }) => ({
 }));
 
 const Dashboard = ({ sidebarOpen }) => {
+    const { isDarkMode } = useTheme();
     const [approvedLessons, setApprovedLessons] = useState(0);
     const [rejectedLessons, setRejectedLessons] = useState(0);
     const [pendingLessons, setPendingLessons] = useState(0);
@@ -289,7 +295,9 @@ const Dashboard = ({ sidebarOpen }) => {
             <Box
                 sx={{
                     minHeight: '100vh',
-                    background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%)',
+                    background: isDarkMode 
+                        ? 'linear-gradient(135deg, #1E1E1E 0%, #2D3436 100%)'
+                        : 'linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%)',
                     position: 'absolute',
                     top: 0,
                     left: 0,
@@ -310,7 +318,7 @@ const Dashboard = ({ sidebarOpen }) => {
                     }}
                 >
                     <CircularProgress size={50} sx={{ color: '#06A9AE' }} />
-                    <Typography variant="body1" sx={{ color: '#546e7a' }}>
+                    <Typography variant="body1" sx={{ color: isDarkMode ? '#fff' : '#546e7a' }}>
                         Đang tải thông tin...
                     </Typography>
                 </Box>
@@ -328,7 +336,9 @@ const Dashboard = ({ sidebarOpen }) => {
         <Box
             sx={{
                 minHeight: '100vh',
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%)',
+                background: isDarkMode 
+                    ? 'linear-gradient(135deg, #1E1E1E 0%, #2D3436 100%)'
+                    : 'linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%)',
                 position: 'absolute',
                 top: 0,
                 left: 0,
@@ -354,7 +364,7 @@ const Dashboard = ({ sidebarOpen }) => {
                                 variant="h4"
                                 sx={{
                                     fontWeight: 700,
-                                    color: '#212B36',
+                                    color: isDarkMode ? '#fff' : '#212B36',
                                     lineHeight: 1.2,
                                 }}
                             >
@@ -363,7 +373,7 @@ const Dashboard = ({ sidebarOpen }) => {
                             <Typography
                                 variant="subtitle1"
                                 sx={{
-                                    color: '#637381',
+                                    color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381',
                                     mt: 0.5,
                                 }}
                             >
@@ -374,9 +384,10 @@ const Dashboard = ({ sidebarOpen }) => {
 
                     {error && (
                         <DashboardCard
+                            isDarkMode={isDarkMode}
                             sx={{
                                 mb: 4,
-                                bgcolor: 'rgba(255, 72, 66, 0.08)',
+                                bgcolor: isDarkMode ? 'rgba(255, 72, 66, 0.15)' : 'rgba(255, 72, 66, 0.08)',
                                 borderLeft: '4px solid #d32f2f',
                             }}
                         >
@@ -384,14 +395,14 @@ const Dashboard = ({ sidebarOpen }) => {
                                 <Typography variant="h6" sx={{ color: '#d32f2f', mb: 1 }}>
                                     Lỗi
                                 </Typography>
-                                <Typography sx={{ color: '#637381' }}>{error}</Typography>
+                                <Typography sx={{ color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381' }}>{error}</Typography>
                             </CardContent>
                         </DashboardCard>
                     )}
 
                     {/* Overview card */}
-                    <DashboardCard>
-                        <CardHeader bgcolor="#06A9AE">
+                    <DashboardCard isDarkMode={isDarkMode}>
+                        <CardHeader bgcolor="#06A9AE" isDarkMode={isDarkMode}>
                             <Box display="flex" alignItems="center">
                                 <TrendingUp sx={{ mr: 1 }} />
                                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -406,7 +417,9 @@ const Dashboard = ({ sidebarOpen }) => {
                                         sx={{
                                             p: 3,
                                             borderRadius: 2,
-                                            bgcolor: 'rgba(0, 171, 85, 0.08)',
+                                            bgcolor: isDarkMode 
+                                                ? 'rgba(0, 171, 85, 0.15)' 
+                                                : 'rgba(0, 171, 85, 0.08)',
                                             height: '100%',
                                             display: 'flex',
                                             flexDirection: 'column',
@@ -416,7 +429,7 @@ const Dashboard = ({ sidebarOpen }) => {
                                         <Typography variant="h5" sx={{ color: '#00AB55', fontWeight: 600, mb: 1 }}>
                                             {allLessonsCount}
                                         </Typography>
-                                        <Typography variant="body1" sx={{ color: '#637381' }}>
+                                        <Typography variant="body1" sx={{ color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381' }}>
                                             Tổng số bài học
                                         </Typography>
                                     </Box>
@@ -426,7 +439,9 @@ const Dashboard = ({ sidebarOpen }) => {
                                         sx={{
                                             p: 3,
                                             borderRadius: 2,
-                                            bgcolor: 'rgba(25, 118, 210, 0.08)',
+                                            bgcolor: isDarkMode 
+                                                ? 'rgba(25, 118, 210, 0.15)' 
+                                                : 'rgba(25, 118, 210, 0.08)',
                                             height: '100%',
                                             display: 'flex',
                                             flexDirection: 'column',
@@ -436,20 +451,20 @@ const Dashboard = ({ sidebarOpen }) => {
                                         <Typography variant="h5" sx={{ color: '#1976d2', fontWeight: 600, mb: 1 }}>
                                             {approvalRate}%
                                         </Typography>
-                                        <Typography variant="body1" sx={{ color: '#637381' }}>
+                                        <Typography variant="body1" sx={{ color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381' }}>
                                             Tỷ lệ duyệt
                                         </Typography>
                                     </Box>
                                 </Grid>
                             </Grid>
 
-                            <Divider sx={{ my: 3 }} />
+                            <Divider sx={{ my: 3, bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }} />
 
                             <Box>
                                 <Typography
                                     variant="h6"
                                     sx={{
-                                        color: '#212B36',
+                                        color: isDarkMode ? '#fff' : '#212B36',
                                         fontWeight: 600,
                                         mb: 2,
                                     }}
@@ -465,7 +480,9 @@ const Dashboard = ({ sidebarOpen }) => {
                                                 alignItems: 'center',
                                                 p: 2,
                                                 borderRadius: 1,
-                                                bgcolor: 'rgba(0, 171, 85, 0.08)',
+                                                bgcolor: isDarkMode 
+                                                    ? 'rgba(0, 171, 85, 0.15)' 
+                                                    : 'rgba(0, 171, 85, 0.08)',
                                             }}
                                         >
                                             <Box
@@ -483,10 +500,10 @@ const Dashboard = ({ sidebarOpen }) => {
                                                 <CheckCircle sx={{ color: '#fff' }} />
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" sx={{ color: '#637381' }}>
+                                                <Typography variant="caption" sx={{ color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381' }}>
                                                     Đã duyệt
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ fontWeight: 600, color: '#212B36' }}>
+                                                <Typography variant="h6" sx={{ fontWeight: 600, color: isDarkMode ? '#fff' : '#212B36' }}>
                                                     {approvedLessonPlans}
                                                 </Typography>
                                             </Box>
@@ -499,7 +516,9 @@ const Dashboard = ({ sidebarOpen }) => {
                                                 alignItems: 'center',
                                                 p: 2,
                                                 borderRadius: 1,
-                                                bgcolor: 'rgba(255, 72, 66, 0.08)',
+                                                bgcolor: isDarkMode 
+                                                    ? 'rgba(255, 72, 66, 0.15)' 
+                                                    : 'rgba(255, 72, 66, 0.08)',
                                             }}
                                         >
                                             <Box
@@ -517,10 +536,10 @@ const Dashboard = ({ sidebarOpen }) => {
                                                 <Cancel sx={{ color: '#fff' }} />
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" sx={{ color: '#637381' }}>
+                                                <Typography variant="caption" sx={{ color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381' }}>
                                                     Đã từ chối
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ fontWeight: 600, color: '#212B36' }}>
+                                                <Typography variant="h6" sx={{ fontWeight: 600, color: isDarkMode ? '#fff' : '#212B36' }}>
                                                     {rejectedLessonPlans}
                                                 </Typography>
                                             </Box>
@@ -533,7 +552,9 @@ const Dashboard = ({ sidebarOpen }) => {
                                                 alignItems: 'center',
                                                 p: 2,
                                                 borderRadius: 1,
-                                                bgcolor: 'rgba(255, 171, 0, 0.08)',
+                                                bgcolor: isDarkMode 
+                                                    ? 'rgba(255, 171, 0, 0.15)' 
+                                                    : 'rgba(255, 171, 0, 0.08)',
                                             }}
                                         >
                                             <Box
@@ -551,10 +572,10 @@ const Dashboard = ({ sidebarOpen }) => {
                                                 <HourglassEmpty sx={{ color: '#fff' }} />
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" sx={{ color: '#637381' }}>
+                                                <Typography variant="caption" sx={{ color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381' }}>
                                                     Đang chờ duyệt
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ fontWeight: 600, color: '#212B36' }}>
+                                                <Typography variant="h6" sx={{ fontWeight: 600, color: isDarkMode ? '#fff' : '#212B36' }}>
                                                     {pendingLessonPlans}
                                                 </Typography>
                                             </Box>
@@ -567,7 +588,9 @@ const Dashboard = ({ sidebarOpen }) => {
                                                 alignItems: 'center',
                                                 p: 2,
                                                 borderRadius: 1,
-                                                bgcolor: 'rgba(25, 118, 210, 0.08)',
+                                                bgcolor: isDarkMode 
+                                                    ? 'rgba(25, 118, 210, 0.15)' 
+                                                    : 'rgba(25, 118, 210, 0.08)',
                                             }}
                                         >
                                             <Box
@@ -585,10 +608,10 @@ const Dashboard = ({ sidebarOpen }) => {
                                                 <Assignment sx={{ color: '#fff' }} />
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" sx={{ color: '#637381' }}>
+                                                <Typography variant="caption" sx={{ color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381' }}>
                                                     Tổng số giáo án
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ fontWeight: 600, color: '#212B36' }}>
+                                                <Typography variant="h6" sx={{ fontWeight: 600, color: isDarkMode ? '#fff' : '#212B36' }}>
                                                     {totalLessonPlans}
                                                 </Typography>
                                             </Box>
