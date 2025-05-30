@@ -89,7 +89,6 @@ const menuItems = [
 const settings = [
   { name: "Hồ sơ", icon: <Person />, path: "/teacher/profile" },
   { name: "Quản lý câu lệnh", icon: <Settings />, path: "/command-management" },
-  { name: "Tạo AI", icon: <AutoAwesome />, path: "/create-ai" },
   { name: "Đăng xuất", icon: <Logout />, path: "/logout" },
 ];
 
@@ -281,7 +280,7 @@ const Navbar = () => {
                   />
                 )
               ))}
-              {/* {isLoggedIn && isTeacher && (
+              {isLoggedIn && isTeacher && (
                 <Button
                   variant="contained"
                   startIcon={<AutoAwesome />}
@@ -296,7 +295,7 @@ const Navbar = () => {
                 >
                   Tạo Giáo án bằng AI
                 </Button>
-              )} */}
+              )}
             </Box>
           )}
 

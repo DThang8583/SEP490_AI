@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import axios from "axios";
 import {
   Box,
   Button,
@@ -9,26 +8,27 @@ import {
   CircularProgress,
   Grid,
   Paper,
+  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
+  Slider,
   Alert,
   Snackbar,
   Container,
   Fade,
   Zoom,
-} from "@mui/material";
+} from '@mui/material';
 import {
   ArrowBack,
-  School,
   AutoAwesome,
   Lightbulb,
-  Book,
-  EmojiEvents,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import { useTheme } from '../context/ThemeContext';
 import { keyframes } from '@mui/system';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const float = keyframes`
   0% {
@@ -70,110 +70,82 @@ const API_KEY = "AIzaSyDSf6v2-ynUdw6IS7Ac_2cSOJN7-g12c7k";
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-const CreateLesson = () => {
+const CreatLesson = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
+  const { userInfo } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [grade, setGrade] = useState("");
-  const [module, setModule] = useState("");
-  const [lesson, setLesson] = useState("");
-  
-  // New state for API data
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // State cho việc chọn lớp, chủ đề và bài học
   const [grades, setGrades] = useState([]);
   const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState([]);
-  const [loadingGrades, setLoadingGrades] = useState(false);
-  const [loadingModules, setLoadingModules] = useState(false);
-  const [loadingLessons, setLoadingLessons] = useState(false);
+  const [selectedGrade, setSelectedGrade] = useState('');
+  const [selectedModule, setSelectedModule] = useState('');
+  const [selectedLesson, setSelectedLesson] = useState('');
+
   const [loadingPrompt, setLoadingPrompt] = useState(false);
   const [promptData, setPromptData] = useState(null);
 
-  // Fetch grades on component mount
-  useEffect(() => {
-    const fetchGrades = async () => {
-      setLoadingGrades(true);
-      try {
-        const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades');
-        if (response.data.code === 0) {
-          setGrades(response.data.data);
-        } else {
-          setError("Không thể tải danh sách lớp học");
-        }
-      } catch (error) {
-        console.error("Error fetching grades:", error);
-        setError("Có lỗi xảy ra khi tải danh sách lớp học");
-      } finally {
-        setLoadingGrades(false);
-      }
-    };
-
-    fetchGrades();
-  }, []);
-
-  // Fetch modules when grade changes
+  // Fetch danh sách chủ đề khi chọn lớp
   useEffect(() => {
     const fetchModules = async () => {
-      if (!grade) {
-        setModules([]);
-        return;
-      }
-
-      setLoadingModules(true);
-      try {
-        const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades/${grade}/modules`);
-        if (response.data.code === 0) {
-          setModules(response.data.data.modules);
-        } else {
-          setError("Không thể tải danh sách chủ đề");
+      const gradeToFetch = userInfo?.gradeId; // Always use userInfo.gradeId
+      console.log("Fetching modules for gradeId from userInfo:", gradeToFetch);
+      if (gradeToFetch) {
+        try {
+          console.log("API Call: Fetching modules from URL:", `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades/${gradeToFetch}/modules`);
+          const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades/${gradeToFetch}/modules`);
+          console.log("Fetched modules:", response.data.data.modules);
+          setModules(response.data.data.modules || []);
+          setSelectedModule(''); // Reset module selection
+          setSelectedLesson(''); // Reset lesson selection
+        } catch (err) {
+          console.error('Error fetching modules:', err);
+          setError('Không thể tải danh sách chủ đề. Vui lòng thử lại.');
+          setModules([]);
         }
-      } catch (error) {
-        console.error("Error fetching modules:", error);
-        setError("Có lỗi xảy ra khi tải danh sách chủ đề");
-      } finally {
-        setLoadingModules(false);
+      } else {
+        setModules([]);
+        setSelectedModule('');
+        setSelectedLesson('');
       }
     };
 
-    fetchModules();
-  }, [grade]);
+    // Fetch modules automatically when userInfo.gradeId changes
+    if (userInfo?.gradeId) {
+      fetchModules();
+    }
+  }, [userInfo?.gradeId]); // Dependency array includes userInfo.gradeId
 
-  // New useEffect for fetching lessons
+  // Fetch danh sách bài học khi chọn chủ đề
   useEffect(() => {
     const fetchLessons = async () => {
-      if (!module) {
-        setLessons([]);
-        return;
-      }
-
-      setLoadingLessons(true);
-      try {
-        const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${module}/lessons`);
-        if (response.data.code === 0) {
-          setLessons(response.data.data.lessons);
-        } else {
-          setError("Không thể tải danh sách bài học");
+      if (selectedModule) {
+        try {
+          const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${selectedModule}/lessons`);
+          setLessons(response.data.data.lessons || []);
+          setSelectedLesson(''); // Reset lesson selection
+        } catch (err) {
+          console.error('Error fetching lessons:', err);
+          setError('Không thể tải danh sách bài học. Vui lòng thử lại.');
+          setLessons([]);
         }
-      } catch (error) {
-        console.error("Error fetching lessons:", error);
-        setError("Có lỗi xảy ra khi tải danh sách bài học");
-      } finally {
-        setLoadingLessons(false);
+      } else {
+        setLessons([]);
+        setSelectedLesson('');
       }
     };
-
     fetchLessons();
-  }, [module]);
+  }, [selectedModule]);
 
-  const handleLessonChange = (e) => {
-    const selectedLesson = lessons.find(l => l.lessonId === e.target.value);
-    if (selectedLesson) {
-      setLesson(e.target.value);
-      // Store lessonId in localStorage
-      localStorage.setItem('selectedLessonId', selectedLesson.lessonId);
-      
-      // Fetch prompt data when lesson is selected
-      fetchPromptData(selectedLesson.lessonId);
+  const handleLessonChange = (event) => {
+    const value = event.target.value || '';
+    setSelectedLesson(value);
+    if (value) {
+      fetchPromptData(value);
     }
   };
 
@@ -181,7 +153,7 @@ const CreateLesson = () => {
   const fetchPromptData = async (lessonId) => {
     setLoadingPrompt(true);
     try {
-      const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}/prompt`);
+      const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}`);
       if (response.data.code === 0) {
         setPromptData(response.data.data);
         console.log("Prompt data fetched:", response.data.data);
@@ -196,72 +168,45 @@ const CreateLesson = () => {
     }
   };
 
-  const generateLesson = async () => {
-    if (!grade || !module || !lesson || !promptData) return;
-    
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if ( !selectedModule || !selectedLesson || !promptData) {
+      setError('Vui lòng chọn đầy đủ lớp, chủ đề và bài học');
+      return;
+    }
+
+    setError('');
+    setSuccess('');
     setLoading(true);
-    setError("");
-
-    const selectedGrade = grades.find(g => g.gradeId === grade);
-    const selectedModule = modules.find(m => m.moduleId === module);
-    const selectedLesson = lessons.find(l => l.lessonId === lesson);
-
-    // Combine API description with fixed prompt structure
-    const prompt = `${promptData.description}
-
-Hãy tạo Giáo án theo đúng cấu trúc sau:
-
-1. Mục tiêu:
-   a) Năng lực đặc thù:
-   - Năng lực tư duy và lập luận toán học
-   - Năng lực mô hình hóa toán học
-   - Năng lực giải quyết vấn đề toán học
-
-   b) Năng lực chung:
-   - Năng lực tự chủ và tự học
-   - Năng lực giao tiếp và hợp tác
-   - Năng lực giải quyết vấn đề và sáng tạo
-
-   c) Phẩm chất:
-    -học sinh chăm chỉ, trung thực, trách nhiệm trong học tập
-2.Giáo viên chuẩn bị
-   - Đồ dùng dạy học
-   - Học liệu
-  - Phương tiện dạy học
-   - Công cụ đánh giá
-
-3. Tiến trình Giáo án:
-   a) Hoạt động 1: Hoạt động khởi động (5 phút)
-   - Mục tiêu:
-   - Cách tiến hành: (Hoạt động của giáo viên và học sinh)
-
-   b) Hoạt động 2: Hoạt động hình thành kiến thức mới (12 phút)
-   - Mục tiêu:
-   - Cách tiến hành: (Hoạt động của giáo viên và học sinh. Nếu bài học này chủ yếu về tính toán, hãy đưa ra 1 ví dụ bài toán kèm giải thích từng bước.)
-
-   c) Hoạt động 3: Hoạt động luyện tập thực hành (15 phút)
-   - Mục tiêu:
-   - Cách tiến hành: (Hoạt động của giáo viên và học sinh. Nếu bài học này chủ yếu về tính toán, hãy đưa ra 1-2 bài toán luyện tập kèm đáp án.)
-
-   d) Hoạt động 4: Hoạt động vận dụng (3 phút)
-   - Mục tiêu:
-   - Cách tiến hành: (Hoạt động của giáo viên và học sinh. Nếu bài học này chủ yếu về tính toán, hãy đưa ra 1 bài toán vận dụng thực tế kèm đáp án.)
-
-Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không được thay đổi hoặc bỏ qua bất kỳ phần nào.`;
 
     try {
+      // Gọi API để lấy dữ liệu bài học
+      const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${selectedLesson}`);
+      const lessonData = response.data.data;
+
+      // Tạo prompt với dữ liệu từ API
+      const prompt = `Hãy tạo giáo án môn Toán lớp ${lessonData.gradeNumber} theo đúng chuẩn Thông tư 27 và Công văn 2345 của Bộ Giáo dục và Đào tạo Việt Nam. Bài học thuộc Chủ đề 1: ${lessonData.module}, có tiêu đề ${lessonData.name}. Giáo án gồm ba phần chính. Phần I – Yêu cầu cần đạt: trình bày rõ 2–3 năng lực đặc thù của môn Toán như ${lessonData.specialAbility}; 2–3 năng lực chung như ${lessonData.generalCapacity}; cùng 1–2 phẩm chất ${lessonData.quality}. Phần II – Đồ dùng dạy học: ${lessonData.schoolSupply}. Phần III – Các hoạt động dạy học chủ yếu: trình bày 4 hoạt động chính với thời lượng không vượt quá ${lessonData.duration} phút, mỗi hoạt động đều phải thể hiện rõ phần "HOẠT ĐỘNG CỦA GIÁO VIÊN" và "HOẠT ĐỘNG CỦA HỌC SINH". Cụ thể, A – Hoạt động MỞ ĐẦU (${lessonData.startUp.duration}): mục tiêu ${lessonData.startUp.goal}, HOẠT ĐỘNG CỦA GIÁO VIÊN: ${lessonData.startUp.teacherActivities}. HOẠT ĐỘNG CỦA HỌC SINH: ${lessonData.startUp.studentActivities}. B – Hoạt động HÌNH THÀNH KIẾN THỨC (${lessonData.knowLedge.duration}): ${lessonData.knowLedge.goal}, HOẠT ĐỘNG CỦA GIÁO VIÊN: ${lessonData.knowLedge.teacherActivities}. HOẠT ĐỘNG CỦA HỌC SINH: ${lessonData.knowLedge.studentActivities}. C – Hoạt động LUYỆN TẬP, THỰC HÀNH (${lessonData.practice.duration}): mục tiêu ${lessonData.practice.goal}, HOẠT ĐỘNG CỦA GIÁO VIÊN: ${lessonData.practice.teacherActivities}. HOẠT ĐỘNG CỦA HỌC SINH: ${lessonData.practice.studentActivities}. D – Hoạt động VẬN DỤNG, TRẢI NGHIỆM (${lessonData.apply.duration}): ${lessonData.apply.goal}, HOẠT ĐỘNG CỦA GIÁO VIÊN: ${lessonData.apply.teacherActivities}. HOẠT ĐỘNG CỦA HỌC SINH: ${lessonData.apply.studentActivities}.`;
+
       const result = await model.generateContent(prompt);
       let text = result.response.text();
       text = text.replace(/[#*]+/g, "");
 
-      // Pass promptId along with content in navigation state
-      navigate("/AIRender", { state: { content: text, promptId: promptData.promptId } });
-    } catch (error) {
-      console.error("API Error:", error);
-      setError("Có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại.");
+      setSuccess('Đã tạo giáo án thành công!');
+      
+      // Chuyển hướng đến trang hiển thị kết quả
+      navigate("/AIRender", { state: { content: text, lessonId: selectedLesson, promptData: lessonData } });
+    } catch (err) {
+      setError('Có lỗi xảy ra khi tạo giáo án. Vui lòng thử lại.');
+      console.error('Error:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleModuleChange = (event) => {
+    const value = event.target.value || '';
+    console.log("Module selected:", value);
+    setSelectedModule(value);
   };
 
   return (
@@ -284,7 +229,7 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
           right: 0,
           bottom: 0,
           background: isDarkMode
-            ? "linear-gradient(-45deg, #2C3E50, #3498DB, #2980B9, #1ABC9C)"
+            ? "linear-gradient(-45deg, #1A2A3A, #2A3A4A, #3A4A5A, #4A5A6A)"
             : "linear-gradient(-45deg, #E0EAFC, #CFDEF3, #E0EAFC, #CFDEF3)",
           backgroundSize: "400% 400%",
           animation: `${gradientAnimation} 15s ease infinite`,
@@ -302,7 +247,7 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
             height: Math.random() * 100 + 50,
             borderRadius: "50%",
             background: isDarkMode
-              ? `rgba(52, 152, 219, ${Math.random() * 0.1})`
+              ? `rgba(44, 62, 80, ${Math.random() * 0.1})`
               : `rgba(44, 62, 80, ${Math.random() * 0.05})`,
             top: `${Math.random() * 100}%`,
             left: `${Math.random() * 100}%`,
@@ -318,7 +263,7 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
           <Box sx={{ mb: 4 }}>
             <Button
               startIcon={<ArrowBack />}
-              onClick={() => navigate("/ChoiceChatorClick")}
+              onClick={() => navigate(-1)}
               sx={{
                 color: isDarkMode ? "rgb(176, 176, 176)" : "rgb(102, 102, 102)",
                 mb: 2,
@@ -332,7 +277,7 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
               Quay lại
             </Button>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <School 
+              <AutoAwesome 
                 sx={{ 
                   color: "#FF6B6B", 
                   mr: 2, 
@@ -351,7 +296,7 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
                     mb: 1,
                   }}
                 >
-                  Tạo Giáo án nhanh
+                  Tạo Giáo Án
                 </Typography>
                 <Typography
                   variant="body1"
@@ -360,7 +305,7 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
                     maxWidth: "600px",
                   }}
                 >
-                  Chọn các thông tin cần thiết để tạo Giáo án
+                  Chọn lớp, chủ đề và bài học để tạo giáo án
                 </Typography>
               </Box>
             </Box>
@@ -390,56 +335,32 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
               },
             }}
           >
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Chọn lớp</InputLabel>
-                  <Select
-                    value={grade}
-                    onChange={(e) => {
-                      setGrade(e.target.value);
-                      setModule("");
-                      setLesson("");
-                    }}
-                    label="Chọn lớp"
-                    disabled={loadingGrades}
-                    sx={{
-                      backgroundColor: isDarkMode
-                        ? "rgba(255, 255, 255, 0.05)"
-                        : "rgba(0, 0, 0, 0.02)",
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: isDarkMode
-                          ? "rgba(255, 255, 255, 0.1)"
-                          : "rgba(0, 0, 0, 0.1)",
-                      },
-                      "&:hover .MuiOutlinedInput-notchedOutline": {
-                        borderColor: isDarkMode
-                          ? "rgba(255, 255, 255, 0.2)"
-                          : "rgba(0, 0, 0, 0.2)",
-                      },
-                    }}
-                  >
-                    {grades.map((g) => (
-                      <MenuItem key={g.gradeId} value={g.gradeId}>
-                        Lớp {g.gradeNumber}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+            <form onSubmit={handleSubmit}>
+              <Grid container spacing={3}>
+                {/* Dropdown chọn lớp */}
+                {userInfo?.gradeId && (
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, ml: 3, mt: 1 }}>
+                      <Typography variant="h6" sx={{ color: isDarkMode ? 'rgb(176, 176, 176)' : 'rgb(102, 102, 102)' }}>
+                        Lớp:
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', ml: 1, color: isDarkMode ? '#ffffff' : '#2D3436' }}>
+                        {userInfo.gradeId}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )}
 
-              {grade && (
-                <Grid item xs={12}>
+                {/* Dropdown chọn chủ đề */}
+                <Grid item xs={12} md={4}>
                   <FormControl fullWidth>
-                    <InputLabel>Chọn chủ đề</InputLabel>
+                    <InputLabel>Chủ đề</InputLabel>
                     <Select
-                      value={module}
-                      onChange={(e) => {
-                        setModule(e.target.value);
-                        setLesson("");
-                      }}
-                      label="Chọn chủ đề"
-                      disabled={loadingModules}
+                      value={selectedModule || ''}
+                      onChange={handleModuleChange}
+                      label="Chủ đề"
+                      required
+                      disabled={!userInfo?.gradeId}
                       sx={{
                         backgroundColor: isDarkMode
                           ? "rgba(255, 255, 255, 0.05)"
@@ -456,25 +377,25 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
                         },
                       }}
                     >
-                      {modules.map((m) => (
-                        <MenuItem key={m.moduleId} value={m.moduleId}>
-                          {m.name}
+                      {modules.map((module) => (
+                        <MenuItem key={module.moduleId} value={module.moduleId || ''}>
+                          {module.name}
                         </MenuItem>
                       ))}
                     </Select>
                   </FormControl>
                 </Grid>
-              )}
 
-              {module && (
-                <Grid item xs={12}>
+                {/* Dropdown chọn bài học */}
+                <Grid item xs={12} md={4}>
                   <FormControl fullWidth>
-                    <InputLabel>Chọn bài học</InputLabel>
+                    <InputLabel>Bài học</InputLabel>
                     <Select
-                      value={lesson}
+                      value={selectedLesson || ''}
                       onChange={handleLessonChange}
-                      label="Chọn bài học"
-                      disabled={loadingLessons}
+                      label="Bài học"
+                      required
+                      disabled={!selectedModule}
                       sx={{
                         backgroundColor: isDarkMode
                           ? "rgba(255, 255, 255, 0.05)"
@@ -491,67 +412,45 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
                         },
                       }}
                     >
-                      {lessons.map((l) => (
-                        <MenuItem key={l.lessonId} value={l.lessonId}>
-                          {l.name}
+                      {lessons.map((lesson) => (
+                        <MenuItem key={lesson.lessonId} value={lesson.lessonId || ''}>
+                          {lesson.name}
                         </MenuItem>
                       ))}
                     </Select>
-                    {loadingLessons && (
-                      <CircularProgress
-                        size={24}
-                        sx={{
-                          position: "absolute",
-                          top: "50%",
-                          right: 16,
-                          marginTop: "-12px",
-                          color: isDarkMode ? "#ffffff" : "#2D3436",
-                        }}
-                      />
-                    )}
                   </FormControl>
                 </Grid>
-              )}
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Lightbulb sx={{ color: "#3498DB", mr: 1 }} />
-                  <Typography
-                    variant="body2"
+
+                <Grid item xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={loading || !userInfo?.gradeId || !selectedModule || !selectedLesson || !promptData || loadingPrompt}
+                    startIcon={loading ? <CircularProgress size={20} /> : <AutoAwesome />}
                     sx={{
-                      color: isDarkMode ? "rgb(176, 176, 176)" : "rgb(102, 102, 102)",
+                      backgroundColor: "#3498DB",
+                      color: "#ffffff",
+                      py: 1.5,
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        backgroundColor: "#2980B9",
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 4px 12px rgba(52, 152, 219, 0.3)",
+                      },
+                      "&.Mui-disabled": {
+                        backgroundColor: isDarkMode
+                          ? "rgba(255, 255, 255, 0.1)"
+                          : "rgba(0, 0, 0, 0.05)",
+                        color: isDarkMode ? "rgb(176, 176, 176)" : "rgb(102, 102, 102)",
+                      },
                     }}
                   >
-                    AI sẽ tạo Giáo án theo cấu trúc chuẩn cho bạn
-                  </Typography>
-                </Box>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  onClick={generateLesson}
-                  disabled={loading || !grade || !module || !lesson || !promptData || loadingPrompt}
-                  startIcon={loading ? <CircularProgress size={20} /> : <AutoAwesome />}
-                  sx={{
-                    backgroundColor: "#3498DB",
-                    color: "#ffffff",
-                    py: 1.5,
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      backgroundColor: "#2980B9",
-                      transform: "translateY(-2px)",
-                      boxShadow: "0 4px 12px rgba(52, 152, 219, 0.3)",
-                    },
-                    "&.Mui-disabled": {
-                      backgroundColor: isDarkMode
-                        ? "rgba(255, 255, 255, 0.1)"
-                        : "rgba(0, 0, 0, 0.05)",
-                      color: isDarkMode ? "rgb(176, 176, 176)" : "rgb(102, 102, 102)",
-                    },
-                  }}
-                >
-                  {loading ? "Đang tạo Giáo án..." : "Tạo Giáo án"}
-                </Button>
+                    {loading ? "Đang tạo giáo án..." : "Tạo giáo án"}
+                  </Button>
+                </Grid>
               </Grid>
-            </Grid>
+            </form>
           </Paper>
         </Zoom>
       </Container>
@@ -569,8 +468,22 @@ Lưu ý: Bạn PHẢI tuân thủ tuyệt đối cấu trúc trên. Không đư�
           {error}
         </Alert>
       </Snackbar>
+
+      <Snackbar
+        open={!!success}
+        autoHideDuration={6000}
+        onClose={() => setSuccess("")}
+      >
+        <Alert
+          onClose={() => setSuccess("")}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          {success}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
 
-export default CreateLesson;
+export default CreatLesson;

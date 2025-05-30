@@ -34,8 +34,13 @@ import {
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const TeacherCurriculumm = () => {
+  const { userInfo } = useAuth();
+  console.log('userInfo:', userInfo);
+  console.log('gradeId from userInfo:', userInfo?.gradeId);
+  
   const [modules, setModules] = useState([]);
   const [filteredModules, setFilteredModules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -115,25 +120,15 @@ const TeacherCurriculumm = () => {
 
   // Function for viewing requirements
   const handleViewRequirements = () => {
-    const grade = localStorage.getItem('Grade');
-    // Navigate to the TeacherRequirements page, passing the grade if necessary
-    navigate('/yeu-cau-can-dat', { state: { grade } });
+    navigate('/yeu-cau-can-dat', { state: { gradeId: userInfo?.gradeId } });
   };
 
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        setLoading(true); // Set loading to true when fetching modules
-        const gradeText = localStorage.getItem('Grade');
-        if (!gradeText) {
-          setError('Grade not found in localStorage');
-          setLoading(false);
-          return;
-        }
-
-        const gradeNumber = convertGradeToNumber(gradeText);
-        if (!gradeNumber) {
-          setError('Invalid grade format');
+        setLoading(true);
+        if (!userInfo?.gradeId) {
+          setError('Grade ID not found in user info');
           setLoading(false);
           return;
         }
@@ -145,11 +140,9 @@ const TeacherCurriculumm = () => {
 
         if (sortColumn) {
           params.SortColumn = sortColumn;
-          // API expects 0 for ascending, 1 for descending
           if (sortDir !== null) {
-              params.SortDir = sortDir;
+            params.SortDir = sortDir;
           }
-           // If sortDir is null, don't send SortDir parameter, rely on API default or leave unsorted
         }
 
         const response = await axios.get(
@@ -158,9 +151,11 @@ const TeacherCurriculumm = () => {
         );
 
         if (response.data.code === 0) {
+          console.log('API Response Data:', response.data.data.items);
           const filteredModules = response.data.data.items.filter(
-            module => module.gradeNumber === gradeNumber
+            module => module.gradeNumber === parseInt(userInfo.gradeId, 10)
           );
+          console.log('Modules filtered by gradeId:', filteredModules);
           setModules(filteredModules);
         } else {
           setError('Failed to fetch modules');
@@ -173,10 +168,11 @@ const TeacherCurriculumm = () => {
     };
 
     fetchModules();
-  }, [sortColumn, sortDir]); // Depend on sortColumn and sortDir
+  }, [sortColumn, sortDir, userInfo?.gradeId]);
 
   useEffect(() => {
     const filtered = modules.filter(module => module.semester === parseInt(semester));
+    console.log('Modules filtered by semester:', filtered);
     setFilteredModules(filtered);
   }, [semester, modules]);
 
@@ -254,7 +250,7 @@ const TeacherCurriculumm = () => {
               textShadow: isDarkMode ? 'none' : '1px 1px 2px rgba(0,0,0,0.1)',
             }}
           >
-            Sách Giáo Khoa Toán {localStorage.getItem('Grade')}
+            Sách Giáo Khoa Toán Lớp {userInfo?.gradeId}
           </Typography>
           <Typography 
             variant="h6" 
@@ -306,7 +302,7 @@ const TeacherCurriculumm = () => {
             }}>
               <MenuBookIcon sx={{ color: theme.palette.primary.main }} />
               <Typography sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
-                Chương trình: {commonInfo.curriculum} {commonInfo.gradeNumber}
+                Chương trình: {commonInfo.curriculum}
               </Typography>
             </Box>
             <Box sx={{ 

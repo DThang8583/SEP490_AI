@@ -25,6 +25,20 @@ import { useTheme } from '../context/ThemeContext';
 
 // Helper function to parse content (Improved version)
 const parseContent = (generatedText) => {
+  console.log('=== Starting Content Parsing ===');
+
+  // Log raw input text line by line
+  if (generatedText) {
+    console.log('--- Raw Input Text ---');
+    const lines = generatedText.split('\n');
+    lines.forEach((line, index) => {
+      console.log(`Line ${index + 1}: ${line}`);
+    });
+    console.log('----------------------');
+  } else {
+    console.log('Raw input text is empty or null.');
+  }
+
   const sections = {
     goal: '',
     schoolSupply: '',
@@ -35,53 +49,82 @@ const parseContent = (generatedText) => {
   };
 
   // Normalize line breaks and remove potential leading/trailing spaces
-  const text = generatedText.replace(/\r\n/g, '\n').trim();
-  console.log("Input text:", text); // Debug log
+  let text = generatedText.replace(/\r\n/g, '\n').trim();
+  console.log('Normalized text:', text);
 
   // Helper to extract content based on a regex with a capturing group
   const extractContent = (regex, sectionName) => {
     const match = text.match(regex);
     const content = match && match[1] ? match[1].trim() : '';
-    console.log(`${sectionName} content:`, content); // Debug log
+    console.log(`${sectionName} extraction:`, {
+      regex: regex.toString(),
+      found: !!match,
+      content: content || 'Not found'
+    });
     return content;
   };
 
-  // Define regex patterns for main sections with more flexible matching
-  const goalRegex = /I\.\s*Yêu cầu cần đạt:?\s*([\s\S]*?)(?=\n\s*II\.\s*Đồ dùng dạy học:|$)/i;
-  const supplyRegex = /II\.\s*Đồ dùng dạy học:?\s*([\s\S]*?)(?=\n\s*III\.\s*Các hoạt động dạy học chủ yếu:|$)/i;
-
-  // Regex patterns for activity sections with more flexible matching
-  const startUpRegex = /A\.\s*Hoạt động MỞ ĐẦU\s*(?:\([^)]+\))?:?\s*([\s\S]*?)(?=\n\s*B\.\s*Hoạt động HÌNH THÀNH KIẾN THỨC:|$)/i;
-  const knowledgeRegex = /B\.\s*Hoạt động HÌNH THÀNH KIẾN THỨC\s*(?:\([^)]+\))?:?\s*([\s\S]*?)(?=\n\s*C\.\s*Hoạt động LUYỆN TẬP, THỰC HÀNH:|$)/i;
-  const practiceRegex = /C\.\s*Hoạt động LUYỆN TẬP, THỰC HÀNH\s*(?:\([^)]+\))?:?\s*([\s\S]*?)(?=\n\s*D\.\s*Hoạt động VẬN DỤNG, TRẢI NGHIỆM:|$)/i;
-  const applyRegex = /D\.\s*Hoạt động VẬN DỤNG, TRẢI NGHIỆM\s*(?:\([^)]+\))?:?\s*([\s\S]*?)(?=\n\s*(?:Ghi chú:|$))/i;
+  // Updated regex patterns with more flexible matching
+  const goalRegex = /(?:Phần\s*I|I\.)\s*Yêu cầu cần đạt:?\s*([\s\S]*?)(?=\s*\n+\s*(?:Phần\s*II|II\.)\s*Đồ dùng dạy học:?|$)/i;
+  const supplyRegex = /(?:Phần\s*II|II\.)\s*Đồ dùng dạy học:?\s*([\s\S]*?)(?=\s*\n+\s*(?:Phần\s*III|III\.)\s*Các hoạt động dạy học chủ yếu:?|$)/i;
+  const activitiesRegex = /(?:Phần\s*III|III\.)\s*Các hoạt động dạy học chủ yếu:?(?:\s*\([^)]+\))?\s*([\s\S]*?)(?=\s*\n+\s*(?:A\.|A\))\s*Hoạt động MỞ ĐẦU:?|$)/i;
 
   // Extract main sections
   sections.goal = extractContent(goalRegex, "Goal");
   sections.schoolSupply = extractContent(supplyRegex, "School Supply");
 
-  // Extract activity sections
+  // Extract combined activities content
+  const activitiesContent = extractContent(activitiesRegex, "All Activities");
+  console.log('Activities content extracted:', activitiesContent);
+
+  // Now extract each activity from the combined activities content
+  const startUpRegex = /(?:A\.|A\))\s*Hoạt động MỞ ĐẦU:?(?:\s*\([^)]+\))?\s*([\s\S]*?)(?=\s*\n+\s*(?:B\.|B\))\s*Hoạt động HÌNH THÀNH KIẾN THỨC:?|$)/i;
+  const knowledgeRegex = /(?:B\.|B\))\s*Hoạt động HÌNH THÀNH KIẾN THỨC:?(?:\s*\([^)]+\))?\s*([\s\S]*?)(?=\s*\n+\s*(?:C\.|C\))\s*Hoạt động LUYỆN TẬP, THỰC HÀNH:?|$)/i;
+  const practiceRegex = /(?:C\.|C\))\s*Hoạt động LUYỆN TẬP, THỰC HÀNH:?(?:\s*\([^)]+\))?\s*([\s\S]*?)(?=\s*\n+\s*(?:D\.|D\))\s*Hoạt động VẬN DỤNG, TRẢI NGHIỆM:?|$)/i;
+  const applyRegex = /(?:D\.|D\))\s*Hoạt động VẬN DỤNG, TRẢI NGHIỆM:?(?:\s*\([^)]+\))?\s*([\s\S]*?)(?=\s*\n+Ghi chú:?|$)/i;
+
+  // Apply regex to the extracted activities content
   sections.startUp = extractContent(startUpRegex, "Start Up");
   sections.knowledge = extractContent(knowledgeRegex, "Knowledge");
   sections.practice = extractContent(practiceRegex, "Practice");
   sections.apply = extractContent(applyRegex, "Apply");
 
-  // Clean up sections to remove any duplicate content
-  const cleanSection = (content) => {
+  // Clean up: Remove any section headers that might have been included in the content
+  const finalClean = (content) => {
     if (!content) return '';
-    // Remove any section headers that might have been included
-    return content.replace(/^[A-D]\.\s*Hoạt động.*?(?=\n|$)/gim, '').trim();
+    return content
+      .replace(/^(?:[A-DĐ]\.|[A-DĐ]\))\s*Hoạt động.*?(?:\([^)]+\))?:?/gim, '')
+      .replace(/^Mục tiêu:?/gim, '')
+      .replace(/^HOẠT ĐỘNG CỦA GIÁO VIÊN:?/gim, '')
+      .replace(/^HOẠT ĐỘNG CỦA HỌC SINH:?/gim, '')
+      .trim();
   };
 
-  sections.startUp = cleanSection(sections.startUp);
-  sections.knowledge = cleanSection(sections.knowledge);
-  sections.practice = cleanSection(sections.practice);
-  sections.apply = cleanSection(sections.apply);
+  // Add detailed logging for practice and apply sections
+  console.log('=== Practice Section Details ===');
+  console.log('Raw Practice Content:', sections.practice);
+  console.log('Cleaned Practice Content:', finalClean(sections.practice));
 
-  // Log the parsed sections for debugging
-  console.log("Parsed sections:", sections);
+  console.log('=== Apply Section Details ===');
+  console.log('Raw Apply Content:', sections.apply);
+  console.log('Cleaned Apply Content:', finalClean(sections.apply));
 
-  // More detailed validation
+  sections.startUp = finalClean(sections.startUp);
+  sections.knowledge = finalClean(sections.knowledge);
+  sections.practice = finalClean(sections.practice);
+  sections.apply = finalClean(sections.apply);
+  sections.goal = sections.goal.trim();
+  sections.schoolSupply = sections.schoolSupply.trim();
+
+  console.log('=== Final Parsed Sections ===');
+  console.log('Goal:', sections.goal || 'Not found');
+  console.log('School Supply:', sections.schoolSupply || 'Not found');
+  console.log('Start Up:', sections.startUp || 'Not found');
+  console.log('Knowledge:', sections.knowledge || 'Not found');
+  console.log('Practice:', sections.practice || 'Not found');
+  console.log('Apply:', sections.apply || 'Not found');
+
+  // More detailed validation - check if the main required sections have content
   const missingSections = [];
   if (!sections.goal) missingSections.push("Yêu cầu cần đạt");
   if (!sections.schoolSupply) missingSections.push("Đồ dùng dạy học");
@@ -91,7 +134,9 @@ const parseContent = (generatedText) => {
   if (!sections.apply) missingSections.push("Hoạt động VẬN DỤNG, TRẢI NGHIỆM");
 
   if (missingSections.length > 0) {
-    console.warn("Missing sections:", missingSections);
+    console.error('=== Missing Sections ===');
+    console.error('Missing sections:', missingSections);
+    console.error('Raw text:', text);
     throw new Error(`Không thể phân tích các phần sau: ${missingSections.join(", ")}. Vui lòng kiểm tra định dạng giáo án.`);
   }
 
@@ -103,12 +148,42 @@ const AIRender = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
 
+  // Add useEffect for initial render logging with parsed content
+  useEffect(() => {
+    // Parse the content into sections
+    const parsedContent = parseContent(location.state?.content || '');
+    
+    console.log({
+      goal: parsedContent.goal,
+      schoolSupply: parsedContent.schoolSupply,
+      startUp: parsedContent.startUp,
+      knowLedge: parsedContent.knowledge,
+      practice: parsedContent.practice,
+      apply: parsedContent.apply
+    });
+    
+    console.log('====================================');
+  }, []); // Empty dependency array ensures this runs only once on mount
+
   const [content, setContent] = useState(location.state?.content || "");
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(location.state?.content || "");
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [isSending, setIsSending] = useState(false); // Loading state for API call
-  const [userId, setUserId] = useState(null); // State for userId
+  const [isSending, setIsSending] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [lessonId, setLessonId] = useState(location.state?.lessonId || null);
+  const [promptData, setPromptData] = useState(location.state?.promptData || null);
+
+  console.log('Initial States:', {
+    content: content ? 'Content exists' : 'No content',
+    isEditing,
+    draft: draft ? 'Draft exists' : 'No draft',
+    snackbar,
+    isSending,
+    userId,
+    lessonId,
+    promptData
+  });
 
   // Get userId from localStorage on component mount
   useEffect(() => {
@@ -116,64 +191,110 @@ const AIRender = () => {
     if (storedUserInfo) {
       try {
         const userInfo = JSON.parse(storedUserInfo);
-        setUserId(userInfo.id); // Extract id
-        console.log("userId from localStorage:", userInfo.id); // Log userId here
+        setUserId(userInfo.id);
       } catch (e) {
-        console.error("Failed to parse userInfo from localStorage", e);
-        // Handle error, maybe show a message or redirect
       }
     } else {
-       console.error("User info not found in localStorage.");
-       // Handle missing user info, maybe redirect to login
        setSnackbar({ open: true, message: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.', severity: 'error' });
-       // navigate('/login'); // Optional: redirect to login
     }
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   // Redirect if no content is passed
   useEffect(() => {
+    console.log('Checking content for redirect');
     if (!location.state?.content) {
         navigate("/CreateLesson");
     }
-  }, [location.state?.content, navigate]); // Dependencies added
+  }, [location.state?.content, navigate]);
 
+  // Update lessonId and promptData states
+  useEffect(() => {
+    if (location.state?.lessonId) {
+      setLessonId(location.state.lessonId);
+    }
+    if (location.state?.promptData) {
+      setPromptData(location.state.promptData);
+    }
+  }, [location.state]);
 
   const handleSaveDraft = async () => {
+    console.log('=== Starting handleSaveDraft ===');
+    console.log('Current states:', {
+      userId,
+      lessonId,
+      promptData,
+      content: content ? 'Content exists' : 'No content'
+    });
+
     if (!userId) {
-       setSnackbar({ open: true, message: 'Không thể lưu: Thiếu thông tin người dùng.', severity: 'error' });
-       return;
+      console.error('Missing userId');
+      setSnackbar({ open: true, message: 'Không thể lưu: Thiếu thông tin người dùng.', severity: 'error' });
+      return;
+    }
+    if (!lessonId) {
+      console.error('Missing lessonId');
+      setSnackbar({ open: true, message: 'Không thể lưu: Thiếu thông tin bài học.', severity: 'error' });
+      return;
     }
 
     setIsSending(true);
     setSnackbar({ open: false, message: '', severity: 'info' });
 
     try {
+      // Parse content into sections
+      console.log('=== Parsing Content ===');
       const parsedData = parseContent(content);
+      console.log('Parsed content sections:', parsedData);
 
-      // Basic validation if parsing failed
-      if (!parsedData.goal && !parsedData.schoolSupply && !parsedData.startUp) {
-           throw new Error("Không thể phân tích nội dung Giáo án. Vui lòng kiểm tra định dạng.");
+      // Validate required sections
+      if (!parsedData.goal || !parsedData.schoolSupply || !parsedData.startUp || 
+          !parsedData.knowledge || !parsedData.practice || !parsedData.apply) {
+        console.error('=== Validation Error ===');
+        console.error('Missing required sections:', {
+          goal: !parsedData.goal ? 'Missing' : 'OK',
+          schoolSupply: !parsedData.schoolSupply ? 'Missing' : 'OK',
+          startUp: !parsedData.startUp ? 'Missing' : 'OK',
+          knowledge: !parsedData.knowledge ? 'Missing' : 'OK',
+          practice: !parsedData.practice ? 'Missing' : 'OK',
+          apply: !parsedData.apply ? 'Missing' : 'OK'
+        });
+        throw new Error("Không thể phân tích nội dung Giáo án. Vui lòng kiểm tra định dạng.");
       }
 
+      // Check if this is the first save by looking for existing content
+      const isFirstSave = !content || content.trim() === '';
+      console.log('Is first save:', isFirstSave);
+
+      // Prepare API body with parsed sections
       const apiBody = {
-        startUp: parsedData.startUp,
-        knowLedge: parsedData.knowledge,
-        goal: parsedData.goal,
-        schoolSupply: parsedData.schoolSupply,  
-        practice: parsedData.practice,
-        apply: parsedData.apply,
-        userId: parseInt(userId, 10),
-        duration:"",
+        startUp: parsedData.startUp.trim(),              // A. Hoạt động MỞ ĐẦU
+        knowLedge: parsedData.knowledge.trim(),          // B. Hoạt động HÌNH THÀNH KIẾN THỨC
+        schoolSupply: parsedData.schoolSupply.trim(),    // Phần II: Đồ dùng dạy học
+        practice: parsedData.practice.trim(),            // C. Hoạt động LUYỆN TẬP, THỰC HÀNH
+        apply: parsedData.apply.trim(),                  // D. Hoạt động VẬN DỤNG, TRẢI NGHIỆM
+        duration: "35",                                  // Thời lượng cố định 35 phút
+        userId: parseInt(userId, 10),                    // Chuyển đổi userId thành số
+        lessonId: parseInt(lessonId, 10)                 // Chuyển đổi lessonId thành số
       };
 
-      console.log("Sending to API for draft:", JSON.stringify(apiBody, null, 2));
+      // Only include goal if it's not the first save
+      if (!isFirstSave) {
+        apiBody.goal = parsedData.goal.trim();           // Phần I: Yêu cầu cần đạt
+      }
+
+      console.log('=== API Request ===');
+      console.log('Request URL:', 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans');
+      console.log('Request Body:', JSON.stringify(apiBody, null, 2));
 
       // Get token for authenticated request
       const token = localStorage.getItem('accessToken');
       if (!token) {
+        console.error('=== Authentication Error ===');
+        console.error('No access token found in localStorage');
         throw new Error("Yêu cầu xác thực thất bại. Vui lòng đăng nhập lại.");
       }
 
+      console.log('=== Sending Request ===');
       const response = await axios.post(
         'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans',
         apiBody,
@@ -182,22 +303,38 @@ const AIRender = () => {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          timeout: 30000 // Increased timeout to 30 seconds
+          timeout: 30000
         }
       );
-      console.log("Response for draft:", response.data); // Log the response for debugging
+
+      console.log('=== API Response ===');
+      console.log('Status:', response.status);
+      console.log('Response Data:', response.data);
+
       if (response.data && (response.data.code === 0 || /success|created/i.test(response.data.message || ''))) {
-          setSnackbar({
-            open: true,
-            message: response.data.message || 'Bản nháp đã được lưu thành công! 📝', // Use API message if available
-            severity: 'success'
-          });
+        setSnackbar({
+          open: true,
+          message: response.data.message || 'Bản nháp đã được lưu thành công! 📝',
+          severity: 'success'
+        });
       } else {
-          throw new Error(response.data.message || "Lưu bản nháp thất bại (phản hồi không mong đợi). ");
+        console.error('=== API Error Response ===');
+        console.error('Unexpected API response:', response.data);
+        throw new Error(response.data.message || "Lưu bản nháp thất bại (phản hồi không mong đợi).");
       }
 
     } catch (error) {
-      console.error("Error saving draft:", error);
+      console.error('=== Error Details ===');
+      console.error('Error Type:', error.name);
+      console.error('Error Message:', error.message);
+      if (error.response) {
+        console.error('Response Status:', error.response.status);
+        console.error('Response Data:', error.response.data);
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+      }
+      console.error('Full Error:', error);
+      
       setSnackbar({
         open: true,
         message: `Lỗi khi lưu bản nháp: ${error.message}`,
@@ -207,12 +344,24 @@ const AIRender = () => {
       setIsSending(false);
     }
 
-    navigate(-1);
+    // Navigate to the draft lessons page after saving
+    navigate('/draft-lessons');
   };
 
   const handleSendToManager = async () => {
+    console.log('handleSendToManager called');
+    console.log('Current states:', {
+      userId,
+      lessonId,
+      promptData,
+      content: content ? 'Content exists' : 'No content'
+    });
     if (!userId) {
        setSnackbar({ open: true, message: 'Không thể gửi: Thiếu thông tin người dùng.', severity: 'error' });
+       return;
+    }
+    if (!lessonId) {
+       setSnackbar({ open: true, message: 'Không thể gửi: Thiếu thông tin bài học hoặc thời lượng.', severity: 'error' });
        return;
     }
 
@@ -220,25 +369,30 @@ const AIRender = () => {
     setSnackbar({ open: false, message: '', severity: 'info' });
 
     try {
+      // Parse content into sections
       const parsedData = parseContent(content);
+      console.log('Parsed content sections:', parsedData);
 
-      // Basic validation if parsing failed
-      if (!parsedData.goal && !parsedData.schoolSupply && !parsedData.startUp) {
-           throw new Error("Không thể phân tích nội dung Giáo án. Vui lòng kiểm tra định dạng.");
+      // Validate required sections
+      if (!parsedData.goal || !parsedData.schoolSupply || !parsedData.startUp || 
+          !parsedData.knowledge || !parsedData.practice || !parsedData.apply) {
+        throw new Error("Không thể phân tích nội dung Giáo án. Vui lòng kiểm tra định dạng.");
       }
 
+      // Prepare API body with parsed sections
       const apiBody = {
-        startUp: parsedData.startUp,
-        knowLedge: parsedData.knowledge,
-        goal: parsedData.goal,
-        schoolSupply: parsedData.schoolSupply,
-        practice: parsedData.practice,
-        apply: parsedData.apply,
-        userId: parseInt(userId, 10),
-        duration:"",
+        startUp: parsedData.startUp.trim(),              // A. Hoạt động MỞ ĐẦU
+        knowLedge: parsedData.knowledge.trim(),          // B. Hoạt động HÌNH THÀNH KIẾN THỨC
+        goal: parsedData.goal.trim(),                    // Phần I: Yêu cầu cần đạt
+        schoolSupply: parsedData.schoolSupply.trim(),    // Phần II: Đồ dùng dạy học
+        practice: parsedData.practice.trim(),            // C. Hoạt động LUYỆN TẬP, THỰC HÀNH
+        apply: parsedData.apply.trim(),                  // D. Hoạt động VẬN DỤNG, TRẢI NGHIỆM
+        duration: "35",                                  // Thời lượng cố định 35 phút
+        userId: parseInt(userId, 10),                    // Chuyển đổi userId thành số
+        lessonId: parseInt(lessonId, 10)                 // Chuyển đổi lessonId thành số
       };
 
-      console.log("Sending to API for manager:", JSON.stringify(apiBody, null, 2));
+      console.log("API Request Body:", JSON.stringify(apiBody, null, 2));
 
       // Get token for authenticated request
       const token = localStorage.getItem('accessToken');
@@ -254,25 +408,24 @@ const AIRender = () => {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          timeout: 30000 // Increased timeout to 30 seconds
+          timeout: 30000
         }
       );
-      console.log("Response:", response.data); // Log the response for debugging
-      // Check if the request was successful (Axios usually throws for 4xx/5xx)
-      // And check if the message indicates success, making the code check less strict
+
+      console.log("Response:", response.data);
       if (response.data && (response.data.code === 0 || /success|created/i.test(response.data.message || ''))) {
           setSnackbar({
             open: true,
-            message: response.data.message || 'Giáo án đã được gửi thành công! ✅', // Use API message if available
+            message: response.data.message || 'Giáo án đã được gửi thành công! ✅',
             severity: 'success'
           });
       } else {
-          // If it reached here but didn't match success criteria
           throw new Error(response.data.message || "Gửi Giáo án thất bại (phản hồi không mong đợi).");
       }
 
     } catch (error) {
       console.error("Error sending lesson:", error);
+      console.error("API Error:", error);
       setSnackbar({
         open: true,
         message: `Lỗi khi gửi Giáo án: ${error.message}`,
@@ -282,10 +435,11 @@ const AIRender = () => {
       setIsSending(false);
     }
 
-    navigate(-1);
+    navigate('/pending-lessons');
   };
 
   const handleCopyContent = () => {
+    console.log('handleCopyContent called');
     navigator.clipboard.writeText(content);
     setSnackbar({
       open: true,
@@ -293,6 +447,13 @@ const AIRender = () => {
       severity: 'success'
     });
   };
+
+  console.log('Rendering AIRender component with states:', {
+    isEditing,
+    isSending,
+    snackbar,
+    content: content ? 'Content exists' : 'No content'
+  });
 
   return (
     <Box
@@ -399,7 +560,7 @@ const AIRender = () => {
                 <Typography 
                   variant="body1" 
                   sx={{ 
-                    whiteSpace: 'pre-line',
+                    whiteSpace: 'pre-wrap',
                     fontSize: '1.1rem',
                     lineHeight: '1.8',
                     color: isDarkMode ? '#ffffff' : '#2D3436',

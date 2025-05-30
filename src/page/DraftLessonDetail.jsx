@@ -240,7 +240,7 @@ const DraftLessonDetail = () => {
         throw new Error("Authentication token not found.");
       }
 
-      const response = await axios.put(
+      const response = await axios.post(
         `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}/pending`,
         {},
         {

@@ -3,8 +3,10 @@ import { Box, Container, Typography, Paper, CircularProgress, Alert, useTheme, T
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const TeacherRequirements = () => {
+  const { userInfo } = useAuth();
   const [curriculum, setCurriculum] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,15 +24,8 @@ const TeacherRequirements = () => {
     const fetchCurriculumDetail = async () => {
       try {
         setLoading(true);
-        const gradeText = localStorage.getItem('Grade');
-        if (!gradeText) {
-          setError('Grade not found in localStorage');
-          setLoading(false);
-          return;
-        }
-        const curriculumName = convertGradeToCurriculumName(gradeText);
-        if (!curriculumName) {
-          setError('Invalid grade format');
+        if (!userInfo?.gradeId) {
+          setError('Grade ID not found in user info');
           setLoading(false);
           return;
         }
@@ -50,12 +45,22 @@ const TeacherRequirements = () => {
           setLoading(false);
           return;
         }
-        const found = response.data.data.items.find(item => item.name === curriculumName);
+        let found = null;
+        const targetGradeId = userInfo.gradeId;
+        // Find curriculum matching user's gradeId or specific name for grades 1-5
+        if (['1', '2', '3', '4', '5'].includes(targetGradeId)) {
+          const expectedName = `Toán lớp ${targetGradeId} ${targetGradeId}`;
+          found = response.data.data.items.find(item => item.name === expectedName);
+        } else {
+          found = response.data.data.items.find(item => item.gradeNumber === parseInt(targetGradeId, 10));
+        }
+
         if (!found) {
-          setError('Không tìm thấy chương trình giảng dạy cho ' + gradeText);
+          setError('Không tìm thấy chương trình giảng dạy cho khối lớp ' + userInfo.gradeId);
           setLoading(false);
           return;
         }
+        console.log('Found curriculumId:', found.curriculumId);
         // Step 2: Get curriculum detail by id
         const detailRes = await axios.get(
           `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums/${found.curriculumId}`
@@ -66,6 +71,7 @@ const TeacherRequirements = () => {
           return;
         }
         setCurriculum(detailRes.data.data);
+        console.log('Fetched curriculum detail:', detailRes.data.data);
       } catch (err) {
         setError('Error fetching curriculum data: ' + err.message);
       } finally {
@@ -73,7 +79,7 @@ const TeacherRequirements = () => {
       }
     };
     fetchCurriculumDetail();
-  }, []);
+  }, [userInfo?.gradeId]);
 
   const handleBack = () => {
     navigate(-1); // Quay lại trang trước đó

@@ -53,9 +53,8 @@ import SlidePreview from './page/SlidePreview';
 import GeneratedQuiz from './page/GeneratedQuiz';
 import QuizDetail from './pages/Admin/Dashboard/QuizDetail';
 import CommandManager from './page/CommandManager';
-import { MenuItem } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import CreateAI from './page/CreateAI';
+
 import TeacherCurriculumm from './page/TeacherCurriculumm';
 import TeacherRequirements from './page/TeacherRequirements';
 
@@ -197,7 +196,6 @@ function App() {
                 <Route path="/bai-tap/:id" element={<ExamDetail />} />
                 <Route path="/khung-chuong-trinh" element={<TeacherCurriculumm />} />
                 <Route path="/command-management" element={<PrivateRoute><CommandManager /></PrivateRoute>} />
-                <Route path="/create-ai" element={<CreateAI />} />
                 <Route path="/yeu-cau-can-dat" element={<TeacherRequirements />} />
                 <Route path="/manager/*" element={
                   <PrivateRoute>
