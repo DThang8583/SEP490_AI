@@ -33,6 +33,14 @@ const CurriculumDetail = () => {
     // State for curriculum sub-sections
     const [curriculumSubSections, setCurriculumSubSections] = useState([]);
 
+    // New state for editing curriculum information
+    const [showEditCurriculumModal, setShowEditCurriculumModal] = useState(false);
+    const [curriculumFormData, setCurriculumFormData] = useState({
+        name: '',
+        description: '',
+        totalPeriods: 0
+    });
+
     useEffect(() => {
         // Fetch curriculum sub-sections
         const fetchSubSections = async () => {
@@ -87,8 +95,10 @@ const CurriculumDetail = () => {
 
     // Handle Add New Detail
     const handleAddDetail = async () => {
-        if (!formData.curriculumContent.trim() || !formData.curriculumGoal.trim()) {
-            alert('Vui lòng điền đầy đủ thông tin');
+        if (!formData.curriculumContent.trim() || 
+            !formData.curriculumGoal.trim() || 
+            !formData.curriculumSubSectionId) {
+            alert('Vui lòng điền đầy đủ thông tin: Mạch kiến thức, Nội dung cần đạt và Mục tiêu cần đạt');
             return;
         }
 
@@ -98,14 +108,14 @@ const CurriculumDetail = () => {
                 curriculumContent: formData.curriculumContent,
                 curriculumGoal: formData.curriculumGoal,
                 curriculumId: parseInt(id),
-                curriculumSubSectionId: formData.curriculumSubSectionId
+                curriculumSubSectionId: parseInt(formData.curriculumSubSectionId)
             });
 
+            console.log('Add response code:', response.data.code);
             if (response.data.code === 0 || response.data.code === 21) {
                 alert('Thêm nội dung cần đạt thành công!');
                 setShowAddModal(false);
                 setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSectionId: '' });
-                setIsSubmitting(false);
                 await refreshCurriculumData();
             } else {
                 alert('Lỗi khi thêm: ' + (response.data.message || 'Unknown error'));
@@ -119,8 +129,10 @@ const CurriculumDetail = () => {
 
     // Handle Edit Detail
     const handleEditDetail = async () => {
-        if (!formData.curriculumContent.trim() || !formData.curriculumGoal.trim()) {
-            alert('Vui lòng điền đầy đủ thông tin');
+        if (!formData.curriculumContent.trim() || 
+            !formData.curriculumGoal.trim() || 
+            !formData.curriculumSubSectionId) {
+            alert('Vui lòng điền đầy đủ thông tin: Mạch kiến thức, Nội dung cần đạt và Mục tiêu cần đạt');
             return;
         }
 
@@ -130,15 +142,15 @@ const CurriculumDetail = () => {
                 curriculumContent: formData.curriculumContent,
                 curriculumGoal: formData.curriculumGoal,
                 curriculumId: parseInt(id),
-                curriculumSubSectionId: formData.curriculumSubSectionId
+                curriculumSubSectionId: parseInt(formData.curriculumSubSectionId)
             });
 
-            if (response.data.code === 0) {
+            console.log('Edit response code:', response.data.code);
+            if (response.data.code === 0 || response.data.code === 22) {
                 alert('Cập nhật nội dung cần đạt thành công!');
                 setShowEditModal(false);
                 setEditingDetail(null);
                 setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSectionId: '' });
-                setIsSubmitting(false);
                 await refreshCurriculumData();
             } else {
                 alert('Lỗi khi cập nhật: ' + (response.data.message || 'Unknown error'));
@@ -161,7 +173,6 @@ const CurriculumDetail = () => {
             console.log('Delete response code:', response.data.code);
             if (response.data.code === 0 || response.data.code === 31) {
                 alert('Xóa nội dung cần đạt thành công!');
-                setIsSubmitting(false);
                 await refreshCurriculumData();
             } else {
                 alert('Lỗi khi xóa: ' + (response.data.message || 'Unknown error'));
@@ -180,6 +191,48 @@ const CurriculumDetail = () => {
             curriculumSubSectionId: detail.curriculumSubSectionId || ''
         });
         setShowEditModal(true);
+    };
+
+    // Handle Edit Curriculum
+    const handleEditCurriculum = async () => {
+        if (!curriculumFormData.name.trim() || !curriculumFormData.description.trim() || !curriculumFormData.totalPeriods) {
+            alert('Vui lòng điền đầy đủ thông tin');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const response = await axios.put(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums/${id}`, {
+                name: curriculumFormData.name,
+                description: curriculumFormData.description,
+                totalPeriods: parseInt(curriculumFormData.totalPeriods),
+                gradeId: curriculum.gradeId,
+                schoolYearId: curriculum.schoolYearId
+            });
+            console.log(schoolYearId);
+            console.log('Edit curriculum response code:', response.data.code);
+            if (response.data.code === 0) {
+                alert('Cập nhật thông tin chương trình thành công!');
+                setShowEditCurriculumModal(false);
+                await refreshCurriculumData();
+            } else {
+                alert('Lỗi khi cập nhật: ' + (response.data.message || 'Unknown error'));
+            }
+        } catch (err) {
+            alert('Lỗi khi cập nhật: ' + err.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Open edit curriculum modal
+    const openEditCurriculumModal = () => {
+        setCurriculumFormData({
+            name: curriculum.name,
+            description: curriculum.description,
+            totalPeriods: curriculum.totalPeriods
+        });
+        setShowEditCurriculumModal(true);
     };
 
     const handleBackClick = () => {
@@ -346,14 +399,34 @@ const CurriculumDetail = () => {
                         boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
                         transition: 'transform 0.3s ease'
                     }}>
-                        <h2 style={{
-                            fontSize: '24px',
-                            color: theme.palette.text.primary,
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
                             marginBottom: '24px',
                             paddingBottom: '16px',
-                            borderBottom: '3px solid #06A9AE',
-                            fontWeight: '600'
-                        }}>Thông tin chung</h2>
+                            borderBottom: '3px solid #06A9AE'
+                        }}>
+                            <h2 style={{
+                                fontSize: '24px',
+                                color: theme.palette.text.primary,
+                                margin: 0,
+                                fontWeight: '600'
+                            }}>Thông tin chung</h2>
+                            <IconButton
+                                onClick={openEditCurriculumModal}
+                                sx={{
+                                    color: '#06A9AE',
+                                    bgcolor: 'rgba(6, 169, 174, 0.1)',
+                                    borderRadius: '8px',
+                                    '&:hover': {
+                                        bgcolor: 'rgba(6, 169, 174, 0.2)',
+                                    }
+                                }}
+                            >
+                                <EditIcon sx={{ fontSize: '20px' }} />
+                            </IconButton>
+                        </div>
                         <table style={{
                             width: '100%',
                             borderCollapse: 'separate',
@@ -895,6 +968,146 @@ const CurriculumDetail = () => {
                                 <Button 
                                     variant="contained" 
                                     onClick={handleEditDetail} 
+                                    disabled={isSubmitting}
+                                    sx={{
+                                        backgroundColor: '#06A9AE',
+                                        '&:hover': {
+                                            backgroundColor: '#05969A',
+                                        }
+                                    }}
+                                >
+                                    Lưu
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Modal>
+
+                    {/* Edit Curriculum Modal */}
+                    <Modal
+                        open={showEditCurriculumModal}
+                        onClose={() => setShowEditCurriculumModal(false)}
+                        aria-labelledby="edit-curriculum-modal-title"
+                        aria-describedby="edit-curriculum-modal-description"
+                    >
+                        <Box sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 400,
+                            bgcolor: theme.palette.background.paper,
+                            border: '2px solid #06A9AE',
+                            boxShadow: 24,
+                            p: 4,
+                            borderRadius: '16px'
+                        }}>
+                            <Typography id="edit-curriculum-modal-title" variant="h6" component="h2" sx={{ 
+                                color: '#06A9AE',
+                                fontWeight: '600',
+                                mb: 3
+                            }}>
+                                Chỉnh sửa thông tin chương trình
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                label="Tên chương trình"
+                                value={curriculumFormData.name}
+                                onChange={(e) => setCurriculumFormData({ ...curriculumFormData, name: e.target.value })}
+                                margin="normal"
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: '#05969A',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#06A9AE',
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#06A9AE',
+                                    }
+                                }}
+                            />
+                            <TextField
+                                fullWidth
+                                label="Mô tả"
+                                multiline
+                                rows={4}
+                                value={curriculumFormData.description}
+                                onChange={(e) => setCurriculumFormData({ ...curriculumFormData, description: e.target.value })}
+                                margin="normal"
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: '#05969A',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#06A9AE',
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#06A9AE',
+                                    }
+                                }}
+                            />
+                            <TextField
+                                fullWidth
+                                label="Tổng số tiết"
+                                type="number"
+                                value={curriculumFormData.totalPeriods}
+                                onChange={(e) => setCurriculumFormData({ ...curriculumFormData, totalPeriods: e.target.value })}
+                                margin="normal"
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: '#05969A',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#06A9AE',
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#06A9AE',
+                                    }
+                                }}
+                            />
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                                <Button 
+                                    onClick={() => setShowEditCurriculumModal(false)} 
+                                    sx={{ 
+                                        mr: 1,
+                                        color: '#06A9AE',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(6, 169, 174, 0.1)',
+                                        }
+                                    }}
+                                >
+                                    Hủy
+                                </Button>
+                                <Button 
+                                    variant="contained" 
+                                    onClick={handleEditCurriculum} 
                                     disabled={isSubmitting}
                                     sx={{
                                         backgroundColor: '#06A9AE',
