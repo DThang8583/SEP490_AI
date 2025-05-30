@@ -19,9 +19,11 @@ import {
 } from '@mui/material';
 import { Edit, Lock, Person, Email, Phone, Cake, School, LocationOn, SupervisorAccount, Badge, Class, CameraAlt } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '@mui/material/styles';
 
 const Profile = ({ sidebarOpen }) => {
     const { userInfo, updateUserInfo } = useAuth();
+    const theme = useTheme();
     const [profile, setProfile] = useState(null);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -189,7 +191,9 @@ const Profile = ({ sidebarOpen }) => {
         <Box
             sx={{
                 minHeight: '100vh',
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                background: theme.palette.mode === 'dark' 
+                    ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)'
+                    : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
                 position: 'fixed',
                 top: 0,
                 left: 0,
@@ -234,9 +238,13 @@ const Profile = ({ sidebarOpen }) => {
                                 sx={{
                                     borderRadius: '16px',
                                     overflow: 'hidden',
-                                    background: 'rgba(255, 255, 255, 0.95)',
+                                    background: theme.palette.mode === 'dark' 
+                                        ? 'rgba(33, 33, 33, 0.95)'
+                                        : 'rgba(255, 255, 255, 0.95)',
                                     backdropFilter: 'blur(10px)',
-                                    boxShadow: '0 10px 40px rgba(31, 38, 135, 0.15)',
+                                    boxShadow: theme.palette.mode === 'dark'
+                                        ? '0 10px 40px rgba(0, 0, 0, 0.3)'
+                                        : '0 10px 40px rgba(31, 38, 135, 0.15)',
                                     maxWidth: '1000px',
                                     margin: '0 auto',
                                 }}
@@ -384,7 +392,11 @@ const Profile = ({ sidebarOpen }) => {
                                     pb: 2
                                 }}>
                                     <Box sx={{ mt: { xs: 2, sm: 1 }, mb: 3, textAlign: 'center' }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: '#1a1a1a' }}>
+                                        <Typography variant="h4" sx={{ 
+                                            fontWeight: 700, 
+                                            mb: 0.5, 
+                                            color: theme.palette.mode === 'dark' ? '#fff' : '#1a1a1a' 
+                                        }}>
                                             {profile.fullname}
                                         </Typography>
                                         <Typography variant="h6" sx={{
@@ -489,11 +501,15 @@ const Profile = ({ sidebarOpen }) => {
                                                     minWidth: { xs: '100%', sm: '160px' },
                                                     borderRadius: '8px',
                                                     backgroundColor: '#06A9AE',
-                                                    boxShadow: '0 4px 12px rgba(6, 169, 174, 0.2)',
+                                                    boxShadow: theme.palette.mode === 'dark'
+                                                        ? '0 4px 12px rgba(6, 169, 174, 0.4)'
+                                                        : '0 4px 12px rgba(6, 169, 174, 0.2)',
                                                     transition: 'all 0.3s ease',
                                                     '&:hover': {
                                                         backgroundColor: '#048b8f',
-                                                        boxShadow: '0 6px 15px rgba(6, 169, 174, 0.3)',
+                                                        boxShadow: theme.palette.mode === 'dark'
+                                                            ? '0 6px 15px rgba(6, 169, 174, 0.5)'
+                                                            : '0 6px 15px rgba(6, 169, 174, 0.3)',
                                                     },
                                                 }}
                                             >
@@ -538,7 +554,7 @@ const Profile = ({ sidebarOpen }) => {
                 <Alert
                     onClose={() => { setError(''); setSuccess(''); }}
                     severity={error ? 'error' : 'success'} // Determine severity
-                    sx={{ width: '100%' }}
+                    sx={{ width: '100%', bgcolor: error ? undefined : '#06A9AE', color: error ? undefined : '#fff' }}
                 >
                     {error || success} {/* Display either error or success message */}
                 </Alert>
