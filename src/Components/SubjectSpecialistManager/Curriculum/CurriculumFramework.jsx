@@ -983,9 +983,15 @@ const CurriculumFramework = () => {
                                                      label="Tổng số tiết"
                                                     type="number"
                                                      value={editableModuleData?.totalPeriods || ''}
-                                                     onChange={(e) => setEditableModuleData({ ...editableModuleData, totalPeriods: e.target.value })}
-                                                     variant="outlined"
-                                                     inputProps={{ min: 0 }}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        const intValue = parseInt(value, 10);
+                                                        if (value === '' || (intValue === 1 || intValue === 2)) {
+                                                            setEditableModuleData({ ...editableModuleData, totalPeriods: value === '' ? '' : intValue });
+                                                        }
+                                                    }}
+                                                    variant="outlined"
+                                                    inputProps={{ min: 0 }}
                                                 />
                                             </Grid>
                                         </Grid>
@@ -1200,7 +1206,13 @@ const CurriculumFramework = () => {
                                             label="Tổng số tiết"
                                             type="number"
                                             value={newModuleData?.totalPeriods || ''}
-                                            onChange={(e) => setNewModuleData({ ...newModuleData, totalPeriods: parseInt(e.target.value, 10) || '' })}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                const intValue = parseInt(value, 10);
+                                                if (value === '' || (intValue === 1 || intValue === 2)) {
+                                                    setNewModuleData({ ...newModuleData, totalPeriods: value === '' ? '' : intValue });
+                                                }
+                                            }}
                                             variant="outlined"
                                             inputProps={{ min: 0 }}
                                         />

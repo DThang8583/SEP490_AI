@@ -45,27 +45,10 @@ import {
     Person as PersonIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 
 // API URLs
 const MODULE_API_URL = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules';
-
-// Color palette for consistency
-const COLORS = {
-    primary: '#06A9AE',
-    secondary: '#1976d2',
-    success: '#00AB55',
-    error: '#FF4842',
-    warning: '#FFAB00',
-    background: {
-        default: 'linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%)',
-        paper: '#FFFFFF',
-        secondary: 'rgba(6, 169, 174, 0.02)',
-    },
-    text: {
-        primary: '#212B36',
-        secondary: '#637381',
-    },
-};
 
 // Styled components
 const DashboardCard = styled(Card)({
@@ -73,16 +56,16 @@ const DashboardCard = styled(Card)({
     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
     transition: 'all 0.3s ease',
     height: '100%',
-    background: COLORS.background.paper,
+    background: (theme) => theme.palette.background.paper,
     '&:hover': {
         transform: 'translateY(-4px)',
         boxShadow: '0 12px 32px rgba(0, 0, 0, 0.12)',
     },
 });
 
-const CardHeader = styled(Box)(({ bgcolor }) => ({
+const CardHeader = styled(Box)(({ theme, bgcolor }) => ({
     padding: '20px',
-    background: bgcolor || COLORS.primary,
+    background: bgcolor || '#06A9AE',
     color: '#fff',
     display: 'flex',
     alignItems: 'center',
@@ -93,7 +76,7 @@ const CardHeader = styled(Box)(({ bgcolor }) => ({
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     fontWeight: 'bold',
-    backgroundColor: COLORS.background.secondary,
+    backgroundColor: theme.palette.background.secondary || theme.palette.action.hover,
     border: `1px solid ${theme.palette.grey[300]}`,
     padding: '16px',
 }));
@@ -102,12 +85,12 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
     border: `1px solid ${theme.palette.grey[300]}`,
     transition: 'all 0.2s ease',
     '&:hover': {
-        backgroundColor: 'rgba(6, 169, 174, 0.04)',
+        backgroundColor: theme.palette.action.hover,
     },
 }));
 
-const CurriculumCard = styled(Box)({
-    backgroundColor: COLORS.background.paper,
+const CurriculumCard = styled(Box)(({ theme }) => ({
+    backgroundColor: theme.palette.background.paper,
     borderRadius: 16,
     marginBottom: 24,
     padding: 24,
@@ -117,40 +100,55 @@ const CurriculumCard = styled(Box)({
         transform: 'translateY(-4px)',
         boxShadow: '0 12px 32px rgba(0, 0, 0, 0.12)',
     },
-});
+}));
 
-const StyledSelect = styled(Select)({
+const StyledSelect = styled(Select)(({ theme }) => ({
     '& .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'rgba(6, 169, 174, 0.2)',
+        borderColor: '#06A9AE',
     },
     '&:hover .MuiOutlinedInput-notchedOutline': {
-        borderColor: COLORS.primary,
+        borderColor: '#05969A',
     },
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-        borderColor: COLORS.primary,
+        borderColor: '#06A9AE',
     },
-});
+}));
 
 // Thêm styled component cho button
-const StyledButton = styled(Button)({
+const StyledButton = styled(Button)(({ theme }) => ({
     textTransform: 'none',
     borderRadius: '8px',
     padding: '8px 20px',
     fontSize: '0.95rem',
     fontWeight: 600,
     transition: 'all 0.2s ease',
-});
+    '&.MuiButton-contained': {
+        backgroundColor: '#06A9AE',
+        color: '#fff',
+        '&:hover': {
+            backgroundColor: '#05969A',
+        }
+    },
+    '&.MuiButton-outlined': {
+        borderColor: '#06A9AE',
+        color: '#06A9AE',
+        '&:hover': {
+            backgroundColor: 'rgba(6, 169, 174, 0.08)',
+            borderColor: '#05969A',
+        }
+    }
+}));
 
 // Thêm styled component cho InfoChip
-const InfoChip = styled(Chip)({
+const InfoChip = styled(Chip)(({ theme }) => ({
     margin: '4px 4px 4px 0',
     borderRadius: 12,
-    backgroundColor: 'rgba(6, 169, 174, 0.08)',
-    color: COLORS.primary,
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
+    color: '#06A9AE',
     '.MuiChip-icon': {
-        color: COLORS.primary,
+        color: '#06A9AE',
     }
-});
+}));
 
 const CurriculumAnalysis = ({ sidebarOpen }) => {
     const [curricula, setCurricula] = useState([]);
@@ -175,6 +173,8 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
     const [commentLoading, setCommentLoading] = useState({});
     const [commentSubmitting, setCommentSubmitting] = useState({});
     const [commentErrors, setCommentErrors] = useState({});
+
+    const theme = useTheme();
 
     // Helper function to get valid token and handle auth errors
     const getAuthConfig = () => {
@@ -252,8 +252,10 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
         } catch (err) {
             console.error('Lỗi khi lấy gradeNumber:', err);
             throw err;
+        } finally {
+            setLoading(false);
         }
-    }, []);
+    }, [theme.palette.text.secondary, theme.palette.error.main]);
 
     const fetchCurricula = useCallback(async () => {
         try {
@@ -294,7 +296,7 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
         } finally {
             setLoading(false);
         }
-    }, [getUserGradeNumber]);
+    }, [getUserGradeNumber, theme.palette.text.secondary, theme.palette.error.main]);
 
     const fetchModules = useCallback(async (gradeNumber) => {
         setModuleLoading(true);
@@ -493,7 +495,7 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
         return (
             <Box sx={{
                 minHeight: '100vh',
-                background: COLORS.background.default,
+                background: theme.palette.background.default,
                 position: 'absolute',
                 top: 0,
                 left: 0,
@@ -505,8 +507,8 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                 alignItems: 'center'
             }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                    <CircularProgress size={50} sx={{ color: COLORS.primary }} />
-                    <Typography variant="body1" sx={{ color: COLORS.text.secondary }}>
+                    <CircularProgress size={50} sx={{ color: theme.palette.primary.main }} />
+                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                         Đang tải dữ liệu chương trình...
                     </Typography>
                 </Box>
@@ -518,7 +520,7 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
         <Box sx={{
             width: 'calc(100% - 78px)',
             minHeight: '100vh',
-            background: COLORS.background.default,
+            background: theme.palette.background.default,
             position: 'fixed',
             top: 0,
             left: '78px',
@@ -531,16 +533,16 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
             <Box sx={{ mb: 4 }}>
                 <Typography variant="h4" sx={{
                     fontWeight: 700,
-                    color: COLORS.text.primary,
+                    color: theme.palette.text.primary,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
                     mb: 1,
                 }}>
-                    <SchoolIcon sx={{ color: COLORS.primary, fontSize: 32 }} />
+                    <SchoolIcon sx={{ color: '#06A9AE', fontSize: 32 }} />
                     Phân tích chương trình
                 </Typography>
-                <Typography variant="body1" sx={{ color: COLORS.text.secondary, ml: 5 }}>
+                <Typography variant="body1" sx={{ color: theme.palette.text.secondary, ml: 5 }}>
                     Xem và phân tích chi tiết chương trình giảng dạy
                 </Typography>
             </Box>
@@ -551,10 +553,10 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                 </Alert>
             ) : (
                 <Stack spacing={3}>
-                    {!error && curricula.length === 0 ? (
+                    {!error && curricula.length === 0 && !loading ? (
                         <DashboardCard>
                             <CardContent sx={{ py: 4, textAlign: 'center' }}>
-                                <Typography sx={{ color: COLORS.text.secondary }}>
+                                <Typography sx={{ color: theme.palette.text.secondary }}>
                                     Không có chương trình giảng dạy nào cho Khối {userGradeNumber}.
                                 </Typography>
                             </CardContent>
@@ -570,7 +572,7 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                     fontWeight: 700,
                                                     fontSize: '1.5rem',
                                                     mb: 2,
-                                                    color: COLORS.text.primary,
+                                                    color: theme.palette.text.primary,
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     gap: 1
@@ -580,9 +582,17 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                         icon={<CalendarIcon />}
                                                         label={curriculum.year}
                                                         size="small"
+                                                        sx={{
+                                                            bgcolor: theme.palette.background.secondary,
+                                                            color: theme.palette.text.primary
+                                                        }}
                                                     />
                                                 </Typography>
-                                                <Typography variant="body1" sx={{ color: COLORS.text.secondary, mb: 2, lineHeight: 1.6 }}>
+                                                <Typography variant="body1" sx={{
+                                                    color: theme.palette.text.secondary,
+                                                    mb: 2,
+                                                    lineHeight: 1.6
+                                                }}>
                                                     {curriculum.description}
                                                 </Typography>
                                                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -590,8 +600,8 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                         icon={<TimerIcon />}
                                                         label={`Tổng số tiết: ${curriculum.totalPeriods}`}
                                                         sx={{
-                                                            bgcolor: 'rgba(6, 169, 174, 0.08)',
-                                                            color: COLORS.primary,
+                                                            bgcolor: theme.palette.background.secondary,
+                                                            color: '#06A9AE',
                                                             fontWeight: 600,
                                                         }}
                                                     />
@@ -603,10 +613,10 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                 endIcon={expandedComments[curriculum.curriculumId] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                                 onClick={() => toggleComments(curriculum.curriculumId)}
                                                 sx={{
-                                                    borderColor: COLORS.primary,
-                                                    color: COLORS.primary,
+                                                    borderColor: '#06A9AE',
+                                                    color: '#06A9AE',
                                                     '&:hover': {
-                                                        borderColor: COLORS.primary,
+                                                        borderColor: '#05969A',
                                                         backgroundColor: 'rgba(6, 169, 174, 0.08)',
                                                     }
                                                 }}
@@ -617,10 +627,10 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
 
                                         {/* Comment Dropdown Section */}
                                         <Collapse in={expandedComments[curriculum.curriculumId]} timeout="auto" unmountOnExit>
-                                            <Box sx={{ mt: 3, pt: 3, borderTop: `2px solid ${COLORS.background.secondary}` }}>
+                                            <Box sx={{ mt: 3, pt: 3, borderTop: `2px solid ${theme.palette.background.secondary}` }}>
                                                 {/* Comment Form */}
                                                 <DashboardCard sx={{ mb: 3 }}>
-                                                    <CardHeader bgcolor={COLORS.primary}>
+                                                    <CardHeader bgcolor={'#06A9AE'}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                             <SendIcon sx={{ mr: 1 }} />
                                                             <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -641,10 +651,10 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                                 '& .MuiOutlinedInput-root': {
                                                                     borderRadius: 2,
                                                                     '&:hover fieldset': {
-                                                                        borderColor: COLORS.primary,
+                                                                        borderColor: '#06A9AE',
                                                                     },
                                                                     '&.Mui-focused fieldset': {
-                                                                        borderColor: COLORS.primary,
+                                                                        borderColor: '#06A9AE',
                                                                     },
                                                                 }
                                                             }}
@@ -663,13 +673,14 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                                 startIcon={<SendIcon />}
                                                                 onClick={() => submitComment(curriculum.curriculumId)}
                                                                 disabled={commentSubmitting[curriculum.curriculumId] || !newComments[curriculum.curriculumId]?.trim()}
-                                                                sx={{
-                                                                    bgcolor: COLORS.primary,
+                                                                sx={(theme) => ({
+                                                                    bgcolor: '#06A9AE',
+                                                                    color: '#fff',
                                                                     '&:hover': {
-                                                                        bgcolor: COLORS.primary,
+                                                                        bgcolor: '#05969A',
                                                                         opacity: 0.9
                                                                     }
-                                                                }}
+                                                                })}
                                                             >
                                                                 {commentSubmitting[curriculum.curriculumId] ? 'Đang gửi...' : 'Gửi nhận xét'}
                                                             </StyledButton>
@@ -679,7 +690,7 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
 
                                                 {/* Comments List */}
                                                 <DashboardCard>
-                                                    <CardHeader bgcolor={COLORS.primary}>
+                                                    <CardHeader bgcolor={'#06A9AE'}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                             <CommentIcon sx={{ mr: 1 }} />
                                                             <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -690,16 +701,16 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                     <CardContent sx={{ p: 3 }}>
                                                         {commentLoading[curriculum.curriculumId] ? (
                                                             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                                                                <CircularProgress size={30} sx={{ color: COLORS.primary }} />
+                                                                <CircularProgress size={30} sx={{ color: '#06A9AE' }} />
                                                             </Box>
                                                         ) : (comments[curriculum.curriculumId] || []).length === 0 ? (
                                                             <Box sx={{
                                                                 textAlign: 'center',
                                                                 p: 3,
-                                                                bgcolor: COLORS.background.secondary,
+                                                                bgcolor: theme.palette.background.secondary,
                                                                 borderRadius: 2
                                                             }}>
-                                                                <Typography sx={{ color: COLORS.text.secondary }}>
+                                                                <Typography sx={{ color: theme.palette.text.secondary }}>
                                                                     Chưa có nhận xét nào cho chương trình này
                                                                 </Typography>
                                                             </Box>
@@ -709,10 +720,10 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                                     <ListItem
                                                                         key={comment.curriculumFeedbackId || index}
                                                                         sx={{
-                                                                            bgcolor: index % 2 === 0 ? COLORS.background.secondary : 'transparent',
+                                                                            bgcolor: index % 2 === 0 ? theme.palette.background.secondary : 'transparent',
                                                                             borderRadius: 2,
                                                                             mb: 1,
-                                                                            border: `1px solid ${COLORS.background.secondary}`,
+                                                                            border: `1px solid ${theme.palette.background.secondary}`,
                                                                             alignItems: 'flex-start'
                                                                         }}
                                                                     >
@@ -723,12 +734,12 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                                                     sx={{
                                                                                         width: 40,
                                                                                         height: 40,
-                                                                                        border: `2px solid ${COLORS.primary}`
+                                                                                        border: (theme) => `2px solid ${theme.palette.primary.main}`
                                                                                     }}
                                                                                 />
                                                                             ) : (
                                                                                 <Avatar sx={{
-                                                                                    bgcolor: COLORS.primary,
+                                                                                    bgcolor: '#06A9AE',
                                                                                     width: 40,
                                                                                     height: 40
                                                                                 }}>
@@ -740,7 +751,7 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                                             primary={
                                                                                 <Box>
                                                                                     <Typography variant="body1" sx={{
-                                                                                        color: COLORS.text.primary,
+                                                                                        color: theme.palette.text.primary,
                                                                                         lineHeight: 1.6,
                                                                                         mb: 1
                                                                                     }}>
@@ -748,7 +759,7 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                                                     </Typography>
                                                                                     {comment.user && (
                                                                                         <Typography variant="caption" sx={{
-                                                                                            color: COLORS.primary,
+                                                                                            color: '#637381',
                                                                                             fontWeight: 600,
                                                                                             display: 'block',
                                                                                             mb: 0.5
@@ -758,7 +769,7 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                                                     )}
                                                                                     {comment.timeStamp && (
                                                                                         <Typography variant="caption" sx={{
-                                                                                            color: COLORS.text.secondary,
+                                                                                            color: '#637381',
                                                                                         }}>
                                                                                             {comment.timeStamp}
                                                                                         </Typography>
@@ -779,7 +790,7 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
 
                                         <Box sx={{ mt: 4 }}>
                                             <DashboardCard>
-                                                <CardHeader bgcolor={COLORS.primary}>
+                                                <CardHeader bgcolor={'#06A9AE'}>
                                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                         <AssignmentIcon sx={{ mr: 1 }} />
                                                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -790,10 +801,10 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                 <CardContent sx={{ p: 3 }}>
                                                     {selectedBook && (
                                                         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                            <MenuBookIcon sx={{ color: COLORS.secondary, mr: 1 }} />
+                                                            <MenuBookIcon sx={{ color: '#06A9AE', mr: 1 }} />
                                                             <Typography variant="h6" sx={{
                                                                 fontWeight: 600,
-                                                                color: COLORS.text.primary
+                                                                color: theme.palette.text.primary
                                                             }}>
                                                                 Sách giáo khoa: {selectedBook}
                                                             </Typography>
@@ -810,12 +821,12 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                             variant={currentSemester === 1 ? "contained" : "outlined"}
                                                             onClick={() => setCurrentSemester(1)}
                                                             sx={{
-                                                                bgcolor: currentSemester === 1 ? COLORS.primary : 'transparent',
-                                                                color: currentSemester === 1 ? '#fff' : COLORS.primary,
-                                                                borderColor: COLORS.primary,
+                                                                bgcolor: currentSemester === 1 ? '#06A9AE' : theme.palette.background.paper,
+                                                                color: currentSemester === 1 ? '#fff' : theme.palette.text.primary,
+                                                                borderColor: '#06A9AE',
                                                                 '&:hover': {
-                                                                    bgcolor: currentSemester === 1 ? COLORS.primary : 'rgba(6, 169, 174, 0.08)',
-                                                                    borderColor: COLORS.primary
+                                                                    bgcolor: currentSemester === 1 ? '#05969A' : theme.palette.background.secondary,
+                                                                    borderColor: '#05969A'
                                                                 }
                                                             }}
                                                         >
@@ -825,12 +836,12 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                             variant={currentSemester === 2 ? "contained" : "outlined"}
                                                             onClick={() => setCurrentSemester(2)}
                                                             sx={{
-                                                                bgcolor: currentSemester === 2 ? COLORS.primary : 'transparent',
-                                                                color: currentSemester === 2 ? '#fff' : COLORS.primary,
-                                                                borderColor: COLORS.primary,
+                                                                bgcolor: currentSemester === 2 ? '#06A9AE' : theme.palette.background.paper,
+                                                                color: currentSemester === 2 ? '#fff' : theme.palette.text.primary,
+                                                                borderColor: '#06A9AE',
                                                                 '&:hover': {
-                                                                    bgcolor: currentSemester === 2 ? COLORS.primary : 'rgba(6, 169, 174, 0.08)',
-                                                                    borderColor: COLORS.primary
+                                                                    bgcolor: currentSemester === 2 ? '#05969A' : theme.palette.background.secondary,
+                                                                    borderColor: '#05969A'
                                                                 }
                                                             }}
                                                         >
@@ -840,7 +851,7 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
 
                                                     {moduleLoading ? (
                                                         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                                                            <CircularProgress size={40} sx={{ color: COLORS.primary }} />
+                                                            <CircularProgress size={40} sx={{ color: '#06A9AE' }} />
                                                         </Box>
                                                     ) : moduleError ? (
                                                         <Alert severity="error" sx={{ m: 2, borderRadius: 2 }}>
@@ -877,13 +888,13 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                                                                 borderRadius: 1
                                                                                             }}>
                                                                                                 <AssignmentIcon sx={{
-                                                                                                    color: COLORS.primary,
+                                                                                                    color: '#06A9AE',
                                                                                                     mr: 1,
                                                                                                     fontSize: 20
                                                                                                 }} />
                                                                                                 <Typography variant="body1" sx={{
                                                                                                     fontWeight: 700,
-                                                                                                    color: COLORS.text.primary,
+                                                                                                    color: theme.palette.text.primary,
                                                                                                     fontSize: '1.1rem'
                                                                                                 }}>
                                                                                                     {module.name}
@@ -905,14 +916,14 @@ const CurriculumAnalysis = ({ sidebarOpen }) => {
                                                                                             </TableCell>
                                                                                             <TableCell align="left" sx={{ pl: 6 }}>
                                                                                                 <Typography variant="body2" sx={{
-                                                                                                    color: COLORS.text.secondary,
+                                                                                                    color: theme.palette.text.secondary,
                                                                                                     display: 'flex',
                                                                                                     alignItems: 'center'
                                                                                                 }}>
                                                                                                     <MenuBookIcon sx={{
                                                                                                         fontSize: 16,
                                                                                                         mr: 1,
-                                                                                                        color: COLORS.secondary,
+                                                                                                        color: '#06A9AE',
                                                                                                         opacity: 0.7
                                                                                                     }} />
                                                                                                     {lesson.name}

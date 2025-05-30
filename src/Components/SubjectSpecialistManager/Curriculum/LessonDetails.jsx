@@ -260,7 +260,7 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
 
                 console.log('Update Lesson API Response Code:', response.data.code);
 
-                if (response.data.code === 0 || response.data.code === 21) {
+                if (response.data.code === 0 || response.data.code === 22) {
                     console.log(`Lesson ${editedLessonData.lessonId} updated successfully.`);
                     // Refetch lessons for the current module to update the list
                     fetchLessons(moduleId); // Use fetchLessons prop
@@ -451,7 +451,13 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
                                      label="Tổng số tiết"
                                      type="number"
                                      value={newLessonData?.totalPeriods || ''}
-                                     onChange={(e) => setNewLessonData({ ...newLessonData, totalPeriods: parseInt(e.target.value, 10) || '' })}
+                                     onChange={(e) => {
+                                         const value = e.target.value;
+                                         const intValue = parseInt(value, 10);
+                                         if (value === '' || (intValue === 1 || intValue === 2)) {
+                                             setNewLessonData({ ...newLessonData, totalPeriods: value === '' ? '' : intValue });
+                                         }
+                                     }}
                                      variant="outlined"
                                      inputProps={{ min: 1 }}
                                  />
@@ -512,7 +518,13 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
                                          label="Tổng số tiết"
                                          type="number"
                                          value={editedLessonData.totalPeriods || ''}
-                                         onChange={(e) => setEditedLessonData({ ...editedLessonData, totalPeriods: parseInt(e.target.value, 10) || '' })}
+                                         onChange={(e) => {
+                                             const value = e.target.value;
+                                             const intValue = parseInt(value, 10);
+                                             if (value === '' || (intValue === 1 || intValue === 2)) {
+                                                 setEditedLessonData({ ...editedLessonData, totalPeriods: value === '' ? '' : intValue });
+                                             }
+                                         }}
                                          variant="outlined"
                                          inputProps={{ min: 0 }}
                                      />
