@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import {
     Box,
@@ -29,6 +29,8 @@ import {
     Grid,
     Collapse,
     TableRow,
+    ListItem,
+    ListItemText,
 } from '@mui/material';
 import {
     Edit as EditIcon,
@@ -47,13 +49,12 @@ import {
     Class as ClassIcon,
     DateRange as DateRangeIcon,
     Notes as NotesIcon,
+    Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-
-// API URLs
-const MODULE_API_URL = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules';
-const LESSON_API_URL = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons';
+import { useTheme } from '@mui/material/styles';
+import LessonDetails from './LessonDetails';
 
 // Color palette for consistency
 const COLORS = {
@@ -85,18 +86,6 @@ const DashboardCard = styled(Card)({
     height: '100%',
     background: COLORS.background.paper,
 });
-
-const CardHeader = styled(Box)(({ bgcolor }) => ({
-    padding: '16px',
-    background: bgcolor || COLORS.primary,
-    color: '#fff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-}));
-
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     fontWeight: 'bold',
     backgroundColor: COLORS.background.secondary,
@@ -139,8 +128,8 @@ const StyledButton = styled(Button)({
     }
 });
 
-const CurriculumCard = styled(Box)({
-    backgroundColor: COLORS.background.paper,
+const CurriculumCard = styled(Box)(({ theme }) => ({
+    backgroundColor: theme.palette.background.paper,
     borderRadius: 12,
     marginBottom: 16,
     padding: 20,
@@ -151,94 +140,265 @@ const CurriculumCard = styled(Box)({
         boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
     },
     cursor: 'pointer',
-});
+}));
 
-const InfoChip = styled(Chip)({
+const InfoChip = styled(Chip)(({ theme }) => ({
     margin: '4px 4px 4px 0',
     borderRadius: 12,
-    backgroundColor: 'rgba(6, 169, 174, 0.08)',
-    color: COLORS.primary,
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
+    color: theme.palette.mode === 'dark' ? COLORS.background.paper : COLORS.primary,
     '.MuiChip-icon': {
         color: COLORS.primary,
     }
-});
+}));
 
-const CurriculumFramework = ({ sidebarOpen }) => {
+const CurriculumFramework = () => {
+    const theme = useTheme();
     const [curricula, setCurricula] = useState([]);
-    const [editMode, setEditMode] = useState(null);
-    const [editedCurriculum, setEditedCurriculum] = useState({ name: '', description: '', totalPeriods: '', year: '' });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [userGradeNumber, setUserGradeNumber] = useState(null);
-
-    const [modules, setModules] = useState([]);
     const [currentSemester, setCurrentSemester] = useState(1);
-    const [modulePage, setModulePage] = useState(1);
-    const [moduleTotalPage, setModuleTotalPage] = useState(1);
-    const [moduleLoading, setModuleLoading] = useState(false);
-    const [moduleError, setModuleError] = useState(null);
-
-    // Giữ lại selectedModuleId để sử dụng cho edit module và add lesson
-    const [selectedModuleId, setSelectedModuleId] = useState(null);
+    const [modules, setModules] = useState([]);
+    const [selectedModule, setSelectedModule] = useState(null);
     const [moduleDetails, setModuleDetails] = useState(null);
-    const [lessons, setLessons] = useState([]);
-    const [detailLoading, setDetailLoading] = useState(false);
-    const [detailError, setDetailError] = useState(null);
-    const [editModuleMode, setEditModuleMode] = useState(false);
-    const [editedModule, setEditedModule] = useState({ name: '', book: '', semester: '', totalPeriods: '' });
-    const [editLessonMode, setEditLessonMode] = useState(null);
-    const [editedLessonName, setEditedLessonName] = useState('');
-    const [editedLessonPeriods, setEditedLessonPeriods] = useState('');
-    const [openAddLessonDialog, setOpenAddLessonDialog] = useState(false);
-    const [newLessonName, setNewLessonName] = useState('');
-    const [newLessonPeriods, setNewLessonPeriods] = useState('1');
-
-    // Thêm state cho lesson details
-    const [expandedLessonId, setExpandedLessonId] = useState(null);
-    const [lessonDetails, setLessonDetails] = useState({});
-    const [lessonDetailLoading, setLessonDetailLoading] = useState(false);
-    const [lessonDetailError, setLessonDetailError] = useState(null);
-
-    const [openAddModuleDialog, setOpenAddModuleDialog] = useState(false);
-    const [newModule, setNewModule] = useState({ name: '', book: '', semester: 1, totalPeriods: '' });
-
-    const [schoolYears, setSchoolYears] = useState([]);
-    const [grades, setGrades] = useState([]);
-    const [userGradeId, setUserGradeId] = useState(null);
-
-    const [editingCurriculum, setEditingCurriculum] = useState(null);
-
-    const [curriculumReloadKey, setCurriculumReloadKey] = useState(0);
-
-    // Thêm state cho lesson edit với các trường mới
-    const [editedLesson, setEditedLesson] = useState({
-        name: '',
-        totalPeriods: '',
-        lessonTypeId: '',
-        noteId: '',
-        weekId: '',
-        moduleId: ''
-    });
-
-    // State cho các dropdown options
-    const [lessonTypes, setLessonTypes] = useState([]);
-    const [notes, setNotes] = useState([]);
-    const [weeks, setWeeks] = useState([]);
-    const [optionsLoading, setOptionsLoading] = useState(false);
-
-    // Cập nhật thêm state cho lesson edit dialog
-    const [openEditLessonDialog, setOpenEditLessonDialog] = useState(false);
-
-    // Thêm state cho delete lesson
-    const [deleteLoading, setDeleteLoading] = useState(false);
-    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-    const [lessonToDelete, setLessonToDelete] = useState(null);
-
-    // Thêm state mới cho dialog edit module
-    const [openEditModuleDialog, setOpenEditModuleDialog] = useState(false);
-
-    const sidebarWidth = sidebarOpen ? 60 : 240;
+    const [openModuleDialog, setOpenModuleDialog] = useState(false);
     const navigate = useNavigate();
+
+    // State to manage selected semester
+    const [selectedSemester, setSelectedSemester] = useState(1);
+    
+    // State to manage expanded module rows
+    const [expandedModuleId, setExpandedModuleId] = useState(null);
+
+    // State for editing module details
+    const [isEditingModule, setIsEditingModule] = useState(false);
+    const [editableModuleData, setEditableModuleData] = useState(null);
+
+    // State for new module data
+    const [newModuleData, setNewModuleData] = useState(null);
+
+    // State for controlling the add module dialog
+    const [openAddModuleDialog, setOpenAddModuleDialog] = useState(false);
+
+    // State for controlling delete confirmation dialog
+    const [openDeleteConfirmDialog, setOpenDeleteConfirmDialog] = useState(false);
+    const [moduleToDelete, setModuleToDelete] = useState(null);
+
+    // Filter modules by selected semester
+    const modulesBySemester = useMemo(() => {
+        return modules.filter(module => module.semester === selectedSemester);
+    }, [modules, selectedSemester]);
+
+    const fetchModuleDetails = useCallback(async (moduleId) => {
+        try {
+            const response = await axios.get(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${moduleId}`
+            );
+            
+            if (response.data.code === 0) {
+                console.log('Module Details:', response.data.data);
+                setModuleDetails(response.data.data);
+                // setOpenModuleDialog(true); // Comment out or remove this line as we will use collapse for lessons
+            }
+        } catch (error) {
+            console.error('Error fetching module details:', error);
+        }
+    }, []);
+
+    // Function to fetch lessons for a module
+    const fetchLessons = useCallback(async (moduleId) => {
+        try {
+            const response = await axios.get(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${moduleId}/lessons`
+            );
+
+            if (response.data.code === 0 && response.data.data.lessons) {
+                console.log(`Lessons for module ${moduleId}:`, response.data.data.lessons);
+                // We need to update the modules state to include lessons for this module
+                setModules(prevModules => 
+                    prevModules.map(module =>
+                        module.moduleId === moduleId
+                            ? { ...module, lessons: response.data.data.lessons } // Add lessons to the module object
+                            : module
+                    )
+                );
+            } else if (response.data.code !== 0) {
+                 console.error(`Error fetching lessons for module ${moduleId}:`, response.data.message);
+            }
+        } catch (error) {
+            console.error(`Error fetching lessons for module ${moduleId}:`, error);
+        }
+    }, []);
+
+    const handleViewDetailsIconClick = useCallback(async (moduleId) => {
+        try {
+             const response = await axios.get(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${moduleId}`
+            );
+            
+            if (response.data.code === 0) {
+                console.log('Module Details from icon click:', response.data.data);
+                setSelectedModule(response.data.data); // Set selected module details
+                setModuleDetails(response.data.data);
+                setOpenModuleDialog(true); // Open the details dialog
+                 setIsEditingModule(false); // Ensure view mode when opening
+                 setEditableModuleData(null); // Clear editable data
+            } else {
+                console.error(`Error fetching module details from icon click:`, response.data.message);
+                alert(`Lỗi khi lấy chi tiết module: ${response.data.message}`);
+            }
+        } catch (error) {
+            console.error(`Error fetching module details from icon click:`, error);
+             alert(`Đã xảy ra lỗi khi lấy chi tiết module.`);
+        }
+    }, [setOpenModuleDialog]); // Added setOpenModuleDialog to dependencies
+
+    const handleModuleClick = (module) => {
+        // Toggle expanded state - row click now only handles expansion
+        if (expandedModuleId === module.moduleId) {
+            setExpandedModuleId(null); // Collapse the currently expanded row
+        } else {
+            setExpandedModuleId(module.moduleId); // Expand this row
+            // Fetch lessons if not already fetched for this module
+            if (!module.lessons) {
+                 fetchLessons(module.moduleId);
+            }
+        }
+        // Removed fetching details here, as it's now handled by icon click
+        // fetchModuleDetails(module.moduleId);
+    };
+
+    const handleCloseModuleDialog = () => {
+        setOpenModuleDialog(false);
+        setModuleDetails(null);
+        setSelectedModule(null); // Clear selected module
+         setIsEditingModule(false); // Reset to view mode
+         setEditableModuleData(null); // Clear editable data
+    };
+
+    const handleEditClick = () => {
+        setIsEditingModule(true);
+        setEditableModuleData(moduleDetails); // Initialize editable data with current details
+    };
+
+    const handleCancelClick = () => {
+        setIsEditingModule(false);
+        setEditableModuleData(null); // Discard changes
+    };
+
+    const handleSaveClick = async () => {
+        if (editableModuleData && editableModuleData.moduleId) {
+
+            const correspondingCurriculum = curricula.find(curr => 
+                 curr.name.includes(editableModuleData.curriculum)
+            );
+
+            if (!correspondingCurriculum) {
+                console.error('Could not find corresponding curriculum for module.', editableModuleData);
+                alert('Không tìm thấy chương trình tương ứng để cập nhật. Vui lòng kiểm tra dữ liệu module và danh sách chương trình.');
+                return; // Stop the save process if curriculum not found
+            }
+
+            // Construct the data to send to the API according to the correct structure
+            const dataToUpdate = {
+                name: editableModuleData.name,
+                desciption: editableModuleData.desciption || '', // Ensure description is not null
+                semester: parseInt(editableModuleData.semester, 10), // Ensure integer type
+                totalPeriods: parseInt(editableModuleData.totalPeriods, 10), // Ensure integer type
+                curriculumId: parseInt(correspondingCurriculum.curriculumId, 10), // Use the found curriculumId and ensure integer type
+                gradeId: parseInt(editableModuleData.gradeNumber, 10), // Ensure integer type
+                bookId: 1 // bookId is always 1
+            };
+
+            try {
+                const accessToken = localStorage.getItem('accessToken');
+                const response = await axios.put(
+                    `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${editableModuleData.moduleId}`,
+                    dataToUpdate,
+                    { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+
+                console.log('API Response Code:', response.data.code);
+
+                if (response.data.code === 0 || response.data.code === 22) {
+                    console.log(`Module ${editableModuleData.moduleId} updated successfully:`, response.data.data);
+                    // Update the modules state
+                     setModules(prevModules => 
+                         prevModules.map(module =>
+                             module.moduleId === editableModuleData.moduleId
+                                 ? { ...module, ...dataToUpdate, book: 'Cánh Diều' } // Merge updated data and ensure book name is correct
+                                 : module
+                         )
+                     );
+                    // Close dialog
+                    setOpenModuleDialog(false);
+                    // Reset editing state
+                    setIsEditingModule(false);
+                    setEditableModuleData(null);
+                } else {
+                    console.error(`Error updating module ${editableModuleData.moduleId}:`, response.data.message);
+                    alert(`Cập nhật module thất bại: ${response.data.message}`);
+                }
+            } catch (error) {
+                console.error(`Error updating module ${editableModuleData.moduleId}:`, error);
+                alert(`Đã xảy ra lỗi khi cập nhật module.`);
+            }
+        } else {
+            console.error('No module data to save.');
+            alert('Không có dữ liệu module để lưu.');
+        }
+    };
+
+    const fetchModules = useCallback(async (gradeNumber) => {
+        try {
+            const response = await axios.get(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades/${gradeNumber}/modules`
+            );
+            
+            if (response.data.code === 0 && response.data.data.modules) {
+                const fetchedModuleList = response.data.data.items || response.data.data.modules || []; // Ensure we get the list correctly
+
+                // Fetch details for each module to get semester information
+                const modulesWithDetails = await Promise.all(fetchedModuleList.map(async (module) => {
+                    try {
+                         const detailResponse = await axios.get(
+                            `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${module.moduleId}`
+                        );
+                        if (detailResponse.data.code === 0) {
+                            return detailResponse.data.data;
+                        } else {
+                            console.error(`Failed to fetch details for module ${module.moduleId}:`, detailResponse.data.message);
+                            return null; // Return null for modules that failed to fetch details
+                        }
+                    } catch (detailError) {
+                        console.error(`Error fetching details for module ${module.moduleId}:`, detailError);
+                        return null; // Return null for modules that caused an error
+                    }
+                }));
+
+                // Filter out null entries and sort by moduleId
+                const validModules = modulesWithDetails.filter(module => module !== null);
+                const sortedModules = validModules.sort((a, b) => a.moduleId - b.moduleId);
+
+                console.log('Modules sorted by moduleId and including semester:', sortedModules.map(module => ({
+                    moduleId: module.moduleId,
+                    name: module.name,
+                    semester: module.semester,
+                    totalPeriods: module.totalPeriods
+                })));
+                
+                setModules(sortedModules);
+            } else if (response.data.code !== 0) {
+                 console.error('Error fetching module list:', response.data.message);
+                 setModules([]); // Set modules to empty array on error
+            }
+
+        } catch (error) {
+            console.error('Error fetching modules list:', error);
+             setModules([]); // Set modules to empty array on error
+        }
+    }, []);
 
     const getUserGradeNumber = useCallback(async () => {
         try {
@@ -257,6 +417,8 @@ const CurriculumFramework = ({ sidebarOpen }) => {
             const gradeMatch = userData.grade.match(/\d+/);
             const gradeNumber = gradeMatch ? parseInt(gradeMatch[0], 10) : null;
 
+            console.log('Grade Number from getUserGradeNumber:', gradeNumber);
+
             if (!gradeNumber) {
                 throw new Error('Không thể xác định khối từ thông tin người dùng.');
             }
@@ -274,7 +436,13 @@ const CurriculumFramework = ({ sidebarOpen }) => {
             setError(null);
 
             const gradeNumber = await getUserGradeNumber();
+            console.log('Grade Number before setting state:', gradeNumber);
             setUserGradeNumber(gradeNumber);
+            
+            // Fetch modules after getting grade number
+            if (gradeNumber) {
+                await fetchModules(gradeNumber);
+            }
 
             const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums', { timeout: 10000 });
 
@@ -296,7 +464,6 @@ const CurriculumFramework = ({ sidebarOpen }) => {
             }
 
             setCurricula(sortedCurricula);
-            setCurriculumReloadKey(prev => prev + 1);
         } catch (error) {
             setError(
                 error.response
@@ -308,846 +475,14 @@ const CurriculumFramework = ({ sidebarOpen }) => {
         } finally {
             setLoading(false);
         }
-    }, [getUserGradeNumber]);
+    }, [getUserGradeNumber, fetchModules]);
 
     useEffect(() => {
         fetchCurricula();
     }, [fetchCurricula]);
 
-    const fetchModules = useCallback(async (gradeNumber) => {
-        setModuleLoading(true);
-        setModuleError(null);
-        try {
-            const accessToken = localStorage.getItem('accessToken');
-            const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-            const response = await axios.get(MODULE_API_URL, { ...config, timeout: 15000 });
-
-            if (response.data.code === 0) {
-                const allModules = response.data.data.items || [];
-                const filteredModules = allModules.filter((module) => module.gradeNumber === gradeNumber);
-
-                // Fetch lessons for each module
-                const modulesWithLessons = await Promise.all(
-                    filteredModules.map(async (module) => {
-                        try {
-                            const lessonsResponse = await axios.get(
-                                `${MODULE_API_URL}/${module.moduleId}/lessons`,
-                                config
-                            );
-                            if (lessonsResponse.data.code === 0) {
-                                return {
-                                    ...module,
-                                    lessons: lessonsResponse.data.data.lessons || []
-                                };
-                            }
-                            return module;
-                        } catch (error) {
-                            console.error(`Error fetching lessons for module ${module.moduleId}:`, error);
-                            return module;
-                        }
-                    })
-                );
-
-                setModules(modulesWithLessons);
-                const semesterModules = modulesWithLessons.filter((module) => module.semester === currentSemester);
-                setModuleTotalPage(Math.ceil(semesterModules.length / 10));
-            } else {
-                setModuleError('Không thể tải dữ liệu từ API: ' + response.data.message);
-            }
-        } catch (err) {
-            console.error('Error fetching modules:', err);
-            setModuleError('Đã xảy ra lỗi khi tải dữ liệu: ' + err.message);
-        } finally {
-            setModuleLoading(false);
-        }
-    }, [currentSemester]);
-
-    const fetchModuleDetails = useCallback(async (moduleId) => {
-        setDetailLoading(true);
-        setDetailError(null);
-        try {
-            const accessToken = localStorage.getItem('accessToken');
-            const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-            const response = await axios.get(`${MODULE_API_URL}/${moduleId}/lessons`, config);
-
-            if (response.data.code === 0) {
-                const moduleData = response.data.data;
-                setModuleDetails(moduleData);
-                setLessons(moduleData.lessons || []);
-                setEditedModule({
-                    name: moduleData.name || '',
-                    book: moduleData.book || '',
-                    semester: moduleData.semester || '',
-                    totalPeriods: moduleData.totalPeriods || '',
-                });
-            } else {
-                setDetailError('Không thể tải dữ liệu từ API: ' + response.data.message);
-            }
-        } catch (err) {
-            setDetailError('Đã xảy ra lỗi khi tải dữ liệu: ' + err.message);
-        } finally {
-            setDetailLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (userGradeNumber) {
-            fetchModules(userGradeNumber);
-        }
-    }, [userGradeNumber, fetchModules]);
-
-    useEffect(() => {
-        if (modules.length > 0) {
-            const semesterModules = modules.filter((module) => module.semester === currentSemester);
-            setModuleTotalPage(Math.ceil(semesterModules.length / 10));
-            setModulePage(1);
-        }
-    }, [currentSemester, modules]);
-
-    useEffect(() => {
-        if (selectedModuleId) {
-            fetchModuleDetails(selectedModuleId);
-        }
-    }, [selectedModuleId, fetchModuleDetails]);
-
-    useEffect(() => {
-        if (
-            editMode &&
-            editedCurriculum.year &&
-            (!editedCurriculum.schoolYearId || editedCurriculum.schoolYearId === "")
-            && schoolYears.length > 0
-        ) {
-            const found = schoolYears.find(y => y.year === editedCurriculum.year);
-            if (found) {
-                setEditedCurriculum(curr => ({
-                    ...curr,
-                    schoolYearId: found.schoolYearId
-                }));
-            }
-        }
-        // eslint-disable-next-line
-    }, [schoolYears, editMode]);
-
-    const handleEditClick = (e, curriculum) => {
-        e.stopPropagation();
-        fetchSchoolYears();
-        setEditMode(curriculum.curriculumId);
-        setEditedCurriculum({
-            name: "Toán lớp",
-            description: curriculum.description,
-            totalPeriods: String(curriculum.totalPeriods ?? ''),
-            year: curriculum.year,
-            schoolYearId: curriculum.schoolYearId ?? "",
-            gradeId: userGradeId
-        });
-        setEditingCurriculum(curriculum);
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        if (name === "totalPeriods") {
-            let cleaned = value.replace(/\D/g, "");
-            if (!cleaned || Number(cleaned) < 1) cleaned = "1";
-            setEditedCurriculum(curr => ({ ...curr, [name]: cleaned }));
-        } else if (name === "schoolYearId") {
-            const selectedYear = schoolYears.find(y => String(y.schoolYearId) === String(value));
-            setEditedCurriculum(curr => ({
-                ...curr,
-                schoolYearId: value,
-                year: selectedYear ? selectedYear.year : ""
-            }));
-        } else {
-            setEditedCurriculum(curr => ({ ...curr, [name]: value }));
-        }
-    };
-
-    const handleSaveEdit = async () => {
-        if (
-            !editedCurriculum.description.trim() ||
-            !String(editedCurriculum.totalPeriods).trim() ||
-            isNaN(Number(editedCurriculum.totalPeriods)) ||
-            Number(editedCurriculum.totalPeriods) <= 1 ||
-            !editedCurriculum.schoolYearId
-        ) {
-            alert('Vui lòng nhập đầy đủ thông tin và Tổng số tiết phải lớn hơn 1.');
-            return;
-        }
-
-        try {
-            const accessToken = localStorage.getItem('accessToken');
-            if (!accessToken) {
-                alert('Vui lòng đăng nhập để thực hiện thao tác này.');
-                return;
-            }
-
-            const updatedCurriculum = {
-                curriculumId: editMode,
-                name: "Toán lớp",
-                description: editedCurriculum.description,
-                totalPeriods: parseInt(editedCurriculum.totalPeriods, 10),
-                schoolYearId: parseInt(editedCurriculum.schoolYearId, 10),
-                gradeId: userGradeId
-            };
-
-            const response = await axios.put(
-                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums/${editMode}`,
-                updatedCurriculum,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            if (response.data.code === 0 || response.data.code === 22) {
-                // Đóng form edit ngay lập tức
-                setEditMode(null);
-                setEditingCurriculum(null);
-
-                // Reload curriculum ngay lập tức
-                await fetchCurricula();
-
-                // Tăng giá trị curriculumReloadKey để kích hoạt re-render
-                setCurriculumReloadKey(prev => prev + 1);
-
-                // Hiển thị thông báo sau khi đã reload xong
-                alert('Chương trình giảng dạy đã được cập nhật thành công!');
-            } else {
-                alert(response.data.message || 'Lỗi khi cập nhật dữ liệu');
-            }
-        } catch (error) {
-            console.error('Error updating curriculum:', error);
-            if (error.response) {
-                alert(`Lỗi: ${error.response.data?.message || 'Không thể cập nhật chương trình giảng dạy. Vui lòng thử lại.'}`);
-            } else {
-                alert('Không thể cập nhật chương trình giảng dạy. Vui lòng thử lại.');
-            }
-        }
-    };
-
-    const handleCancelEdit = () => {
-        setEditMode(null);
-        setEditingCurriculum(null);
-    };
-
-    const handleModulePageChange = (event, value) => setModulePage(value);
-
-    const handleSemesterChange = (semester) => setCurrentSemester(semester);
-
-    const handleEditModuleClick = (module, curriculumId) => {
-        setSelectedModuleId(module.moduleId);
-        setEditModuleMode(true);
-        setEditedModule({
-            name: module.name,
-            semester: module.semester,
-            totalPeriods: module.totalPeriods,
-            bookId: 1, // Mặc định bookId = 1
-            curriculumId: curriculumId, // curriculumId được truyền vào
-            gradeId: userGradeId // gradeId giống edit curriculum
-        });
-        setModuleDetails(module);
-        setOpenEditModuleDialog(true); // Thêm state mới cho dialog
-    };
-
-    const handleModuleInputChange = (e) => {
-        const { name, value } = e.target;
-        setEditedModule({ ...editedModule, [name]: value });
-    };
-
-    const handleSaveModuleEdit = async () => {
-        try {
-            const accessToken = localStorage.getItem('accessToken');
-            const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-            const updatedModule = {
-                name: editedModule.name,
-                semester: parseInt(editedModule.semester, 10),
-                totalPeriods: parseInt(editedModule.totalPeriods, 10),
-                bookId: 1, // Mặc định bookId = 1
-                curriculumId: editedModule.curriculumId,
-                gradeId: userGradeId
-            };
-
-            const response = await axios.put(`${MODULE_API_URL}/${selectedModuleId}`, updatedModule, config);
-
-            if (response.data.code !== 0 && response.data.code !== 22) {
-                throw new Error(response.data.message || 'Lỗi khi cập nhật dữ liệu');
-            }
-
-            // Fetch lại toàn bộ dữ liệu modules sau khi cập nhật
-            await fetchModules(userGradeNumber);
-            setEditModuleMode(false);
-            setOpenEditModuleDialog(false);
-            alert('Cập nhật module thành công!');
-        } catch (error) {
-            alert('Không thể cập nhật module. Vui lòng thử lại: ' + error.message);
-        }
-    };
-
-    const handleCancelModuleEdit = () => {
-        setOpenEditModuleDialog(false);
-        setEditModuleMode(false);
-        setEditedModule({
-            name: '',
-            semester: 1,
-            totalPeriods: '',
-            bookId: 1,
-            curriculumId: '',
-            gradeId: userGradeId
-        });
-    };
-
-    const handleCloseEditModuleDialog = () => {
-        setOpenEditModuleDialog(false);
-        setEditModuleMode(false);
-        setEditedModule({
-            name: '',
-            semester: 1,
-            totalPeriods: '',
-            bookId: 1,
-            curriculumId: '',
-            gradeId: userGradeId
-        });
-    };
-
-    const handleDeleteModule = async (moduleId) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa module này? Hành động này sẽ xóa tất cả bài học liên quan.')) {
-            try {
-                const accessToken = localStorage.getItem('accessToken');
-                const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-                console.log('Starting delete module request for moduleId:', moduleId);
-                console.log('Config:', config);
-
-                const response = await axios.delete(`${MODULE_API_URL}/${moduleId}`, config);
-
-                console.log('Delete module response:', response);
-                console.log('Response status:', response.status);
-                console.log('Response data:', response.data);
-                console.log('Response data code:', response.data.code);
-
-                if (response.data.code !== 0 && response.data.code !== 22) {
-                    console.error('API returned error code:', response.data.code);
-                    console.error('API error message:', response.data.message);
-                    throw new Error(response.data.message || 'Lỗi khi xóa module');
-                }
-
-                console.log('Delete module successful, fetching updated modules...');
-                // Fetch lại toàn bộ dữ liệu modules sau khi xóa
-                await fetchModules(userGradeNumber);
-                if (selectedModuleId === moduleId) {
-                    setSelectedModuleId(null);
-                    setLessons([]);
-                }
-                console.log('Module deleted successfully!');
-                alert('Xóa module thành công!');
-            } catch (error) {
-                console.error('Error deleting module:', error);
-                console.error('Error details:', {
-                    message: error.message,
-                    response: error.response,
-                    request: error.request,
-                    stack: error.stack
-                });
-
-                if (error.response) {
-                    console.error('Error response status:', error.response.status);
-                    console.error('Error response data:', error.response.data);
-                    console.error('Error response headers:', error.response.headers);
-                }
-
-                alert('Không thể xóa module. Vui lòng thử lại.');
-            }
-        }
-    };
-
-    const handleEditLessonClick = async (lesson) => {
-        try {
-            // Đảm bảo các options đã được load
-            if (lessonTypes.length === 0 || notes.length === 0 || weeks.length === 0) {
-                setOptionsLoading(true);
-                await Promise.all([
-                    fetchLessonTypes(),
-                    fetchNotes(),
-                    fetchWeeks()
-                ]);
-                setOptionsLoading(false);
-            }
-
-            // Tìm module mà lesson này thuộc về từ dữ liệu modules hiện tại
-            const parentModule = modules.find(module =>
-                module.lessons && module.lessons.some(l => l.lessonId === lesson.lessonId)
-            );
-
-            // Fetch chi tiết lesson từ API để có đầy đủ thông tin
-            const accessToken = localStorage.getItem('accessToken');
-            const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-            const response = await axios.get(
-                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lesson.lessonId}/info`,
-                config
-            );
-
-            if (response.data.code === 0) {
-                const lessonData = response.data.data;
-                console.log('Lesson data from API:', lessonData); // Debug log
-                console.log('Parent Module:', parentModule); // Debug log
-
-                // Map dữ liệu để lấy ID từ text/name
-                let lessonTypeId = '';
-                let noteId = '';
-                let weekId = '';
-
-                // Xử lý lessonTypeId
-                if (lessonData.lessonTypeId) {
-                    lessonTypeId = String(lessonData.lessonTypeId);
-                } else if (lessonData.lessonType && lessonTypes.length > 0) {
-                    const foundLessonType = lessonTypes.find(type =>
-                        type.lessonTypeName === lessonData.lessonType
-                    );
-                    if (foundLessonType) {
-                        lessonTypeId = String(foundLessonType.lessonTypeId);
-                    }
-                }
-
-                // Xử lý noteId
-                if (lessonData.noteId) {
-                    noteId = String(lessonData.noteId);
-                } else if (lessonData.note && notes.length > 0) {
-                    const foundNote = notes.find(note =>
-                        note.description === lessonData.note
-                    );
-                    if (foundNote) {
-                        noteId = String(foundNote.noteId);
-                    }
-                }
-
-                // Xử lý weekId
-                if (lessonData.weekId) {
-                    weekId = String(lessonData.weekId);
-                } else if (lessonData.week && weeks.length > 0) {
-                    const foundWeek = weeks.find(week =>
-                        week.weekNumber === lessonData.week
-                    );
-                    if (foundWeek) {
-                        weekId = String(foundWeek.weekId);
-                    }
-                }
-
-                // Lấy moduleId từ parent module hoặc từ API response
-                const moduleIdForLesson = parentModule
-                    ? String(parentModule.moduleId)
-                    : String(lessonData.moduleId || selectedModuleId || '');
-
-                console.log('Final moduleId for edit:', moduleIdForLesson); // Debug log
-
-                setEditLessonMode(lesson.lessonId);
-                setEditedLesson({
-                    name: lessonData.name || lesson.name,
-                    totalPeriods: String(lessonData.totalPeriods || lesson.totalPeriods || '1'),
-                    lessonTypeId: lessonTypeId,
-                    noteId: noteId,
-                    weekId: weekId,
-                    moduleId: moduleIdForLesson
-                });
-                setOpenEditLessonDialog(true);
-            } else {
-                // Fallback nếu không lấy được chi tiết
-                const moduleIdForLesson = parentModule
-                    ? String(parentModule.moduleId)
-                    : String(selectedModuleId || '');
-
-                setEditLessonMode(lesson.lessonId);
-                setEditedLesson({
-                    name: lesson.name,
-                    totalPeriods: String(lesson.totalPeriods || '1'),
-                    lessonTypeId: '',
-                    noteId: '',
-                    weekId: '',
-                    moduleId: moduleIdForLesson
-                });
-                setOpenEditLessonDialog(true);
-            }
-        } catch (error) {
-            console.error('Error fetching lesson details for edit:', error);
-
-            // Tìm module mà lesson này thuộc về trong trường hợp lỗi
-            const parentModule = modules.find(module =>
-                module.lessons && module.lessons.some(l => l.lessonId === lesson.lessonId)
-            );
-
-            const moduleIdForLesson = parentModule
-                ? String(parentModule.moduleId)
-                : String(selectedModuleId || '');
-
-            // Fallback nếu có lỗi
-            setEditLessonMode(lesson.lessonId);
-            setEditedLesson({
-                name: lesson.name,
-                totalPeriods: String(lesson.totalPeriods || '1'),
-                lessonTypeId: '',
-                noteId: '',
-                weekId: '',
-                moduleId: moduleIdForLesson
-            });
-            setOpenEditLessonDialog(true);
-        }
-    };
-
-    const handleEditedLessonInputChange = (e) => {
-        const { name, value } = e.target;
-        setEditedLesson(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const handleCloseEditLessonDialog = () => {
-        setOpenEditLessonDialog(false);
-        setEditLessonMode(null);
-        setEditedLesson({
-            name: '',
-            totalPeriods: '',
-            lessonTypeId: '',
-            noteId: '',
-            weekId: '',
-            moduleId: ''
-        });
-    };
-
-    const handleSaveLessonEdit = async (lessonId) => {
-        if (!editedLesson.name.trim() || !editedLesson.totalPeriods || isNaN(Number(editedLesson.totalPeriods)) || Number(editedLesson.totalPeriods) < 1) {
-            alert('Vui lòng nhập đầy đủ thông tin và số tiết phải lớn hơn 0');
-            return;
-        }
-
-        try {
-            const accessToken = localStorage.getItem('accessToken');
-            const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-            const updatedLesson = {
-                name: editedLesson.name.trim(),
-                moduleId: Number(editedLesson.moduleId || selectedModuleId),
-                totalPeriods: Number(editedLesson.totalPeriods),
-                lessonTypeId: editedLesson.lessonTypeId ? Number(editedLesson.lessonTypeId) : undefined,
-                noteId: editedLesson.noteId ? Number(editedLesson.noteId) : undefined,
-                weekId: editedLesson.weekId ? Number(editedLesson.weekId) : undefined,
-            };
-
-            // Loại bỏ các field undefined
-            Object.keys(updatedLesson).forEach(key =>
-                updatedLesson[key] === undefined && delete updatedLesson[key]
-            );
-
-            const response = await axios.put(`${LESSON_API_URL}/${lessonId}`, updatedLesson, config);
-
-            if (response.data.code !== 0 && response.data.code !== 22) {
-                throw new Error(response.data.message || 'Lỗi khi cập nhật bài học');
-            }
-
-            // Fetch lại toàn bộ dữ liệu modules sau khi cập nhật bài học
-            await fetchModules(userGradeNumber);
-
-            // Nếu đang xem chi tiết module, fetch lại module details
-            if (selectedModuleId) {
-                await fetchModuleDetails(selectedModuleId);
-            }
-
-            // Clear lesson details cache để force reload khi expand
-            setLessonDetails(prev => {
-                const updated = { ...prev };
-                delete updated[lessonId];
-                return updated;
-            });
-
-            // Reset expanded lesson nếu lesson đang được expand
-            if (expandedLessonId === lessonId) {
-                setExpandedLessonId(null);
-            }
-
-            // Đóng dialog và reset state
-            handleCloseEditLessonDialog();
-
-            alert('Cập nhật bài học thành công!');
-        } catch (error) {
-            if (error.response && error.response.data && error.response.data.message) {
-                alert('Lỗi: ' + error.response.data.message);
-            } else {
-                alert('Không thể cập nhật bài học. Vui lòng thử lại.');
-            }
-            console.error('Error updating lesson:', error);
-        }
-    };
-
-    const handleDeleteLesson = (lesson, moduleId) => {
-        handleOpenDeleteDialog(lesson, moduleId);
-    };
-
-    const handleOpenDeleteDialog = (lesson, moduleId) => {
-        setLessonToDelete({ ...lesson, moduleId });
-        setOpenDeleteDialog(true);
-    };
-
-    const handleCloseDeleteDialog = () => {
-        setOpenDeleteDialog(false);
-        setLessonToDelete(null);
-    };
-
-    const handleConfirmDeleteLesson = async () => {
-        if (!lessonToDelete) return;
-
-        setDeleteLoading(true);
-        try {
-            const accessToken = localStorage.getItem('accessToken');
-            if (!accessToken) {
-                alert('Vui lòng đăng nhập để thực hiện thao tác này.');
-                return;
-            }
-
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                }
-            };
-
-            console.log(`Deleting lesson with ID: ${lessonToDelete.lessonId}`); // Debug log
-
-            const response = await axios.delete(`${LESSON_API_URL}/${lessonToDelete.lessonId}`, config);
-
-            console.log('Delete response:', response.data); // Debug log
-
-            if (response.data.code !== 0 && response.data.code !== 22) {
-                throw new Error(response.data.message || 'Lỗi khi xóa bài học');
-            }
-
-            // Fetch lại toàn bộ dữ liệu modules sau khi xóa bài học
-            await fetchModules(userGradeNumber);
-
-            // Đóng dialog
-            handleCloseDeleteDialog();
-
-            // Hiển thị thông báo thành công
-            alert('Xóa bài học thành công!');
-
-        } catch (error) {
-            console.error('Error deleting lesson:', error);
-
-            let errorMessage = 'Không thể xóa bài học. Vui lòng thử lại.';
-
-            if (error.response) {
-                // Server responded with error status
-                const { status, data } = error.response;
-                if (status === 401) {
-                    errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
-                } else if (status === 404) {
-                    errorMessage = 'Bài học không tồn tại hoặc đã bị xóa.';
-                } else if (status === 403) {
-                    errorMessage = 'Bạn không có quyền xóa bài học này.';
-                } else if (data && data.message) {
-                    errorMessage = `Lỗi: ${data.message}`;
-                }
-            } else if (error.request) {
-                // Network error
-                errorMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet.';
-            }
-
-            alert(errorMessage);
-        } finally {
-            setDeleteLoading(false);
-        }
-    };
-
-    // Cập nhật state cho new lesson với đầy đủ các trường
-    const [newLesson, setNewLesson] = useState({
-        name: '',
-        description: '',
-        totalPeriods: '1',
-        lessonTypeId: '',
-        noteId: '',
-        weekId: '',
-        moduleId: ''
-    });
-
-    const handleOpenAddLessonDialog = async () => {
-        try {
-            // Đảm bảo các options đã được load
-            if (lessonTypes.length === 0 || notes.length === 0 || weeks.length === 0) {
-                setOptionsLoading(true);
-                await Promise.all([
-                    fetchLessonTypes(),
-                    fetchNotes(),
-                    fetchWeeks()
-                ]);
-                setOptionsLoading(false);
-            }
-
-            setOpenAddLessonDialog(true);
-            setNewLesson({
-                name: '',
-                description: '',
-                totalPeriods: '1',
-                lessonTypeId: '',
-                noteId: '',
-                weekId: '',
-                moduleId: String(selectedModuleId)
-            });
-        } catch (error) {
-            console.error('Error loading options for add lesson:', error);
-            setOpenAddLessonDialog(true);
-            setNewLesson({
-                name: '',
-                description: '',
-                totalPeriods: '1',
-                lessonTypeId: '',
-                noteId: '',
-                weekId: '',
-                moduleId: String(selectedModuleId)
-            });
-        }
-    };
-
-    const handleCloseAddLessonDialog = () => {
-        setOpenAddLessonDialog(false);
-        setNewLesson({
-            name: '',
-            description: '',
-            totalPeriods: '1',
-            lessonTypeId: '',
-            noteId: '',
-            weekId: '',
-            moduleId: ''
-        });
-    };
-
-    const handleNewLessonInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewLesson(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const handleAddLesson = async () => {
-        if (!newLesson.name.trim() || !newLesson.totalPeriods || !newLesson.moduleId || !newLesson.lessonTypeId || !newLesson.noteId || !newLesson.weekId) {
-            alert('Vui lòng nhập đầy đủ thông tin bắt buộc (Tên bài học, Số tiết, Module, Loại bài học, Ghi chú, Tuần)');
-            return;
-        }
-
-        if (isNaN(Number(newLesson.totalPeriods)) || Number(newLesson.totalPeriods) < 1) {
-            alert('Số tiết phải là số nguyên lớn hơn 0');
-            return;
-        }
-
-        try {
-            const accessToken = localStorage.getItem('accessToken');
-            const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-            const lessonData = {
-                name: newLesson.name.trim(),
-                description: newLesson.description.trim(),
-                totalPeriods: Number(newLesson.totalPeriods),
-                moduleId: Number(newLesson.moduleId),
-                lessonTypeId: Number(newLesson.lessonTypeId),
-                noteId: Number(newLesson.noteId),
-                weekId: Number(newLesson.weekId),
-            };
-
-            console.log('Sending lesson data:', lessonData); // Debug log
-
-            const response = await axios.post(LESSON_API_URL, lessonData, config);
-
-            console.log('Full API response:', response.data); // Debug log để xem response đầy đủ
-
-            // Cải thiện logic xử lý response
-            const { data } = response;
-            const isSuccess = (
-                data.code === 0 ||
-                data.code === 22 ||
-                data.message === "Created successfully!" ||
-                response.status === 200 ||
-                response.status === 201
-            );
-
-            if (!isSuccess) {
-                throw new Error(data.message || 'Lỗi khi thêm bài học');
-            }
-
-            // Fetch lại toàn bộ dữ liệu modules sau khi thêm bài học
-            await fetchModules(userGradeNumber);
-            handleCloseAddLessonDialog();
-            alert('Thêm bài học thành công!');
-
-        } catch (error) {
-            console.error('Error adding lesson:', error);
-
-            // Kiểm tra xem có phải là success response bị nhầm lẫn không
-            if (error.message && error.message.includes("Created successfully")) {
-                // Đây thực ra là success, không phải error
-                await fetchModules(userGradeNumber);
-                handleCloseAddLessonDialog();
-                alert('Thêm bài học thành công!');
-                return;
-            }
-
-            // Xử lý error thực sự
-            if (error.response && error.response.data && error.response.data.message) {
-                alert('Lỗi: ' + error.response.data.message);
-            } else {
-                alert('Không thể thêm bài học. Vui lòng thử lại.');
-            }
-        }
-    };
-
-    const handleOpenAddModuleDialog = () => {
-        setOpenAddModuleDialog(true);
-        setNewModule({
-            name: '',
-            book: modules[0]?.book || '',
-            semester: currentSemester,
-            totalPeriods: ''
-        });
-    };
-
-    const handleCloseAddModuleDialog = () => {
-        setOpenAddModuleDialog(false);
-        setNewModule({ name: '', book: '', semester: currentSemester, totalPeriods: '' });
-    };
-
-    const handleNewModuleInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewModule({ ...newModule, [name]: value });
-    };
-
-    const handleAddModule = async () => {
-        try {
-            const accessToken = localStorage.getItem('accessToken');
-            const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-            const moduleToAdd = {
-                name: newModule.name,
-                book: newModule.book,
-                semester: parseInt(newModule.semester, 10),
-                totalPeriods: parseInt(newModule.totalPeriods, 10),
-                gradeNumber: userGradeNumber,
-            };
-
-            const response = await axios.post(MODULE_API_URL, moduleToAdd, config);
-
-            if (response.data.code !== 0 && response.data.code !== 22) {
-                throw new Error(response.data.message || 'Lỗi khi thêm module');
-            }
-
-            // Fetch lại toàn bộ dữ liệu modules sau khi thêm
-            await fetchModules(userGradeNumber);
-            handleCloseAddModuleDialog();
-            alert('Thêm module thành công!');
-        } catch (error) {
-            alert('Không thể thêm module. Vui lòng thử lại: ' + error.message);
-        }
+    const handleSemesterChange = (semester) => {
+        setSelectedSemester(semester);
     };
 
     const handleViewCurriculumDetail = (curriculumId) => {
@@ -1158,131 +493,95 @@ const CurriculumFramework = ({ sidebarOpen }) => {
         }
     };
 
-    const bookName = modules.length > 0 ? modules[0].book : '';
+    const handleOpenAddModuleDialog = () => {
+        setOpenAddModuleDialog(true);
+        // Initialize new module data with default values if needed
+        setNewModuleData({
+            name: '',
+            desciption: '',
+            semester: selectedSemester, // Default to currently selected semester
+            totalPeriods: 0,
+            curriculumId: curricula.length > 0 ? curricula[0].curriculumId : 0, // Default to first curriculum or 0
+            gradeId: userGradeNumber || 0, // Default to user's grade or 0
+            bookId: 1 // Default bookId
+        });
+    };
 
-    const fetchSchoolYears = useCallback(async () => {
-        try {
-            const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/school-years');
-            if (response.data.code === 0) {
-                setSchoolYears(response.data.data);
+    const handleCloseAddModuleDialog = () => {
+        setOpenAddModuleDialog(false);
+        setNewModuleData(null); // Clear form data on close
+    };
+
+    const handleSaveNewModule = async () => {
+        if (newModuleData) {
+            try {
+                const accessToken = localStorage.getItem('accessToken');
+                const response = await axios.post(
+                    'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules',
+                    newModuleData,
+                    { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+
+                console.log('API Response Code:', response.data.code);
+
+                if (response.data.code === 0 || response.data.code === 21) {
+                    console.log(`Module created successfully:`, response.data.data);
+                    // Update the modules state
+                    setModules(prevModules => [...prevModules, response.data.data]);
+                    // Close dialog
+                    setOpenAddModuleDialog(false);
+                    // Reset new module data
+                    setNewModuleData(null);
+                } else {
+                    console.error(`Error creating module ${newModuleData.moduleId}:`, response.data.message);
+                    alert(`Tạo mới module thất bại: ${response.data.message}`);
+                }
+            } catch (error) {
+                console.error(`Error creating module ${newModuleData.moduleId}:`, error);
+                alert(`Đã xảy ra lỗi khi tạo mới module.`);
             }
-        } catch (error) {
-            setSchoolYears([]);
+        } else {
+            console.error('No module data to save.');
+            alert('Không có dữ liệu module để lưu.');
         }
-    }, []);
+    };
 
-    const fetchGrades = useCallback(async () => {
-        try {
-            const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades');
-            if (response.data.code === 0) {
-                setGrades(response.data.data);
-            }
-        } catch (error) {
-            setGrades([]);
-        }
-    }, []);
+    // Handler for opening delete confirmation dialog
+    const handleOpenDeleteConfirmDialog = (module) => {
+        setModuleToDelete(module);
+        setOpenDeleteConfirmDialog(true);
+    };
 
-    useEffect(() => {
-        fetchGrades();
-    }, [fetchGrades]);
+    // Handler for closing delete confirmation dialog
+    const handleCloseDeleteConfirmDialog = () => {
+        setModuleToDelete(null);
+        setOpenDeleteConfirmDialog(false);
+    };
 
-    useEffect(() => {
-        if (grades.length > 0 && userGradeNumber) {
-            const found = grades.find(g => g.gradeNumber === userGradeNumber);
-            if (found) setUserGradeId(found.gradeId);
-        }
-    }, [grades, userGradeNumber]);
-
-    // Fetch lesson types từ API
-    const fetchLessonTypes = useCallback(async () => {
-        try {
-            const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-types');
-            if (response.data.code === 0) {
-                setLessonTypes(response.data.data);
-            }
-        } catch (error) {
-            console.error('Error fetching lesson types:', error);
-        }
-    }, []);
-
-    // Fetch notes từ API
-    const fetchNotes = useCallback(async () => {
-        try {
-            const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/notes');
-            if (response.data.code === 0) {
-                setNotes(response.data.data);
-            }
-        } catch (error) {
-            console.error('Error fetching notes:', error);
-        }
-    }, []);
-
-    // Fetch weeks từ API
-    const fetchWeeks = useCallback(async () => {
-        try {
-            const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/weeks');
-            if (response.data.code === 0) {
-                setWeeks(response.data.data);
-            }
-        } catch (error) {
-            console.error('Error fetching weeks:', error);
-        }
-    }, []);
-
-    // Fetch tất cả options khi component mount
-    useEffect(() => {
-        const fetchAllOptions = async () => {
-            setOptionsLoading(true);
-            await Promise.all([
-                fetchLessonTypes(),
-                fetchNotes(),
-                fetchWeeks()
-            ]);
-            setOptionsLoading(false);
-        };
-        fetchAllOptions();
-    }, [fetchLessonTypes, fetchNotes, fetchWeeks]);
-
-    // Thêm function để fetch lesson details
-    const fetchLessonDetails = useCallback(async (lessonId) => {
-        if (lessonDetails[lessonId]) {
-            return;
-        }
-
-        setLessonDetailLoading(true);
-        setLessonDetailError(null);
+    // Handler for deleting a module
+    const handleDeleteModule = async (moduleId) => {
         try {
             const accessToken = localStorage.getItem('accessToken');
-            const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-            const response = await axios.get(
-                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}/info`,
-                config
+            const response = await axios.delete(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${moduleId}`,
+                { headers: { Authorization: `Bearer ${accessToken}` } }
             );
 
-            if (response.data.code === 0) {
-                setLessonDetails(prev => ({
-                    ...prev,
-                    [lessonId]: response.data.data
-                }));
-            } else {
-                setLessonDetailError('Không thể tải thông tin chi tiết bài học: ' + response.data.message);
-            }
-        } catch (err) {
-            console.error('Error fetching lesson details:', err);
-            setLessonDetailError('Đã xảy ra lỗi khi tải thông tin chi tiết bài học: ' + err.message);
-        } finally {
-            setLessonDetailLoading(false);
-        }
-    }, [lessonDetails]);
+            console.log('Delete API Response Code:', response.data.code);
 
-    // Thêm function để handle click vào lesson
-    const handleLessonClick = async (lessonId) => {
-        if (expandedLessonId === lessonId) {
-            setExpandedLessonId(null);
-        } else {
-            setExpandedLessonId(lessonId);
-            await fetchLessonDetails(lessonId);
+            if (response.data.code === 0 || response.data.code === 31) {
+                console.log(`Module ${moduleId} deleted successfully.`);
+                // Update the modules state by removing the deleted module
+                setModules(prevModules => prevModules.filter(module => module.moduleId !== moduleId));
+                // Close the delete confirmation dialog
+                handleCloseDeleteConfirmDialog();
+            } else {
+                console.error(`Error deleting module ${moduleId}:`, response.data.message);
+                alert(`Xóa module thất bại: ${response.data.message}`);
+            }
+        } catch (error) {
+            console.error(`Error deleting module ${moduleId}:`, error);
+            alert(`Đã xảy ra lỗi khi xóa module.`);
         }
     };
 
@@ -1314,7 +613,7 @@ const CurriculumFramework = ({ sidebarOpen }) => {
     return (
         <Box sx={{
             minHeight: '100vh',
-            background: COLORS.background.default,
+            bgcolor: 'background.default',
             position: 'absolute',
             top: 0,
             left: 0,
@@ -1325,8 +624,6 @@ const CurriculumFramework = ({ sidebarOpen }) => {
         }}>
             <Box sx={{
                 py: 6,
-                ml: `${sidebarWidth}px`,
-                transition: 'margin-left 0.3s ease',
                 px: { xs: 3, md: 5 }
             }}>
                 <Container maxWidth="lg">
@@ -1336,13 +633,13 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                             <Box>
                                 <Typography variant="h4" sx={{
                                     fontWeight: 700,
-                                    color: COLORS.text.primary,
+                                    color: theme.palette.text.primary,
                                     lineHeight: 1.2,
                                 }}>
                                     Khung chương trình
                                 </Typography>
                                 <Typography variant="subtitle1" sx={{
-                                    color: COLORS.text.secondary,
+                                    color: theme.palette.text.secondary,
                                     mt: 0.5,
                                 }}>
                                     {userGradeNumber ? `Quản lý chương trình giảng dạy Khối ${userGradeNumber}` : 'Vui lòng đăng nhập để xem chương trình giảng dạy'}
@@ -1355,1953 +652,604 @@ const CurriculumFramework = ({ sidebarOpen }) => {
                         <Alert severity="error" sx={{ my: 2 }}>{error}</Alert>
                     )}
 
-                    {!error && curricula.length === 0 ? (
-                        <DashboardCard>
-                            <CardContent sx={{ py: 4, textAlign: 'center' }}>
-                                <Typography sx={{ color: COLORS.text.secondary }}>
-                                    Không có chương trình giảng dạy nào cho Khối {userGradeNumber}.
+                    {/* Module and Curriculum Display */}
+                    {!error && userGradeNumber && ( // Only show if no error and grade number is available
+                        <Box>
+                            {/* Existing curricula list code - Keeping this for now as it seems separate from modules */}
+                             {curricula.length > 0 ? (
+                                <Box sx={{ mt: 4 }}>
+                                     <Typography variant="h6" sx={{
+                                        mb: 2,
+                                        color: theme.palette.text.primary,
+                                        fontWeight: 600
+                                     }}>
+                                        Khung chương trình chi tiết
                                 </Typography>
-                            </CardContent>
-                        </DashboardCard>
-                    ) : (
-                        <List key={curriculumReloadKey} sx={{ bgcolor: 'transparent', p: 0 }}>
+                        <List sx={{ bgcolor: 'transparent', p: 0 }}>
                             {curricula.map((curriculum) => (
                                 <Box key={curriculum.curriculumId}>
                                     <CurriculumCard>
-                                        {String(editMode) === String(curriculum.curriculumId) ? (
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                                             <Box>
-                                                <Stack spacing={2}>
-                                                    <TextField
-                                                        label="Mô tả"
-                                                        name="description"
-                                                        value={editedCurriculum.description}
-                                                        onChange={handleInputChange}
-                                                        fullWidth
-                                                        multiline
-                                                        rows={3}
-                                                        variant="outlined"
-                                                    />
-                                                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                                                        <TextField
-                                                            label="Tổng số tiết cả năm"
-                                                            name="totalPeriods"
-                                                            value={editedCurriculum.totalPeriods ?? ''}
-                                                            onChange={handleInputChange}
-                                                            fullWidth
-                                                            type="text"
-                                                            inputProps={{
-                                                                min: 1,
-                                                                inputMode: "numeric",
-                                                                pattern: "[0-9]*"
-                                                            }}
-                                                            helperText="Chỉ nhập số nguyên lớn hơn 1"
-                                                            variant="outlined"
-                                                        />
-                                                        <TextField
-                                                            select
-                                                            label="Năm học"
-                                                            name="schoolYearId"
-                                                            value={editedCurriculum.schoolYearId ?? ""}
-                                                            onChange={handleInputChange}
-                                                            fullWidth
-                                                            required
-                                                            variant="outlined"
-                                                        >
-                                                            {schoolYears.map((year) => (
-                                                                <MenuItem key={year.schoolYearId} value={year.schoolYearId}>
-                                                                    {year.year}
-                                                                </MenuItem>
-                                                            ))}
-                                                        </TextField>
-                                                    </Stack>
-                                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
-                                                        <StyledButton
-                                                            onClick={handleSaveEdit}
-                                                            variant="contained"
-                                                            color="primary"
-                                                            startIcon={<CheckIcon />}
-                                                            disabled={
-                                                                !editedCurriculum.name.trim() ||
-                                                                !editedCurriculum.description.trim() ||
-                                                                !String(editedCurriculum.totalPeriods).trim() ||
-                                                                isNaN(Number(editedCurriculum.totalPeriods)) ||
-                                                                Number(editedCurriculum.totalPeriods) <= 1 ||
-                                                                !editedCurriculum.schoolYearId
-                                                            }
-                                                        >
-                                                            Lưu thay đổi
-                                                        </StyledButton>
-                                                        <StyledButton
-                                                            onClick={handleCancelEdit}
-                                                            variant="outlined"
-                                                            color="secondary"
-                                                            startIcon={<CloseIcon />}
-                                                        >
-                                                            Hủy
-                                                        </StyledButton>
-                                                    </Box>
-                                                </Stack>
+                                                            <Typography sx={{
+                                                                fontWeight: 600,
+                                                                fontSize: '1.25rem',
+                                                                mb: 1.5,
+                                                                color: theme.palette.text.primary
+                                                             }}>
+                                                    {curriculum.name} ({curriculum.year})
+                                                </Typography>
+                                                            <Typography variant="body2" sx={{
+                                                                color: theme.palette.text.secondary,
+                                                                mb: 1,
+                                                                lineHeight: 1.6
+                                                             }}>
+                                                    {curriculum.description}
+                                                </Typography>
+                                                            <Typography variant="body2" sx={{
+                                                                color: theme.palette.text.secondary,
+                                                                lineHeight: 1.6
+                                                             }}>
+                                                    Tổng số tiết cả năm: {curriculum.totalPeriods}
+                                                </Typography>
                                             </Box>
-                                        ) : (
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                                                <Box>
-                                                    <Typography sx={{ fontWeight: 600, fontSize: '1.25rem', mb: 1.5, color: COLORS.text.primary }}>
-                                                        {curriculum.name} ({curriculum.year})
-                                                    </Typography>
-                                                    <Typography variant="body2" sx={{ color: COLORS.text.secondary, mb: 1, lineHeight: 1.6 }}>
-                                                        {curriculum.description}
-                                                    </Typography>
-                                                    <Typography variant="body2" sx={{ color: COLORS.text.secondary, lineHeight: 1.6 }}>
-                                                        Tổng số tiết cả năm: {curriculum.totalPeriods}
-                                                    </Typography>
-                                                </Box>
-                                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                                    <IconButton
-                                                        onClick={(e) => { e.stopPropagation(); handleEditClick(e, curriculum); }}
-                                                        sx={{
-                                                            bgcolor: 'rgba(6, 169, 174, 0.08)',
-                                                            '&:hover': { bgcolor: 'rgba(6, 169, 174, 0.15)' },
-                                                            borderRadius: '8px',
-                                                            p: 1.5
-                                                        }}
-                                                    >
-                                                        <EditIcon sx={{ color: COLORS.primary }} />
-                                                    </IconButton>
-                                                </Box>
-                                            </Box>
-                                        )}
-                                    </CurriculumCard>
-
-                                    {userGradeNumber && (
-                                        <Box sx={{ ml: 4, mb: 4 }}>
-                                            {bookName && (
-                                                <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <MenuBookIcon sx={{ color: COLORS.secondary, mr: 1 }} />
-                                                    <Typography variant="h6" sx={{
-                                                        fontWeight: 600,
-                                                        color: COLORS.text.primary
-                                                    }}>
-                                                        Sách giáo khoa: {bookName}
-                                                    </Typography>
-                                                </Box>
-                                            )}
-
-                                            <Box sx={{
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                mb: 3,
-                                                gap: 2
-                                            }}>
+                                            <Box sx={{ display: 'flex', gap: 1 }}>
                                                 <StyledButton
-                                                    variant={currentSemester === 1 ? "contained" : "outlined"}
-                                                    onClick={() => handleSemesterChange(1)}
+                                                    variant="outlined"
+                                                    onClick={() => handleViewCurriculumDetail(curriculum.curriculumId)}
                                                     sx={{
-                                                        bgcolor: currentSemester === 1 ? COLORS.primary : 'transparent',
-                                                        color: currentSemester === 1 ? '#fff' : COLORS.primary,
-                                                        borderColor: COLORS.primary,
+                                                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
                                                         '&:hover': {
-                                                            bgcolor: currentSemester === 1 ? COLORS.primary : 'rgba(6, 169, 174, 0.08)',
-                                                            borderColor: COLORS.primary
-                                                        }
+                                                                        boxShadow: '0 6px 16px rgba(0, 0, 0, 0.1)',
+                                                            transform: 'translateY(-2px)'
+                                                        },
+                                                        transition: 'all 0.2s ease',
+                                                                    border: `1px solid ${COLORS.primary}`,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px'
                                                     }}
                                                 >
-                                                    Học kỳ 1
-                                                </StyledButton>
-                                                <StyledButton
-                                                    variant={currentSemester === 2 ? "contained" : "outlined"}
-                                                    onClick={() => handleSemesterChange(2)}
-                                                    sx={{
-                                                        bgcolor: currentSemester === 2 ? COLORS.primary : 'transparent',
-                                                        color: currentSemester === 2 ? '#fff' : COLORS.primary,
-                                                        borderColor: COLORS.primary,
-                                                        '&:hover': {
-                                                            bgcolor: currentSemester === 2 ? COLORS.primary : 'rgba(6, 169, 174, 0.08)',
-                                                            borderColor: COLORS.primary
-                                                        }
-                                                    }}
-                                                >
-                                                    Học kỳ 2
+                                                    <MenuBookIcon sx={{ fontSize: 24, color: COLORS.primary }} />
+                                                    Xem nội dung cần đạt
                                                 </StyledButton>
                                             </Box>
-
-                                            <DashboardCard sx={{ mb: 4 }}>
-                                                <CardHeader bgcolor={COLORS.primary}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                        <AssignmentIcon sx={{ mr: 1 }} />
-                                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                                            Danh sách các chủ đề/bài học - Học kỳ {currentSemester}
-                                                        </Typography>
-                                                    </Box>
-                                                    <Box sx={{ display: 'flex', gap: 2 }}>
-                                                        <Button
-                                                            variant="outlined"
-                                                            onClick={() => handleViewCurriculumDetail(curriculum.curriculumId)}
-                                                            sx={{
-                                                                bgcolor: '#fff',
-                                                                color: COLORS.primary,
-                                                                fontWeight: 600,
-                                                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                                                                '&:hover': {
-                                                                    bgcolor: '#fff',
-                                                                    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
-                                                                    transform: 'translateY(-2px)'
-                                                                },
-                                                                transition: 'all 0.2s ease',
-                                                                textTransform: 'none',
-                                                                borderRadius: '8px',
-                                                                padding: '8px 20px',
-                                                                fontSize: '0.95rem',
-                                                                border: `2px solid ${COLORS.primary}`,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '8px'
-                                                            }}
-                                                        >
-                                                            <MenuBookIcon sx={{ fontSize: 24, color: COLORS.primary }} />
-                                                            Xem nội dung cần đạt
-                                                        </Button>
-                                                        <StyledButton
-                                                            onClick={handleOpenAddModuleDialog}
-                                                            sx={{
-                                                                bgcolor: '#fff',
-                                                                color: COLORS.primary,
-                                                                fontWeight: 600,
-                                                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                                                                '&:hover': {
-                                                                    bgcolor: '#fff',
-                                                                    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
-                                                                    transform: 'translateY(-2px)'
-                                                                },
-                                                                transition: 'all 0.2s ease',
-                                                                textTransform: 'none',
-                                                                borderRadius: '8px',
-                                                                padding: '8px 20px',
-                                                                fontSize: '0.95rem',
-                                                                border: `2px solid ${COLORS.primary}`,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '8px'
-                                                            }}
-                                                        >
-                                                            <AddIcon sx={{ fontSize: 24, color: COLORS.primary }} />
-                                                            Thêm Module
-                                                        </StyledButton>
-                                                    </Box>
-                                                </CardHeader>
-
-                                                <CardContent sx={{ p: 0 }}>
-                                                    {moduleLoading ? (
-                                                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
-                                                            <CircularProgress size={40} sx={{ color: COLORS.primary }} />
-                                                        </Box>
-                                                    ) : moduleError ? (
-                                                        <Box sx={{ p: 3 }}>
-                                                            <Alert severity="error">{moduleError}</Alert>
-                                                        </Box>
-                                                    ) : modules.length > 0 ? (
-                                                        <>
-                                                            <TableContainer sx={{ boxShadow: 'none' }}>
-                                                                <Table sx={{ minWidth: 650 }} aria-label="module table">
-                                                                    <TableHead>
-                                                                        <TableRow>
-                                                                            <StyledTableCell align="center" width="10%">STT</StyledTableCell>
-                                                                            <StyledTableCell align="left" width="70%">Tên chủ đề</StyledTableCell>
-                                                                            <StyledTableCell align="center" width="20%">Tổng số tiết</StyledTableCell>
-                                                                        </TableRow>
-                                                                    </TableHead>
-                                                                    <TableBody>
-                                                                        {modules
-                                                                            .filter((module) => module.semester === currentSemester)
-                                                                            .slice((modulePage - 1) * 10, modulePage * 10)
-                                                                            .map((module, index) => (
-                                                                                <React.Fragment key={module.moduleId}>
-                                                                                    <StyledTableRow>
-                                                                                        <TableCell align="center">{(modulePage - 1) * 10 + index + 1}</TableCell>
-                                                                                        <TableCell
-                                                                                            align="left"
-                                                                                            sx={{
-                                                                                                fontWeight: 600,
-                                                                                                color: COLORS.text.primary,
-                                                                                                display: 'flex',
-                                                                                                alignItems: 'center',
-                                                                                            }}
-                                                                                        >
-                                                                                            {module.name}
-                                                                                        </TableCell>
-                                                                                        <TableCell align="center">
-                                                                                            <InfoChip
-                                                                                                icon={<SchoolIcon />}
-                                                                                                label={`${module.totalPeriods} tiết`}
-                                                                                                size="small"
-                                                                                            />
-                                                                                        </TableCell>
-                                                                                    </StyledTableRow>
-                                                                                    <TableRow>
-                                                                                        <TableCell colSpan={4} sx={{ p: 0, border: 'none' }}>
-                                                                                            <Box sx={{
-                                                                                                m: 2,
-                                                                                                p: 3,
-                                                                                                bgcolor: 'rgba(6, 169, 174, 0.02)',
-                                                                                                borderRadius: 2,
-                                                                                                border: '1px solid rgba(6, 169, 174, 0.1)'
-                                                                                            }}>
-                                                                                                <Box sx={{
-                                                                                                    display: 'flex',
-                                                                                                    justifyContent: 'space-between',
-                                                                                                    alignItems: 'center',
-                                                                                                    pb: 2,
-                                                                                                    borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-                                                                                                    mb: 3
-                                                                                                }}>
-                                                                                                    <Typography variant="h6" sx={{ color: COLORS.text.primary }}>
-                                                                                                        {module.name}
-                                                                                                    </Typography>
-                                                                                                    <Box>
-                                                                                                        <IconButton
-                                                                                                            onClick={(e) => {
-                                                                                                                e.stopPropagation();
-                                                                                                                handleEditModuleClick(module, curriculum.curriculumId);
-                                                                                                            }}
-                                                                                                            sx={{
-                                                                                                                color: COLORS.primary,
-                                                                                                                bgcolor: 'rgba(6, 169, 174, 0.08)',
-                                                                                                                '&:hover': { bgcolor: 'rgba(6, 169, 174, 0.15)' }
-                                                                                                            }}
-                                                                                                        >
-                                                                                                            <EditIcon />
-                                                                                                        </IconButton>
-                                                                                                        <IconButton
-                                                                                                            onClick={(e) => {
-                                                                                                                e.stopPropagation();
-                                                                                                                handleDeleteModule(module.moduleId);
-                                                                                                            }}
-                                                                                                            sx={{
-                                                                                                                color: COLORS.error,
-                                                                                                                bgcolor: 'rgba(255, 72, 66, 0.08)',
-                                                                                                                '&:hover': { bgcolor: 'rgba(255, 72, 66, 0.15)' }
-                                                                                                            }}
-                                                                                                        >
-                                                                                                            <DeleteIcon />
-                                                                                                        </IconButton>
-                                                                                                    </Box>
-                                                                                                </Box>
-
-                                                                                                <Box sx={{
-                                                                                                    display: 'flex',
-                                                                                                    justifyContent: 'space-between',
-                                                                                                    alignItems: 'center',
-                                                                                                    mb: 2
-                                                                                                }}>
-                                                                                                    <Typography
-                                                                                                        variant="h6"
-                                                                                                        sx={{
-                                                                                                            display: 'flex',
-                                                                                                            alignItems: 'center',
-                                                                                                            color: COLORS.text.primary
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        <AssignmentIcon sx={{ mr: 1, fontSize: 20, color: COLORS.secondary }} />
-                                                                                                        Danh sách bài học
-                                                                                                    </Typography>
-                                                                                                    <StyledButton
-                                                                                                        variant="contained"
-                                                                                                        color="primary"
-                                                                                                        startIcon={<AddIcon />}
-                                                                                                        onClick={() => {
-                                                                                                            setSelectedModuleId(module.moduleId);
-                                                                                                            handleOpenAddLessonDialog();
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        Thêm bài học
-                                                                                                    </StyledButton>
-                                                                                                </Box>
-
-                                                                                                <TableContainer
-                                                                                                    component={Paper}
-                                                                                                    sx={{
-                                                                                                        borderRadius: 2,
-                                                                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                                                                                                    }}
-                                                                                                >
-                                                                                                    <Table>
-                                                                                                        <TableHead>
-                                                                                                            <TableRow>
-                                                                                                                <StyledTableCell align="center" width="5%">STT</StyledTableCell>
-                                                                                                                <StyledTableCell align="left" width="55%">Tên bài học</StyledTableCell>
-                                                                                                                <StyledTableCell align="center" width="20%">Số tiết</StyledTableCell>
-                                                                                                                <StyledTableCell align="center" width="20%">Hành động</StyledTableCell>
-                                                                                                            </TableRow>
-                                                                                                        </TableHead>
-                                                                                                        <TableBody>
-                                                                                                            {module.lessons && module.lessons.length > 0 ? (
-                                                                                                                module.lessons.map((lesson, lessonIndex) => (
-                                                                                                                    <React.Fragment key={lesson.lessonId}>
-                                                                                                                        <StyledTableRow>
-                                                                                                                            <TableCell align="center">{lessonIndex + 1}</TableCell>
-                                                                                                                            <TableCell
-                                                                                                                                align="left"
-                                                                                                                                sx={{
-                                                                                                                                    cursor: 'pointer',
-                                                                                                                                    display: 'flex',
-                                                                                                                                    alignItems: 'center',
-                                                                                                                                    '&:hover': {
-                                                                                                                                        backgroundColor: 'rgba(6, 169, 174, 0.05)'
-                                                                                                                                    }
-                                                                                                                                }}
-                                                                                                                                onClick={(e) => {
-                                                                                                                                    if (editLessonMode !== lesson.lessonId) {
-                                                                                                                                        handleLessonClick(lesson.lessonId);
-                                                                                                                                    }
-                                                                                                                                }}
-                                                                                                                            >
-                                                                                                                                <>
-                                                                                                                                    <InfoIcon sx={{ mr: 1, color: COLORS.primary, fontSize: 18 }} />
-                                                                                                                                    {lesson.name}
-                                                                                                                                </>
-                                                                                                                            </TableCell>
-                                                                                                                            <TableCell align="center">
-                                                                                                                                {editLessonMode === lesson.lessonId ? (
-                                                                                                                                    <TextField
-                                                                                                                                        value={editedLessonPeriods}
-                                                                                                                                        onChange={handleEditedLessonInputChange}
-                                                                                                                                        type="number"
-                                                                                                                                        variant="outlined"
-                                                                                                                                        size="small"
-                                                                                                                                        sx={{ width: '80px' }}
-                                                                                                                                        inputProps={{ min: 1 }}
-                                                                                                                                        onClick={(e) => e.stopPropagation()}
-                                                                                                                                    />
-                                                                                                                                ) : (
-                                                                                                                                    <InfoChip
-                                                                                                                                        icon={<SchoolIcon />}
-                                                                                                                                        label={`${lesson.totalPeriods || 1} tiết`}
-                                                                                                                                        size="small"
-                                                                                                                                    />
-                                                                                                                                )}
-                                                                                                                            </TableCell>
-                                                                                                                            <TableCell align="center">
-                                                                                                                                {editLessonMode === lesson.lessonId ? (
-                                                                                                                                    <Box sx={{ display: 'flex', gap: 1 }}>
-                                                                                                                                        <IconButton
-                                                                                                                                            onClick={(e) => {
-                                                                                                                                                e.stopPropagation();
-                                                                                                                                                handleEditLessonClick(lesson);
-                                                                                                                                            }}
-                                                                                                                                            sx={{
-                                                                                                                                                color: COLORS.primary,
-                                                                                                                                                bgcolor: 'rgba(6, 169, 174, 0.08)',
-                                                                                                                                                '&:hover': { bgcolor: 'rgba(6, 169, 174, 0.15)' }
-                                                                                                                                            }}
-                                                                                                                                        >
-                                                                                                                                            <EditIcon />
-                                                                                                                                        </IconButton>
-                                                                                                                                        <IconButton
-                                                                                                                                            onClick={(e) => {
-                                                                                                                                                e.stopPropagation();
-                                                                                                                                                handleDeleteLesson(lesson, module.moduleId);
-                                                                                                                                            }}
-                                                                                                                                            sx={{
-                                                                                                                                                color: COLORS.error,
-                                                                                                                                                bgcolor: 'rgba(255, 72, 66, 0.08)',
-                                                                                                                                                '&:hover': {
-                                                                                                                                                    bgcolor: 'rgba(255, 72, 66, 0.15)',
-                                                                                                                                                    transform: 'scale(1.05)'
-                                                                                                                                                },
-                                                                                                                                                transition: 'all 0.2s ease'
-                                                                                                                                            }}
-                                                                                                                                            disabled={deleteLoading}
-                                                                                                                                        >
-                                                                                                                                            {deleteLoading && lessonToDelete?.lessonId === lesson.lessonId ? (
-                                                                                                                                                <CircularProgress size={20} sx={{ color: COLORS.error }} />
-                                                                                                                                            ) : (
-                                                                                                                                                <DeleteIcon />
-                                                                                                                                            )}
-                                                                                                                                        </IconButton>
-                                                                                                                                    </Box>
-                                                                                                                                ) : (
-                                                                                                                                    <Box sx={{ display: 'flex', gap: 1 }}>
-                                                                                                                                        <IconButton
-                                                                                                                                            onClick={(e) => {
-                                                                                                                                                e.stopPropagation();
-                                                                                                                                                handleEditLessonClick(lesson);
-                                                                                                                                            }}
-                                                                                                                                            sx={{
-                                                                                                                                                color: COLORS.primary,
-                                                                                                                                                bgcolor: 'rgba(6, 169, 174, 0.08)',
-                                                                                                                                                '&:hover': { bgcolor: 'rgba(6, 169, 174, 0.15)' }
-                                                                                                                                            }}
-                                                                                                                                        >
-                                                                                                                                            <EditIcon />
-                                                                                                                                        </IconButton>
-                                                                                                                                        <IconButton
-                                                                                                                                            onClick={(e) => {
-                                                                                                                                                e.stopPropagation();
-                                                                                                                                                handleDeleteLesson(lesson, module.moduleId);
-                                                                                                                                            }}
-                                                                                                                                            sx={{
-                                                                                                                                                color: COLORS.error,
-                                                                                                                                                bgcolor: 'rgba(255, 72, 66, 0.08)',
-                                                                                                                                                '&:hover': {
-                                                                                                                                                    bgcolor: 'rgba(255, 72, 66, 0.15)',
-                                                                                                                                                    transform: 'scale(1.05)'
-                                                                                                                                                },
-                                                                                                                                                transition: 'all 0.2s ease'
-                                                                                                                                            }}
-                                                                                                                                            disabled={deleteLoading}
-                                                                                                                                        >
-                                                                                                                                            {deleteLoading && lessonToDelete?.lessonId === lesson.lessonId ? (
-                                                                                                                                                <CircularProgress size={20} sx={{ color: COLORS.error }} />
-                                                                                                                                            ) : (
-                                                                                                                                                <DeleteIcon />
-                                                                                                                                            )}
-                                                                                                                                        </IconButton>
-                                                                                                                                    </Box>
-                                                                                                                                )}
-                                                                                                                            </TableCell>
-                                                                                                                        </StyledTableRow>
-
-                                                                                                                        {/* Lesson Details Row */}
-                                                                                                                        <TableRow>
-                                                                                                                            <TableCell colSpan={4} sx={{ p: 0, border: 'none' }}>
-                                                                                                                                <Collapse in={expandedLessonId === lesson.lessonId} timeout="auto" unmountOnExit>
-                                                                                                                                    <Box sx={{
-                                                                                                                                        m: 2,
-                                                                                                                                        p: 0,
-                                                                                                                                        bgcolor: '#fff',
-                                                                                                                                        borderRadius: 2,
-                                                                                                                                        border: '1px solid rgba(0, 0, 0, 0.1)',
-                                                                                                                                        overflow: 'hidden'
-                                                                                                                                    }}>
-                                                                                                                                        {lessonDetailLoading ? (
-                                                                                                                                            <Box sx={{
-                                                                                                                                                display: 'flex',
-                                                                                                                                                justifyContent: 'center',
-                                                                                                                                                alignItems: 'center',
-                                                                                                                                                p: 3
-                                                                                                                                            }}>
-                                                                                                                                                <CircularProgress size={24} sx={{ color: COLORS.primary }} />
-                                                                                                                                                <Typography sx={{ ml: 2, color: COLORS.text.secondary }}>
-                                                                                                                                                    Đang tải thông tin...
-                                                                                                                                                </Typography>
-                                                                                                                                            </Box>
-                                                                                                                                        ) : lessonDetailError ? (
-                                                                                                                                            <Box sx={{ p: 2 }}>
-                                                                                                                                                <Alert severity="error">
-                                                                                                                                                    {lessonDetailError}
-                                                                                                                                                </Alert>
-                                                                                                                                            </Box>
-                                                                                                                                        ) : lessonDetails[lesson.lessonId] ? (
-                                                                                                                                            <>
-                                                                                                                                                {/* Header */}
-                                                                                                                                                <Box sx={{
-                                                                                                                                                    p: 2.5,
-                                                                                                                                                    bgcolor: 'rgba(25, 118, 210, 0.04)',
-                                                                                                                                                    borderBottom: '1px solid rgba(0, 0, 0, 0.08)'
-                                                                                                                                                }}>
-                                                                                                                                                    <Typography variant="h6" sx={{
-                                                                                                                                                        color: COLORS.text.primary,
-                                                                                                                                                        fontWeight: 600,
-                                                                                                                                                        fontSize: '1rem'
-                                                                                                                                                    }}>
-                                                                                                                                                        Thông tin chi tiết bài học
-                                                                                                                                                    </Typography>
-                                                                                                                                                </Box>
-
-                                                                                                                                                {/* Content */}
-                                                                                                                                                <Box sx={{ p: 2.5 }}>
-                                                                                                                                                    <Grid container spacing={2}>
-                                                                                                                                                        {/* Tên bài học */}
-                                                                                                                                                        <Grid item xs={12} md={6}>
-                                                                                                                                                            <Box sx={{
-                                                                                                                                                                p: 2,
-                                                                                                                                                                border: '1px solid rgba(0, 0, 0, 0.08)',
-                                                                                                                                                                borderRadius: 1,
-                                                                                                                                                                bgcolor: 'rgba(25, 118, 210, 0.02)'
-                                                                                                                                                            }}>
-                                                                                                                                                                <Typography variant="caption" sx={{
-                                                                                                                                                                    color: COLORS.text.secondary,
-                                                                                                                                                                    fontWeight: 600,
-                                                                                                                                                                    textTransform: 'uppercase',
-                                                                                                                                                                    fontSize: '0.7rem',
-                                                                                                                                                                    letterSpacing: 0.5
-                                                                                                                                                                }}>
-                                                                                                                                                                    Tên bài học
-                                                                                                                                                                </Typography>
-                                                                                                                                                                <Typography variant="body1" sx={{
-                                                                                                                                                                    color: COLORS.text.primary,
-                                                                                                                                                                    fontWeight: 500,
-                                                                                                                                                                    mt: 0.5
-                                                                                                                                                                }}>
-                                                                                                                                                                    {lessonDetails[lesson.lessonId].name}
-                                                                                                                                                                </Typography>
-                                                                                                                                                            </Box>
-                                                                                                                                                        </Grid>
-
-                                                                                                                                                        {/* Số tiết */}
-                                                                                                                                                        <Grid item xs={12} md={6}>
-                                                                                                                                                            <Box sx={{
-                                                                                                                                                                p: 2,
-                                                                                                                                                                border: '1px solid rgba(0, 0, 0, 0.08)',
-                                                                                                                                                                borderRadius: 1,
-                                                                                                                                                                bgcolor: 'rgba(6, 169, 174, 0.02)'
-                                                                                                                                                            }}>
-                                                                                                                                                                <Typography variant="caption" sx={{
-                                                                                                                                                                    color: COLORS.text.secondary,
-                                                                                                                                                                    fontWeight: 600,
-                                                                                                                                                                    textTransform: 'uppercase',
-                                                                                                                                                                    fontSize: '0.7rem',
-                                                                                                                                                                    letterSpacing: 0.5
-                                                                                                                                                                }}>
-                                                                                                                                                                    Số tiết
-                                                                                                                                                                </Typography>
-                                                                                                                                                                <Typography variant="body1" sx={{
-                                                                                                                                                                    color: COLORS.text.primary,
-                                                                                                                                                                    fontWeight: 500,
-                                                                                                                                                                    mt: 0.5
-                                                                                                                                                                }}>
-                                                                                                                                                                    {lessonDetails[lesson.lessonId].totalPeriods} tiết
-                                                                                                                                                                </Typography>
-                                                                                                                                                            </Box>
-                                                                                                                                                        </Grid>
-
-                                                                                                                                                        {/* Loại bài học */}
-                                                                                                                                                        <Grid item xs={12} md={6}>
-                                                                                                                                                            <Box sx={{
-                                                                                                                                                                p: 2,
-                                                                                                                                                                border: '1px solid rgba(0, 0, 0, 0.08)',
-                                                                                                                                                                borderRadius: 1,
-                                                                                                                                                                bgcolor: 'rgba(255, 171, 0, 0.02)'
-                                                                                                                                                            }}>
-                                                                                                                                                                <Typography variant="caption" sx={{
-                                                                                                                                                                    color: COLORS.text.secondary,
-                                                                                                                                                                    fontWeight: 600,
-                                                                                                                                                                    textTransform: 'uppercase',
-                                                                                                                                                                    fontSize: '0.7rem',
-                                                                                                                                                                    letterSpacing: 0.5
-                                                                                                                                                                }}>
-                                                                                                                                                                    Loại bài học
-                                                                                                                                                                </Typography>
-                                                                                                                                                                <Typography variant="body1" sx={{
-                                                                                                                                                                    color: COLORS.text.primary,
-                                                                                                                                                                    fontWeight: 500,
-                                                                                                                                                                    mt: 0.5
-                                                                                                                                                                }}>
-                                                                                                                                                                    {lessonDetails[lesson.lessonId].lessonType}
-                                                                                                                                                                </Typography>
-                                                                                                                                                            </Box>
-                                                                                                                                                        </Grid>
-
-                                                                                                                                                        {/* Tuần học */}
-                                                                                                                                                        <Grid item xs={12} md={6}>
-                                                                                                                                                            <Box sx={{
-                                                                                                                                                                p: 2,
-                                                                                                                                                                border: '1px solid rgba(0, 0, 0, 0.08)',
-                                                                                                                                                                borderRadius: 1,
-                                                                                                                                                                bgcolor: 'rgba(0, 171, 85, 0.02)'
-                                                                                                                                                            }}>
-                                                                                                                                                                <Typography variant="caption" sx={{
-                                                                                                                                                                    color: COLORS.text.secondary,
-                                                                                                                                                                    fontWeight: 600,
-                                                                                                                                                                    textTransform: 'uppercase',
-                                                                                                                                                                    fontSize: '0.7rem',
-                                                                                                                                                                    letterSpacing: 0.5
-                                                                                                                                                                }}>
-                                                                                                                                                                    Tuần
-                                                                                                                                                                </Typography>
-                                                                                                                                                                <Typography variant="body1" sx={{
-                                                                                                                                                                    color: COLORS.text.primary,
-                                                                                                                                                                    fontWeight: 500,
-                                                                                                                                                                    mt: 0.5
-                                                                                                                                                                }}>
-                                                                                                                                                                    Tuần {lessonDetails[lesson.lessonId].week}
-                                                                                                                                                                </Typography>
-                                                                                                                                                            </Box>
-                                                                                                                                                        </Grid>
-
-                                                                                                                                                        {/* Mô tả */}
-                                                                                                                                                        <Grid item xs={12}>
-                                                                                                                                                            <Box sx={{
-                                                                                                                                                                p: 2,
-                                                                                                                                                                border: '1px solid rgba(0, 0, 0, 0.08)',
-                                                                                                                                                                borderRadius: 1,
-                                                                                                                                                                bgcolor: 'rgba(0, 0, 0, 0.01)'
-                                                                                                                                                            }}>
-                                                                                                                                                                <Typography variant="caption" sx={{
-                                                                                                                                                                    color: COLORS.text.secondary,
-                                                                                                                                                                    fontWeight: 600,
-                                                                                                                                                                    textTransform: 'uppercase',
-                                                                                                                                                                    fontSize: '0.7rem',
-                                                                                                                                                                    letterSpacing: 0.5
-                                                                                                                                                                }}>
-                                                                                                                                                                    Mô tả
-                                                                                                                                                                </Typography>
-                                                                                                                                                                <Typography variant="body2" sx={{
-                                                                                                                                                                    color: COLORS.text.primary,
-                                                                                                                                                                    lineHeight: 1.6,
-                                                                                                                                                                    mt: 0.5
-                                                                                                                                                                }}>
-                                                                                                                                                                    {lessonDetails[lesson.lessonId].description || 'Chưa có mô tả'}
-                                                                                                                                                                </Typography>
-                                                                                                                                                            </Box>
-                                                                                                                                                        </Grid>
-
-                                                                                                                                                        {/* Ghi chú (nếu có) */}
-                                                                                                                                                        {lessonDetails[lesson.lessonId].note && (
-                                                                                                                                                            <Grid item xs={12}>
-                                                                                                                                                                <Box sx={{
-                                                                                                                                                                    p: 2,
-                                                                                                                                                                    border: '1px solid rgba(255, 171, 0, 0.2)',
-                                                                                                                                                                    borderRadius: 1,
-                                                                                                                                                                    bgcolor: 'rgba(255, 171, 0, 0.05)'
-                                                                                                                                                                }}>
-                                                                                                                                                                    <Typography variant="caption" sx={{
-                                                                                                                                                                        color: COLORS.text.secondary,
-                                                                                                                                                                        fontWeight: 600,
-                                                                                                                                                                        textTransform: 'uppercase',
-                                                                                                                                                                        fontSize: '0.7rem',
-                                                                                                                                                                        letterSpacing: 0.5
-                                                                                                                                                                    }}>
-                                                                                                                                                                        Ghi chú
-                                                                                                                                                                    </Typography>
-                                                                                                                                                                    <Typography variant="body2" sx={{
-                                                                                                                                                                        color: COLORS.text.primary,
-                                                                                                                                                                        lineHeight: 1.6,
-                                                                                                                                                                        mt: 0.5,
-                                                                                                                                                                        fontStyle: 'italic'
-                                                                                                                                                                    }}>
-                                                                                                                                                                        {lessonDetails[lesson.lessonId].note}
-                                                                                                                                                                    </Typography>
-                                                                                                                                                                </Box>
-                                                                                                                                                            </Grid>
-                                                                                                                                                        )}
-                                                                                                                                                    </Grid>
-                                                                                                                                                </Box>
-                                                                                                                                            </>
-                                                                                                                                        ) : (
-                                                                                                                                            <Box sx={{
-                                                                                                                                                textAlign: 'center',
-                                                                                                                                                p: 3,
-                                                                                                                                                color: COLORS.text.secondary
-                                                                                                                                            }}>
-                                                                                                                                                <Typography>
-                                                                                                                                                    Nhấp vào tên bài học để xem thông tin chi tiết
-                                                                                                                                                </Typography>
-                                                                                                                                            </Box>
-                                                                                                                                        )}
-                                                                                                                                    </Box>
-                                                                                                                                </Collapse>
-                                                                                                                            </TableCell>
-                                                                                                                        </TableRow>
-                                                                                                                    </React.Fragment>
-                                                                                                                ))
-                                                                                                            ) : (
-                                                                                                                <TableRow>
-                                                                                                                    <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                                                                                                                        <Typography sx={{ color: COLORS.text.secondary }}>
-                                                                                                                            Chưa có bài học nào trong module này
-                                                                                                                        </Typography>
-                                                                                                                    </TableCell>
-                                                                                                                </TableRow>
-                                                                                                            )}
-                                                                                                        </TableBody>
-                                                                                                    </Table>
-                                                                                                </TableContainer>
-                                                                                            </Box>
-                                                                                        </TableCell>
-                                                                                    </TableRow>
-                                                                                </React.Fragment>
-                                                                            ))}
-                                                                    </TableBody>
-                                                                </Table>
-                                                            </TableContainer>
-                                                        </>
-                                                    ) : (
-                                                        <Box sx={{ p: 3, textAlign: 'center' }}>
-                                                            <Typography sx={{ color: COLORS.text.secondary }}>
-                                                                Không có module nào cho học kỳ {currentSemester}
-                                                            </Typography>
-                                                        </Box>
-                                                    )}
-                                                </CardContent>
-                                            </DashboardCard>
                                         </Box>
-                                    )}
+                                    </CurriculumCard>
                                 </Box>
                             ))}
                         </List>
+                                 </Box>
+                             ) : ( !error && curricula.length === 0 && // Only show message if no error and no curricula
+                                 <DashboardCard>
+                                     <CardContent sx={{ py: 4, textAlign: 'center' }}>
+                                         <Typography sx={{ color: theme.palette.text.secondary }}>
+                                             Không có khung chương trình chi tiết nào cho Khối {userGradeNumber}.
+                                         </Typography>
+                                     </CardContent>
+                                 </DashboardCard>
+                             )}
+
+                            {/* Textbook and Semester Selection */}
+                            <Box sx={{ mt: 4, mb: 3, textAlign: 'center' }}>
+                                <Typography variant="h6" sx={{
+                                    color: theme.palette.text.primary,
+                                    mb: 2,
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    fontWeight: 600
+                                }}>
+                                    <MenuBookIcon sx={{ mr: 1, color: COLORS.primary }} /> Sách giáo khoa: Cánh Diều
+                                </Typography>
+                                <Box>
+                                    <StyledButton
+                                        variant={selectedSemester === 1 ? 'contained' : 'outlined'}
+                                        onClick={() => handleSemesterChange(1)}
+                                        sx={{ mr: 1 }}
+                                    >
+                                        Học kỳ 1
+                                    </StyledButton>
+                                    <StyledButton
+                                        variant={selectedSemester === 2 ? 'contained' : 'outlined'}
+                                        onClick={() => handleSemesterChange(2)}
+                                    >
+                                        Học kỳ 2
+                                    </StyledButton>
+                                </Box>
+                            </Box>
+
+                            {/* Add Module Button */}
+                            <Box sx={{ textAlign: 'right', mb: 2 }}>
+                                <StyledButton
+                                    variant="contained"
+                                    onClick={handleOpenAddModuleDialog}
+                                    startIcon={<AddIcon />}
+                                >
+                                    Thêm Chủ đề
+                                </StyledButton>
+                            </Box>
+
+                            {/* Display Modules in Table */}
+                            {modulesBySemester.length > 0 ? (
+                                <TableContainer 
+                                    component={Paper} 
+                                    sx={{
+                                        boxShadow: '0 4px 20px rgba(0,0,0,0.05)', 
+                                        borderRadius: 2, 
+                                        overflow: 'hidden',
+                                        bgcolor: theme.palette.background.paper,
+                                    }}
+                                >
+                                    <Table>
+                                        <TableHead>
+                                            <TableRow>
+                                                <StyledTableCell sx={{
+                                                    width: '80px',
+                                                    color: theme.palette.text.secondary,
+                                                    borderBottomColor: theme.palette.divider
+                                                 }}>STT</StyledTableCell>
+                                                <StyledTableCell sx={{
+                                                    color: theme.palette.text.secondary,
+                                                    borderBottomColor: theme.palette.divider
+                                                }}>Tên chủ đề</StyledTableCell>
+                                                <StyledTableCell sx={{
+                                                     width: '120px',
+                                                     color: theme.palette.text.secondary,
+                                                     borderBottomColor: theme.palette.divider,
+                                                     textAlign: 'center'
+                                                }}>Thao tác</StyledTableCell>
+                                                <StyledTableCell align="right" sx={{
+                                                     color: theme.palette.text.secondary,
+                                                     borderBottomColor: theme.palette.divider
+                                                }}>Số tiết</StyledTableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {modulesBySemester.map((module, index) => (
+                                                <React.Fragment key={module.moduleId}>
+                                                    <StyledTableRow 
+                                                        onClick={() => handleModuleClick(module)}
+                                                        sx={{
+                                                            '&:last-child td, &:last-child th': { border: 0 },
+                                                            borderBottom: expandedModuleId === module.moduleId ? 'none' : `1px solid ${theme.palette.divider}`,
+                                                            '&:hover': {
+                                                                backgroundColor: theme.palette.action.hover,
+                                                                cursor: 'pointer',
+                                                            },
+                                                        }}
+                                                    >
+                                                        <TableCell sx={{
+                                                            color: theme.palette.text.primary,
+                                                            border: 'none'
+                                                        }}>{index + 1}</TableCell>
+                                                        <TableCell sx={{
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            gap: 1, 
+                                                            color: theme.palette.text.primary,
+                                                            border: 'none'
+                                                         }}>
+                                                            <MenuBookIcon sx={{ mr: 1, color: COLORS.primary, fontSize: 20 }} />
+                                                            <Box sx={{ flexGrow: 1 }}>
+                                                              {module.name}
+                                                            </Box>
+                                                         </TableCell>
+                                                        <TableCell sx={{
+                                                            color: theme.palette.text.primary,
+                                                            border: 'none',
+                                                            textAlign: 'center'
+                                                         }}>
+                                                            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                                                                <IconButton 
+                                                                    size="small" 
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        handleViewDetailsIconClick(module.moduleId);
+                                                                    }}
+                                                                    sx={{
+                                                                        color: COLORS.primary,
+                                                                        '&:hover': {
+                                                                            bgcolor: COLORS.hover.primary
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <VisibilityIcon fontSize="small" />
+                                                                </IconButton>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        handleOpenDeleteConfirmDialog(module);
+                                                                    }}
+                                                                    sx={{
+                                                                        color: COLORS.error,
+                                                                        '&:hover': {
+                                                                            bgcolor: 'rgba(255, 72, 66, 0.08)'
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <DeleteIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Box>
+                                                         </TableCell>
+                                                        <TableCell align="right" sx={{
+                                                             color: theme.palette.text.primary,
+                                                              border: 'none'
+                                                        }}>
+                                                            <InfoChip
+                                                                 icon={<AccessTimeIcon fontSize="small" sx={{ color: COLORS.primary }} />}
+                                                                 label={`${module.totalPeriods} tiết`}
+                                                                 sx={{ 
+                                                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
+                                                                    color: theme.palette.text.primary,
+                                                                    '.MuiChip-icon': { color: COLORS.primary }
+                                                                 }}
+                                                            />
+                                                        </TableCell>
+                                                    </StyledTableRow>
+                                                    <TableRow>
+                                                        <TableCell sx={{ paddingBottom: 0, paddingTop: 0, border: 'none' }} colSpan={3}>
+                                                            <Collapse in={expandedModuleId === module.moduleId} timeout="auto" unmountOnExit>
+                                                                <Box sx={{ margin: 1, p: 2, bgcolor: theme.palette.background.secondary, borderRadius: 1 }}>
+                                                                    <Typography variant="h6" gutterBottom component="div" sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
+                                                                        Bài học:
+                                                                    </Typography>
+                                                                    {module.lessons ? (
+                                                                        <LessonDetails 
+                                                                            lessons={module.lessons} 
+                                                                            theme={theme} 
+                                                                            colors={COLORS} // Pass COLORS instead of colors
+                                                                            moduleId={module.moduleId} // Pass module ID
+                                                                            fetchLessons={fetchLessons} // Pass fetchLessons handler
+                                                                        />
+                                                                    ) : (
+                                                                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                                                                            <CircularProgress size={20} sx={{ color: COLORS.primary }} />
+                                                                        </Box>
+                                                                    )}
+                                                                </Box>
+                                                            </Collapse>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                </React.Fragment>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            ) : (
+                                modulesBySemester.length === 0 && (
+                                <Typography sx={{ textAlign: 'center', color: theme.palette.text.secondary, my: 4 }}>
+                                    Không tìm thấy module nào cho Học kỳ {selectedSemester}.
+                                </Typography>
+                                )
+                            )}
+
+                        </Box>
                     )}
 
-                    {/* Add Module Dialog */}
-                    <Dialog open={openAddModuleDialog} onClose={handleCloseAddModuleDialog} maxWidth="sm" fullWidth>
-                        <DialogTitle>Thêm Module Mới</DialogTitle>
-                        <DialogContent>
-                            <Stack spacing={2} sx={{ mt: 1 }}>
-                                <TextField
-                                    label="Tên module"
-                                    name="name"
-                                    value={newModule.name}
-                                    onChange={handleNewModuleInputChange}
-                                    fullWidth
-                                    required
-                                />
-                                <TextField
-                                    label="Sách"
-                                    name="book"
-                                    value={newModule.book}
-                                    onChange={handleNewModuleInputChange}
-                                    fullWidth
-                                    required
-                                />
-                                <TextField
-                                    select
-                                    label="Học kỳ"
-                                    name="semester"
-                                    value={newModule.semester}
-                                    onChange={handleNewModuleInputChange}
-                                    fullWidth
-                                    required
-                                >
-                                    <MenuItem value={1}>Học kỳ 1</MenuItem>
-                                    <MenuItem value={2}>Học kỳ 2</MenuItem>
-                                </TextField>
-                                <TextField
-                                    label="Tổng số tiết"
-                                    name="totalPeriods"
-                                    type="number"
-                                    value={newModule.totalPeriods}
-                                    onChange={handleNewModuleInputChange}
-                                    fullWidth
-                                    required
-                                    inputProps={{ min: 1 }}
-                                />
-                            </Stack>
+                    <Dialog 
+                        open={openModuleDialog} 
+                        onClose={handleCloseModuleDialog}
+                        maxWidth="sm"
+                        fullWidth
+                    >
+                        <DialogTitle>
+                            <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+                                Chi tiết Chủ đề
+                            </Typography>
+                        </DialogTitle>
+                        <DialogContent dividers>
+                            {moduleDetails && (
+                                <Box sx={{ mt: 2 }}>
+                                    {isEditingModule ? (
+                                        <Grid container spacing={2}>
+                                             <Grid item xs={12}>
+                                                <TextField
+                                                     fullWidth
+                                                    label="Tên chủ đề"
+                                                     value={editableModuleData?.name || ''}
+                                                     onChange={(e) => setEditableModuleData({ ...editableModuleData, name: e.target.value })}
+                                                     variant="outlined"
+                                                     sx={{ mb: 2 }}
+                                                />
+                                            </Grid>
+                                             <Grid item xs={12}>
+                                                <TextField
+                                                     fullWidth
+                                                    label="Mô tả"
+                                                     value={editableModuleData?.desciption || ''}
+                                                     onChange={(e) => setEditableModuleData({ ...editableModuleData, desciption: e.target.value })}
+                                                     variant="outlined"
+                                                     multiline
+                                                     rows={3}
+                                                     sx={{ mb: 2 }}
+                                                />
+                                            </Grid>
+                                             <Grid item xs={12} sm={6}>
+                                                <TextField
+                                                    fullWidth
+                                                     label="Học kỳ"
+                                                    type="number"
+                                                     value={editableModuleData?.semester || ''}
+                                                     onChange={(e) => setEditableModuleData({ ...editableModuleData, semester: e.target.value })}
+                                                     variant="outlined"
+                                                     inputProps={{ min: 1, max: 2 }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <TextField
+                                                    fullWidth
+                                                     label="Tổng số tiết"
+                                                    type="number"
+                                                     value={editableModuleData?.totalPeriods || ''}
+                                                     onChange={(e) => setEditableModuleData({ ...editableModuleData, totalPeriods: e.target.value })}
+                                                     variant="outlined"
+                                                     inputProps={{ min: 0 }}
+                                                />
+                                            </Grid>
+                                        </Grid>
+
+                                    ) : (
+                                        <Box>
+                                            <Box sx={{ mb: 3 }}>
+                                                <Typography variant="h5" sx={{ 
+                                                    fontWeight: 'bold', 
+                                                    color: COLORS.primary,
+                                                    mb: 1 
+                                                }}>
+                                                    {moduleDetails.name}
+                                                </Typography>
+                                                <Typography variant="body1" sx={{ 
+                                                    color: theme.palette.text.secondary,
+                                                    mb: 2
+                                                }}>
+                                                    {moduleDetails.desciption}
+                                                </Typography>
+                                            </Box>
+
+                                            <Grid container spacing={1} sx={{ mb: 3 }}>
+                                                <Grid item xs={12}>
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                                        <InfoChip
+                                                            icon={<SchoolIcon />}
+                                                            label={`Học kỳ: ${moduleDetails.semester}`}
+                                                             sx={{ 
+                                                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
+                                                                color: theme.palette.text.primary,
+                                                                '.MuiChip-icon': { color: COLORS.primary }
+                                                             }}
+                                                        />
+                                                        <InfoChip
+                                                            icon={<AccessTimeIcon />}
+                                                            label={`Số tiết: ${moduleDetails.totalPeriods}`}
+                                                             sx={{ 
+                                                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
+                                                                color: theme.palette.text.primary,
+                                                                '.MuiChip-icon': { color: COLORS.primary }
+                                                             }}
+                                                        />
+                                                        <InfoChip
+                                                            icon={<MenuBookIcon />}
+                                                            label={`Chương trình: ${moduleDetails.curriculum}`}
+                                                             sx={{ 
+                                                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
+                                                                color: theme.palette.text.primary,
+                                                                '.MuiChip-icon': { color: COLORS.primary }
+                                                             }}
+                                                        />
+                                                        <InfoChip
+                                                            icon={<ClassIcon />}
+                                                            label={`Khối: ${moduleDetails.gradeNumber}`}
+                                                             sx={{ 
+                                                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
+                                                                color: theme.palette.text.primary,
+                                                                '.MuiChip-icon': { color: COLORS.primary }
+                                                             }}
+                                                        />
+                                                        <InfoChip
+                                                            icon={<ImportContactsIcon />}
+                                                            label={`Sách: ${moduleDetails.book}`}
+                                                             sx={{ 
+                                                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(6, 169, 174, 0.2)' : 'rgba(6, 169, 174, 0.08)',
+                                                                color: theme.palette.text.primary,
+                                                                '.MuiChip-icon': { color: COLORS.primary }
+                                                             }}
+                                                        />
+                                                    </Box>
+                                                </Grid>
+                                            </Grid>
+
+                                            <Box sx={{ mt: 3, p: 2, bgcolor: theme.palette.background.secondary, borderRadius: 2 }}>
+                                                <Typography variant="subtitle2" sx={{ 
+                                                    color: theme.palette.text.secondary,
+                                                    mb: 2,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 1
+                                                }}>
+                                                    <InfoIcon fontSize="small" />
+                                                    Thông tin chi tiết
+                                                </Typography>
+                                                <Grid container spacing={1}>
+                                                    <Grid item xs={12} sm={6}> 
+                                                        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                                                            <strong>Mô tả:</strong> {moduleDetails.desciption}
+                                                        </Typography>
+                                                    </Grid>
+                                                     <Grid item xs={12} sm={6}> 
+                                                        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                                                            <strong>Học kỳ:</strong> {moduleDetails.semester}
+                                                        </Typography>
+                                                    </Grid>
+                                                     <Grid item xs={12} sm={6}> 
+                                                        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                                                            <strong>Tổng số tiết:</strong> {moduleDetails.totalPeriods}
+                                                        </Typography>
+                                                    </Grid>
+                                                     <Grid item xs={12} sm={6}> 
+                                                        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                                                            <strong>Chương trình:</strong> {moduleDetails.curriculum}
+                                                        </Typography>
+                                                    </Grid>
+                                                     <Grid item xs={12} sm={6}> 
+                                                        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                                                            <strong>Khối:</strong> {moduleDetails.gradeNumber}
+                                                        </Typography>
+                                                    </Grid>
+                                                     <Grid item xs={12} sm={6}> 
+                                                        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                                                            <strong>Sách:</strong> {moduleDetails.book}
+                                                        </Typography>
+                                                    </Grid>
+                                                </Grid>
+                                            </Box>
+                                        </Box>
+                                    )}
+                                </Box>
+                            )}
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={handleCloseAddModuleDialog}>Hủy</Button>
-                            <Button
-                                onClick={handleAddModule}
-                                variant="contained"
-                                disabled={
-                                    !newModule.name.trim() ||
-                                    !newModule.book.trim() ||
-                                    !newModule.totalPeriods ||
-                                    isNaN(Number(newModule.totalPeriods)) ||
-                                    Number(newModule.totalPeriods) < 1
-                                }
-                            >
-                                Thêm
+                            {isEditingModule ? (
+                                <>
+                                    <Button onClick={handleCancelClick} sx={{ color: theme.palette.text.secondary }}>
+                                        Hủy
+                                    </Button>
+                                    <Button onClick={handleSaveClick} variant="contained" sx={{ bgcolor: COLORS.primary, color: '#fff' }}>
+                                        Lưu
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Button 
+                                         onClick={handleEditClick}
+                                         sx={{
+                                            color: COLORS.primary,
+                                            '&:hover': {
+                                                 backgroundColor: COLORS.hover.primary
+                                             }
+                                         }}
+                                     >
+                                        Chỉnh sửa
+                                    </Button>
+                                    <Button 
+                                        onClick={handleCloseModuleDialog} 
+                                        sx={{
+                                            color: COLORS.primary,
+                                            '&:hover': {
+                                                backgroundColor: COLORS.hover.primary
+                                            }
+                                        }}
+                                    >
+                                        Đóng
+                                    </Button>
+                                </>
+                            )}
+                        </DialogActions>
+                    </Dialog>
+
+                    {/* Add Module Dialog */}
+                    <Dialog
+                        open={openAddModuleDialog}
+                        onClose={handleCloseAddModuleDialog}
+                        maxWidth="sm"
+                        fullWidth
+                    >
+                        <DialogTitle>
+                            <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+                                Thêm Chủ đề Mới
+                            </Typography>
+                        </DialogTitle>
+                        <DialogContent dividers>
+                            <Box sx={{ mt: 2 }}>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            fullWidth
+                                            label="Tên chủ đề"
+                                            value={newModuleData?.name || ''}
+                                            onChange={(e) => setNewModuleData({ ...newModuleData, name: e.target.value })}
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            fullWidth
+                                            label="Mô tả"
+                                            value={newModuleData?.desciption || ''}
+                                            onChange={(e) => setNewModuleData({ ...newModuleData, desciption: e.target.value })}
+                                            variant="outlined"
+                                            multiline
+                                            rows={3}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Học kỳ"
+                                            type="number"
+                                            value={newModuleData?.semester || ''}
+                                            onChange={(e) => setNewModuleData({ ...newModuleData, semester: e.target.value })}
+                                            variant="outlined"
+                                            inputProps={{ min: 1, max: 2 }}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Tổng số tiết"
+                                            type="number"
+                                            value={newModuleData?.totalPeriods || ''}
+                                            onChange={(e) => setNewModuleData({ ...newModuleData, totalPeriods: parseInt(e.target.value, 10) || '' })}
+                                            variant="outlined"
+                                            inputProps={{ min: 0 }}
+                                        />
+                                    </Grid>
+                                </Grid>
+                            </Box>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleCloseAddModuleDialog} sx={{ color: theme.palette.text.secondary }}>
+                                Hủy
+                            </Button>
+                            <Button onClick={handleSaveNewModule} variant="contained" sx={{ bgcolor: COLORS.primary, color: '#fff' }}>
+                                Lưu chủ đề
                             </Button>
                         </DialogActions>
                     </Dialog>
 
-                    {/* Add Lesson Dialog - Improved UI/UX */}
+                    {/* Delete Confirmation Dialog for Module */}
                     <Dialog
-                        open={openAddLessonDialog}
-                        onClose={handleCloseAddLessonDialog}
-                        maxWidth="md"
-                        fullWidth
-                        PaperProps={{
-                            sx: {
-                                borderRadius: 4,
-                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.12)',
-                                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                                overflow: 'hidden'
-                            }
-                        }}
-                    >
-                        {/* Enhanced Dialog Header */}
-                        <DialogTitle sx={{
-                            background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
-                            color: '#fff',
-                            p: 3,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            position: 'relative',
-                            '&::after': {
-                                content: '""',
-                                position: 'absolute',
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                height: '4px',
-                                background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)'
-                            }
-                        }}>
-                            <Box sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: 48,
-                                height: 48,
-                                borderRadius: '12px',
-                                bgcolor: 'rgba(255, 255, 255, 0.2)',
-                                backdropFilter: 'blur(10px)'
-                            }}>
-                                <AddIcon sx={{ fontSize: 28, color: '#fff' }} />
-                            </Box>
-                            <Box>
-                                <Typography variant="h5" sx={{
-                                    fontWeight: 700,
-                                    fontSize: '1.5rem',
-                                    mb: 0.5,
-                                    textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                                }}>
-                                    Thêm Bài Học Mới
-                                </Typography>
-                                <Typography variant="body2" sx={{
-                                    opacity: 0.9,
-                                    fontSize: '0.875rem'
-                                }}>
-                                    Tạo bài học mới cho chương trình giảng dạy
-                                </Typography>
-                            </Box>
-                        </DialogTitle>
-
-                        <DialogContent sx={{ p: 4, bgcolor: '#fff' }}>
-                            <Stack spacing={4} sx={{ mt: 1 }}>
-                                {/* Basic Information Section */}
-                                <Box>
-                                    <Box sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        mb: 3,
-                                        pb: 2,
-                                        borderBottom: `2px solid ${COLORS.primary}20`
-                                    }}>
-                                        <InfoIcon sx={{
-                                            color: COLORS.primary,
-                                            mr: 1.5,
-                                            fontSize: 24
-                                        }} />
-                                        <Typography variant="h6" sx={{
-                                            color: COLORS.text.primary,
-                                            fontWeight: 600,
-                                            fontSize: '1.1rem'
-                                        }}>
-                                            Thông tin cơ bản
-                                        </Typography>
-                                    </Box>
-
-                                    <Stack spacing={3}>
-                                        <Box sx={{ position: 'relative' }}>
-                                            <TextField
-                                                label="Tên bài học"
-                                                name="name"
-                                                value={newLesson.name}
-                                                onChange={handleNewLessonInputChange}
-                                                fullWidth
-                                                required
-                                                variant="outlined"
-                                                placeholder="Nhập tên bài học..."
-                                                InputProps={{
-                                                    startAdornment: (
-                                                        <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                                                            <AssignmentIcon sx={{ color: COLORS.primary, fontSize: 20 }} />
-                                                        </Box>
-                                                    ),
-                                                }}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            boxShadow: `0 4px 12px ${COLORS.primary}20`
-                                                        },
-                                                        '&.Mui-focused': {
-                                                            boxShadow: `0 4px 20px ${COLORS.primary}30`
-                                                        }
-                                                    }
-                                                }}
-                                                helperText={
-                                                    newLesson.name.trim() ?
-                                                        "✓ Tên bài học hợp lệ" :
-                                                        "Vui lòng nhập tên bài học"
-                                                }
-                                                FormHelperTextProps={{
-                                                    sx: {
-                                                        color: newLesson.name.trim() ? COLORS.success : COLORS.text.secondary,
-                                                        fontWeight: 500
-                                                    }
-                                                }}
-                                            />
-                                        </Box>
-
-                                        <TextField
-                                            label="Mô tả bài học"
-                                            name="description"
-                                            value={newLesson.description}
-                                            onChange={handleNewLessonInputChange}
-                                            fullWidth
-                                            multiline
-                                            rows={3}
-                                            variant="outlined"
-                                            placeholder="Nhập mô tả cho bài học (tùy chọn)..."
-                                            InputProps={{
-                                                startAdornment: (
-                                                    <Box sx={{ mr: 1, display: 'flex', alignItems: 'flex-start', mt: 1 }}>
-                                                        <NotesIcon sx={{ color: COLORS.primary, fontSize: 20 }} />
-                                                    </Box>
-                                                ),
-                                            }}
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 2,
-                                                    transition: 'all 0.3s ease',
-                                                    '&:hover': {
-                                                        boxShadow: `0 4px 12px ${COLORS.primary}20`
-                                                    },
-                                                    '&.Mui-focused': {
-                                                        boxShadow: `0 4px 20px ${COLORS.primary}30`
-                                                    }
-                                                }
-                                            }}
-                                        />
-
-                                        <TextField
-                                            select
-                                            label="Module"
-                                            name="moduleId"
-                                            value={newLesson.moduleId}
-                                            onChange={handleNewLessonInputChange}
-                                            fullWidth
-                                            required
-                                            variant="outlined"
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 2,
-                                                    transition: 'all 0.3s ease',
-                                                    '&:hover': {
-                                                        boxShadow: `0 4px 12px ${COLORS.primary}20`
-                                                    },
-                                                    '&.Mui-focused': {
-                                                        boxShadow: `0 4px 20px ${COLORS.primary}30`
-                                                    }
-                                                }
-                                            }}
-                                        >
-                                            {modules.map((module) => (
-                                                <MenuItem key={module.moduleId} value={String(module.moduleId)}>
-                                                    {module.name}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-                                    </Stack>
-                                </Box>
-
-                                {/* Schedule & Classification Section */}
-                                <Box>
-                                    <Box sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        mb: 3,
-                                        pb: 2,
-                                        borderBottom: `2px solid ${COLORS.secondary}20`
-                                    }}>
-                                        <AccessTimeIcon sx={{
-                                            color: COLORS.secondary,
-                                            mr: 1.5,
-                                            fontSize: 24
-                                        }} />
-                                        <Typography variant="h6" sx={{
-                                            color: COLORS.text.primary,
-                                            fontWeight: 600,
-                                            fontSize: '1.1rem'
-                                        }}>
-                                            Phân loại & Thời gian
-                                        </Typography>
-                                    </Box>
-
-                                    <Grid container spacing={3}>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                select
-                                                label="Số tiết"
-                                                name="totalPeriods"
-                                                value={newLesson.totalPeriods}
-                                                onChange={handleNewLessonInputChange}
-                                                fullWidth
-                                                required
-                                                variant="outlined"
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            boxShadow: `0 4px 12px ${COLORS.secondary}20`
-                                                        },
-                                                        '&.Mui-focused': {
-                                                            boxShadow: `0 4px 20px ${COLORS.secondary}30`
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                <MenuItem value="1">1 tiết</MenuItem>
-                                                <MenuItem value="2">2 tiết</MenuItem>
-                                            </TextField>
-                                        </Grid>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                select
-                                                label="Loại bài học"
-                                                name="lessonTypeId"
-                                                value={newLesson.lessonTypeId}
-                                                onChange={handleNewLessonInputChange}
-                                                fullWidth
-                                                required
-                                                variant="outlined"
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            boxShadow: `0 4px 12px ${COLORS.secondary}20`
-                                                        },
-                                                        '&.Mui-focused': {
-                                                            boxShadow: `0 4px 20px ${COLORS.secondary}30`
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                {lessonTypes.map((type) => (
-                                                    <MenuItem key={type.lessonTypeId} value={type.lessonTypeId}>
-                                                        {type.lessonTypeName}
-                                                    </MenuItem>
-                                                ))}
-                                            </TextField>
-                                        </Grid>
-                                    </Grid>
-                                </Box>
-
-                                {/* Additional Details Section */}
-                                <Box>
-                                    <Box sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        mb: 3,
-                                        pb: 2,
-                                        borderBottom: `2px solid ${COLORS.warning}20`
-                                    }}>
-                                        <DateRangeIcon sx={{
-                                            color: COLORS.warning,
-                                            mr: 1.5,
-                                            fontSize: 24
-                                        }} />
-                                        <Typography variant="h6" sx={{
-                                            color: COLORS.text.primary,
-                                            fontWeight: 600,
-                                            fontSize: '1.1rem'
-                                        }}>
-                                            Chi tiết bổ sung
-                                        </Typography>
-                                    </Box>
-
-                                    <Grid container spacing={3}>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                select
-                                                label="Ghi chú"
-                                                name="noteId"
-                                                value={newLesson.noteId}
-                                                onChange={handleNewLessonInputChange}
-                                                fullWidth
-                                                required
-                                                variant="outlined"
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            boxShadow: `0 4px 12px ${COLORS.warning}20`
-                                                        },
-                                                        '&.Mui-focused': {
-                                                            boxShadow: `0 4px 20px ${COLORS.warning}30`
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                {notes.map((note) => (
-                                                    <MenuItem key={note.noteId} value={note.noteId}>
-                                                        {note.description}
-                                                    </MenuItem>
-                                                ))}
-                                            </TextField>
-                                        </Grid>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                select
-                                                label="Tuần học"
-                                                name="weekId"
-                                                value={newLesson.weekId}
-                                                onChange={handleNewLessonInputChange}
-                                                fullWidth
-                                                required
-                                                variant="outlined"
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            boxShadow: `0 4px 12px ${COLORS.warning}20`
-                                                        },
-                                                        '&.Mui-focused': {
-                                                            boxShadow: `0 4px 20px ${COLORS.warning}30`
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                {weeks.map((week) => (
-                                                    <MenuItem key={week.weekId} value={week.weekId}>
-                                                        Tuần {week.weekNumber}
-                                                    </MenuItem>
-                                                ))}
-                                            </TextField>
-                                        </Grid>
-                                    </Grid>
-                                </Box>
-
-                                {/* Loading State */}
-                                {optionsLoading && (
-                                    <Box sx={{
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        p: 4,
-                                        bgcolor: `${COLORS.primary}08`,
-                                        borderRadius: 3,
-                                        border: `2px dashed ${COLORS.primary}30`,
-                                        backdropFilter: 'blur(10px)'
-                                    }}>
-                                        <CircularProgress
-                                            size={28}
-                                            sx={{
-                                                color: COLORS.primary,
-                                                mr: 2
-                                            }}
-                                        />
-                                        <Typography sx={{
-                                            color: COLORS.text.primary,
-                                            fontWeight: 500,
-                                            fontSize: '1rem'
-                                        }}>
-                                            Đang tải dữ liệu dropdown...
-                                        </Typography>
-                                    </Box>
-                                )}
-
-                                {/* Form Validation Summary */}
-                                {(newLesson.name.trim() && newLesson.moduleId && newLesson.lessonTypeId && newLesson.noteId && newLesson.weekId) && (
-                                    <Box sx={{
-                                        p: 3,
-                                        bgcolor: `${COLORS.success}08`,
-                                        borderRadius: 2,
-                                        border: `1px solid ${COLORS.success}30`,
-                                        display: 'flex',
-                                        alignItems: 'center'
-                                    }}>
-                                        <CheckIcon sx={{ color: COLORS.success, mr: 2, fontSize: 24 }} />
-                                        <Typography sx={{
-                                            color: COLORS.success,
-                                            fontWeight: 600
-                                        }}>
-                                            Tất cả thông tin đã được điền đầy đủ. Sẵn sàng tạo bài học!
-                                        </Typography>
-                                    </Box>
-                                )}
-                            </Stack>
-                        </DialogContent>
-
-                        {/* Enhanced Dialog Actions */}
-                        <DialogActions sx={{
-                            p: 4,
-                            gap: 2,
-                            bgcolor: 'rgba(6, 169, 174, 0.02)',
-                            borderTop: '1px solid rgba(0, 0, 0, 0.08)'
-                        }}>
-                            <StyledButton
-                                onClick={handleCloseAddLessonDialog}
-                                variant="outlined"
-                                color="secondary"
-                                sx={{
-                                    minWidth: 120,
-                                    height: 48,
-                                    borderRadius: 3,
-                                    fontSize: '1rem',
-                                    fontWeight: 600,
-                                    borderWidth: 2,
-                                    '&:hover': {
-                                        borderWidth: 2,
-                                        transform: 'translateY(-2px)',
-                                        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
-                                    }
-                                }}
-                                startIcon={<CloseIcon />}
-                            >
-                                Hủy bỏ
-                            </StyledButton>
-                            <StyledButton
-                                onClick={handleAddLesson}
-                                variant="contained"
-                                color="primary"
-                                disabled={
-                                    !newLesson.name.trim() ||
-                                    !newLesson.totalPeriods ||
-                                    !newLesson.moduleId ||
-                                    !newLesson.lessonTypeId ||
-                                    !newLesson.noteId ||
-                                    !newLesson.weekId ||
-                                    isNaN(Number(newLesson.totalPeriods)) ||
-                                    Number(newLesson.totalPeriods) < 1 ||
-                                    optionsLoading
-                                }
-                                sx={{
-                                    minWidth: 160,
-                                    height: 48,
-                                    borderRadius: 3,
-                                    fontSize: '1rem',
-                                    fontWeight: 700,
-                                    background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
-                                    boxShadow: `0 8px 20px ${COLORS.primary}40`,
-                                    '&:hover': {
-                                        background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
-                                        transform: 'translateY(-3px)',
-                                        boxShadow: `0 12px 28px ${COLORS.primary}50`
-                                    },
-                                    '&:disabled': {
-                                        background: 'rgba(0, 0, 0, 0.12)',
-                                        color: 'rgba(0, 0, 0, 0.26)',
-                                        boxShadow: 'none'
-                                    }
-                                }}
-                                startIcon={<AddIcon sx={{ fontSize: 20 }} />}
-                            >
-                                Tạo bài học
-                            </StyledButton>
-                        </DialogActions>
-                    </Dialog>
-
-                    {/* Edit Lesson Dialog - THÊM PHẦN NÀY */}
-                    <Dialog
-                        open={openEditLessonDialog}
-                        onClose={handleCloseEditLessonDialog}
-                        maxWidth="md"
-                        fullWidth
-                        PaperProps={{
-                            sx: {
-                                borderRadius: 4,
-                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.12)',
-                                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                                overflow: 'hidden'
-                            }
-                        }}
-                    >
-                        {/* Enhanced Dialog Header */}
-                        <DialogTitle sx={{
-                            background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
-                            color: '#fff',
-                            p: 3,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            position: 'relative',
-                            '&::after': {
-                                content: '""',
-                                position: 'absolute',
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                height: '4px',
-                                background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)'
-                            }
-                        }}>
-                            <Box sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: 48,
-                                height: 48,
-                                borderRadius: '12px',
-                                bgcolor: 'rgba(255, 255, 255, 0.2)',
-                                backdropFilter: 'blur(10px)'
-                            }}>
-                                <EditIcon sx={{ fontSize: 28, color: '#fff' }} />
-                            </Box>
-                            <Box>
-                                <Typography variant="h5" sx={{
-                                    fontWeight: 700,
-                                    fontSize: '1.5rem',
-                                    mb: 0.5,
-                                    textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                                }}>
-                                    Chỉnh Sửa Bài Học
-                                </Typography>
-                                <Typography variant="body2" sx={{
-                                    opacity: 0.9,
-                                    fontSize: '0.875rem'
-                                }}>
-                                    Cập nhật thông tin bài học
-                                </Typography>
-                            </Box>
-                        </DialogTitle>
-
-                        <DialogContent sx={{ p: 4, bgcolor: '#fff' }}>
-                            <Stack spacing={4} sx={{ mt: 1 }}>
-                                {/* Basic Information Section */}
-                                <Box>
-                                    <Box sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        mb: 3,
-                                        pb: 2,
-                                        borderBottom: `2px solid ${COLORS.primary}20`
-                                    }}>
-                                        <InfoIcon sx={{
-                                            color: COLORS.primary,
-                                            mr: 1.5,
-                                            fontSize: 24
-                                        }} />
-                                        <Typography variant="h6" sx={{
-                                            color: COLORS.text.primary,
-                                            fontWeight: 600,
-                                            fontSize: '1.1rem'
-                                        }}>
-                                            Thông tin cơ bản
-                                        </Typography>
-                                    </Box>
-
-                                    <Stack spacing={3}>
-                                        <Box sx={{ position: 'relative' }}>
-                                            <TextField
-                                                label="Tên bài học"
-                                                name="name"
-                                                value={editedLesson.name}
-                                                onChange={handleEditedLessonInputChange}
-                                                fullWidth
-                                                required
-                                                variant="outlined"
-                                                placeholder="Nhập tên bài học..."
-                                                InputProps={{
-                                                    startAdornment: (
-                                                        <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                                                            <AssignmentIcon sx={{ color: COLORS.primary, fontSize: 20 }} />
-                                                        </Box>
-                                                    ),
-                                                }}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            boxShadow: `0 4px 12px ${COLORS.primary}20`
-                                                        },
-                                                        '&.Mui-focused': {
-                                                            boxShadow: `0 4px 20px ${COLORS.primary}30`
-                                                        }
-                                                    }
-                                                }}
-                                                helperText={
-                                                    editedLesson.name.trim() ?
-                                                        "Tên bài học hợp lệ" :
-                                                        "Vui lòng nhập tên bài học"
-                                                }
-                                                FormHelperTextProps={{
-                                                    sx: {
-                                                        color: editedLesson.name.trim() ? COLORS.success : COLORS.text.secondary,
-                                                        fontWeight: 500
-                                                    }
-                                                }}
-                                            />
-                                        </Box>
-
-                                        <TextField
-                                            select
-                                            label="Module"
-                                            name="moduleId"
-                                            value={editedLesson.moduleId}
-                                            onChange={handleEditedLessonInputChange}
-                                            fullWidth
-                                            required
-                                            variant="outlined"
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 2,
-                                                    transition: 'all 0.3s ease',
-                                                    '&:hover': {
-                                                        boxShadow: `0 4px 12px ${COLORS.primary}20`
-                                                    },
-                                                    '&.Mui-focused': {
-                                                        boxShadow: `0 4px 20px ${COLORS.primary}30`
-                                                    }
-                                                }
-                                            }}
-                                        >
-                                            {modules.map((module) => (
-                                                <MenuItem key={module.moduleId} value={String(module.moduleId)}>
-                                                    {module.name}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-                                    </Stack>
-                                </Box>
-
-                                {/* Schedule & Classification Section */}
-                                <Box>
-                                    <Box sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        mb: 3,
-                                        pb: 2,
-                                        borderBottom: `2px solid ${COLORS.secondary}20`
-                                    }}>
-                                        <AccessTimeIcon sx={{
-                                            color: COLORS.secondary,
-                                            mr: 1.5,
-                                            fontSize: 24
-                                        }} />
-                                        <Typography variant="h6" sx={{
-                                            color: COLORS.text.primary,
-                                            fontWeight: 600,
-                                            fontSize: '1.1rem'
-                                        }}>
-                                            Phân loại & Thời gian
-                                        </Typography>
-                                    </Box>
-
-                                    <Grid container spacing={3}>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                select
-                                                label="Số tiết"
-                                                name="totalPeriods"
-                                                value={editedLesson.totalPeriods}
-                                                onChange={handleEditedLessonInputChange}
-                                                fullWidth
-                                                required
-                                                variant="outlined"
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            boxShadow: `0 4px 12px ${COLORS.secondary}20`
-                                                        },
-                                                        '&.Mui-focused': {
-                                                            boxShadow: `0 4px 20px ${COLORS.secondary}30`
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                <MenuItem value="1">1 tiết</MenuItem>
-                                                <MenuItem value="2">2 tiết</MenuItem>
-                                            </TextField>
-                                        </Grid>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                select
-                                                label="Loại bài học"
-                                                name="lessonTypeId"
-                                                value={editedLesson.lessonTypeId}
-                                                onChange={handleEditedLessonInputChange}
-                                                fullWidth
-                                                required
-                                                variant="outlined"
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            boxShadow: `0 4px 12px ${COLORS.secondary}20`
-                                                        },
-                                                        '&.Mui-focused': {
-                                                            boxShadow: `0 4px 20px ${COLORS.secondary}30`
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                {lessonTypes.map((type) => (
-                                                    <MenuItem key={type.lessonTypeId} value={String(type.lessonTypeId)}>
-                                                        {type.lessonTypeName}
-                                                    </MenuItem>
-                                                ))}
-                                            </TextField>
-                                        </Grid>
-                                    </Grid>
-                                </Box>
-
-                                {/* Additional Details Section */}
-                                <Box>
-                                    <Box sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        mb: 3,
-                                        pb: 2,
-                                        borderBottom: `2px solid ${COLORS.warning}20`
-                                    }}>
-                                        <DateRangeIcon sx={{
-                                            color: COLORS.warning,
-                                            mr: 1.5,
-                                            fontSize: 24
-                                        }} />
-                                        <Typography variant="h6" sx={{
-                                            color: COLORS.text.primary,
-                                            fontWeight: 600,
-                                            fontSize: '1.1rem'
-                                        }}>
-                                            Chi tiết bổ sung
-                                        </Typography>
-                                    </Box>
-
-                                    <Grid container spacing={3}>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                select
-                                                label="Ghi chú"
-                                                name="noteId"
-                                                value={editedLesson.noteId}
-                                                onChange={handleEditedLessonInputChange}
-                                                fullWidth
-                                                required
-                                                variant="outlined"
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            boxShadow: `0 4px 12px ${COLORS.warning}20`
-                                                        },
-                                                        '&.Mui-focused': {
-                                                            boxShadow: `0 4px 20px ${COLORS.warning}30`
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                {notes.map((note) => (
-                                                    <MenuItem key={note.noteId} value={String(note.noteId)}>
-                                                        {note.description}
-                                                    </MenuItem>
-                                                ))}
-                                            </TextField>
-                                        </Grid>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                select
-                                                label="Tuần học"
-                                                name="weekId"
-                                                value={editedLesson.weekId}
-                                                onChange={handleEditedLessonInputChange}
-                                                fullWidth
-                                                required
-                                                variant="outlined"
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            boxShadow: `0 4px 12px ${COLORS.warning}20`
-                                                        },
-                                                        '&.Mui-focused': {
-                                                            boxShadow: `0 4px 20px ${COLORS.warning}30`
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                {weeks.map((week) => (
-                                                    <MenuItem key={week.weekId} value={String(week.weekId)}>
-                                                        Tuần {week.weekNumber}
-                                                    </MenuItem>
-                                                ))}
-                                            </TextField>
-                                        </Grid>
-                                    </Grid>
-                                </Box>
-
-                                {/* Loading State */}
-                                {optionsLoading && (
-                                    <Box sx={{
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        p: 4,
-                                        bgcolor: `${COLORS.primary}08`,
-                                        borderRadius: 3,
-                                        border: `2px dashed ${COLORS.primary}30`,
-                                        backdropFilter: 'blur(10px)'
-                                    }}>
-                                        <CircularProgress
-                                            size={28}
-                                            sx={{
-                                                color: COLORS.primary,
-                                                mr: 2
-                                            }}
-                                        />
-                                        <Typography sx={{
-                                            color: COLORS.text.primary,
-                                            fontWeight: 500,
-                                            fontSize: '1rem'
-                                        }}>
-                                            Đang tải dữ liệu dropdown...
-                                        </Typography>
-                                    </Box>
-                                )}
-                            </Stack>
-                        </DialogContent>
-
-                        {/* Enhanced Dialog Actions */}
-                        <DialogActions sx={{
-                            p: 4,
-                            gap: 2,
-                            bgcolor: 'rgba(6, 169, 174, 0.02)',
-                            borderTop: '1px solid rgba(0, 0, 0, 0.08)'
-                        }}>
-                            <StyledButton
-                                onClick={handleCloseEditLessonDialog}
-                                variant="outlined"
-                                color="secondary"
-                                sx={{
-                                    minWidth: 120,
-                                    height: 48,
-                                    borderRadius: 3,
-                                    fontSize: '1rem',
-                                    fontWeight: 600,
-                                    borderWidth: 2,
-                                    '&:hover': {
-                                        borderWidth: 2,
-                                        transform: 'translateY(-2px)',
-                                        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
-                                    }
-                                }}
-                                startIcon={<CloseIcon />}
-                            >
-                                Hủy bỏ
-                            </StyledButton>
-                            <StyledButton
-                                onClick={() => handleSaveLessonEdit(editLessonMode)}
-                                variant="contained"
-                                color="primary"
-                                disabled={
-                                    !editedLesson.name.trim() ||
-                                    !editedLesson.totalPeriods ||
-                                    !editedLesson.moduleId ||
-                                    !editedLesson.lessonTypeId ||
-                                    !editedLesson.noteId ||
-                                    !editedLesson.weekId ||
-                                    isNaN(Number(editedLesson.totalPeriods)) ||
-                                    Number(editedLesson.totalPeriods) < 1 ||
-                                    optionsLoading
-                                }
-                                sx={{
-                                    minWidth: 160,
-                                    height: 48,
-                                    borderRadius: 3,
-                                    fontSize: '1rem',
-                                    fontWeight: 700,
-                                    background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
-                                    boxShadow: `0 8px 20px ${COLORS.primary}40`,
-                                    '&:hover': {
-                                        background: `linear-gradient(135deg, ${COLORS.primary} 0%, #0891b2 100%)`,
-                                        transform: 'translateY(-3px)',
-                                        boxShadow: `0 12px 28px ${COLORS.primary}50`
-                                    },
-                                    '&:disabled': {
-                                        background: 'rgba(0, 0, 0, 0.12)',
-                                        color: 'rgba(0, 0, 0, 0.26)',
-                                        boxShadow: 'none'
-                                    }
-                                }}
-                                startIcon={<CheckIcon sx={{ fontSize: 20 }} />}
-                            >
-                                Cập nhật
-                            </StyledButton>
-                        </DialogActions>
-                    </Dialog>
-
-                    {/* Delete Confirmation Dialog */}
-                    <Dialog
-                        open={openDeleteDialog}
-                        onClose={handleCloseDeleteDialog}
+                        open={openDeleteConfirmDialog}
+                        onClose={handleCloseDeleteConfirmDialog}
                         maxWidth="sm"
                         fullWidth
-                        PaperProps={{
-                            sx: {
-                                borderRadius: 3,
-                                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)'
-                            }
-                        }}
                     >
-                        <DialogTitle sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            pb: 2,
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.08)'
-                        }}>
-                            <Box sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                color: COLORS.error,
-                                mr: 2
-                            }}>
-                                <DeleteIcon sx={{ fontSize: 28 }} />
-                            </Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                Xác nhận xóa bài học
+                        <DialogTitle>
+                            <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+                                Xác nhận Xóa Chủ đề
                             </Typography>
                         </DialogTitle>
-
-                        <DialogContent sx={{ pt: 3 }}>
-                            {lessonToDelete && (
-                                <Box>
-                                    <Alert severity="warning" sx={{ mb: 3 }}>
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                            Hành động này không thể hoàn tác!
-                                        </Typography>
-                                    </Alert>
-
-                                    <Typography variant="body1" sx={{ mb: 2, color: COLORS.text.primary }}>
-                                        Bạn có chắc chắn muốn xóa bài học sau?
-                                    </Typography>
-
-                                    <Box sx={{
-                                        p: 3,
-                                        bgcolor: 'rgba(255, 72, 66, 0.05)',
-                                        borderRadius: 2,
-                                        border: '1px solid rgba(255, 72, 66, 0.2)',
-                                        textAlign: 'center'
-                                    }}>
-                                        <Typography variant="h6" sx={{
-                                            fontWeight: 600,
-                                            color: COLORS.text.primary,
-                                            mb: 1
-                                        }}>
-                                            "{lessonToDelete.name}"
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            )}
+                        <DialogContent dividers>
+                            <Typography sx={{ color: theme.palette.text.secondary }}>
+                                Bạn có chắc chắn muốn xóa chủ đề "{moduleToDelete?.name}" không? Hành động này không thể hoàn tác.
+                            </Typography>
                         </DialogContent>
-
-                        <DialogActions sx={{ p: 3, gap: 2 }}>
-                            <StyledButton
-                                onClick={handleCloseDeleteDialog}
-                                variant="outlined"
-                                color="secondary"
-                                disabled={deleteLoading}
-                            >
-                                Hủy bỏ
-                            </StyledButton>
-
-                            <StyledButton
-                                onClick={handleConfirmDeleteLesson}
-                                variant="contained"
-                                disabled={deleteLoading}
-                                sx={{
-                                    bgcolor: COLORS.error,
-                                    '&:hover': {
-                                        bgcolor: COLORS.error,
-                                        opacity: 0.9
+                        <DialogActions>
+                            <Button onClick={handleCloseDeleteConfirmDialog} sx={{ color: theme.palette.text.secondary }}>
+                                Hủy
+                            </Button>
+                            <Button
+                                onClick={async () => {
+                                    if (moduleToDelete) {
+                                        await handleDeleteModule(moduleToDelete.moduleId);
                                     }
                                 }}
-                                startIcon={deleteLoading ? (
-                                    <CircularProgress size={16} sx={{ color: '#fff' }} />
-                                ) : (
-                                    <DeleteIcon />
-                                )}
-                            >
-                                {deleteLoading ? 'Đang xóa...' : 'Xóa bài học'}
-                            </StyledButton>
-                        </DialogActions>
-                    </Dialog>
-
-                    {/* Edit Module Dialog */}
-                    <Dialog
-                        open={openEditModuleDialog}
-                        onClose={handleCloseEditModuleDialog}
-                        maxWidth="sm"
-                        fullWidth
-                        PaperProps={{
-                            sx: {
-                                borderRadius: 3,
-                                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)'
-                            }
-                        }}
-                    >
-                        <DialogTitle sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            pb: 2,
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.08)'
-                        }}>
-                            <Box sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                color: COLORS.primary,
-                                mr: 2
-                            }}>
-                                <EditIcon sx={{ fontSize: 28 }} />
-                            </Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                Chỉnh sửa Module
-                            </Typography>
-                        </DialogTitle>
-
-                        <DialogContent sx={{ pt: 3 }}>
-                            <Stack spacing={3}>
-                                <TextField
-                                    label="Tên module"
-                                    name="name"
-                                    value={editedModule.name}
-                                    onChange={handleModuleInputChange}
-                                    fullWidth
-                                    required
-                                    variant="outlined"
-                                />
-                                <TextField
-                                    select
-                                    label="Học kỳ"
-                                    name="semester"
-                                    value={editedModule.semester}
-                                    onChange={handleModuleInputChange}
-                                    fullWidth
-                                    required
-                                    variant="outlined"
-                                >
-                                    <MenuItem value={1}>Học kỳ 1</MenuItem>
-                                    <MenuItem value={2}>Học kỳ 2</MenuItem>
-                                </TextField>
-                                <TextField
-                                    label="Tổng số tiết"
-                                    name="totalPeriods"
-                                    type="number"
-                                    value={editedModule.totalPeriods}
-                                    onChange={handleModuleInputChange}
-                                    fullWidth
-                                    required
-                                    inputProps={{ min: 1 }}
-                                    variant="outlined"
-                                />
-                            </Stack>
-                        </DialogContent>
-
-                        <DialogActions sx={{ p: 3, gap: 2 }}>
-                            <StyledButton
-                                onClick={handleCloseEditModuleDialog}
-                                variant="outlined"
-                                color="secondary"
-                            >
-                                Hủy bỏ
-                            </StyledButton>
-                            <StyledButton
-                                onClick={handleSaveModuleEdit}
                                 variant="contained"
-                                color="primary"
-                                disabled={
-                                    !editedModule.name.trim() ||
-                                    !editedModule.totalPeriods ||
-                                    isNaN(Number(editedModule.totalPeriods)) ||
-                                    Number(editedModule.totalPeriods) < 1
-                                }
+                                sx={{ bgcolor: COLORS.error, color: '#fff' }}
                             >
-                                Cập nhật
-                            </StyledButton>
+                                Xóa
+                            </Button>
                         </DialogActions>
                     </Dialog>
                 </Container>
@@ -3310,4 +1258,4 @@ const CurriculumFramework = ({ sidebarOpen }) => {
     );
 };
 
-export default CurriculumFramework;
+export default CurriculumFramework; 

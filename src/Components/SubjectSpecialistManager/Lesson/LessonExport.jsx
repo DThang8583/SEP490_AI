@@ -37,6 +37,7 @@ import {
     Search as SearchIcon,
     Clear as ClearIcon
 } from '@mui/icons-material';
+import { useTheme } from '../../../context/ThemeContext';
 
 // Color palette for consistency
 const COLORS = {
@@ -57,15 +58,17 @@ const COLORS = {
 };
 
 // Styled components
-const DashboardCard = styled(Card)({
+const DashboardCard = styled(Card)(({ isDarkMode }) => ({
     borderRadius: 12,
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
+    boxShadow: isDarkMode 
+        ? '0 8px 24px rgba(0, 0, 0, 0.2)' 
+        : '0 8px 24px rgba(0, 0, 0, 0.08)',
     transition: 'all 0.3s ease',
     height: '100%',
-    background: COLORS.background.paper,
-});
+    background: isDarkMode ? '#1E1E1E' : COLORS.background.paper,
+}));
 
-const CardHeader = styled(Box)(({ bgcolor }) => ({
+const CardHeader = styled(Box)(({ bgcolor, isDarkMode }) => ({
     padding: '16px',
     background: bgcolor || COLORS.primary,
     color: '#fff',
@@ -74,16 +77,20 @@ const CardHeader = styled(Box)(({ bgcolor }) => ({
     justifyContent: 'space-between',
 }));
 
-const StyledListItem = styled(ListItem)({
-    backgroundColor: COLORS.background.paper,
+const StyledListItem = styled(ListItem)(({ isDarkMode }) => ({
+    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : COLORS.background.paper,
     borderRadius: 8,
     marginBottom: 16,
     padding: 16,
-    boxShadow: '0 3px 6px rgba(0,0,0,0.08)',
+    boxShadow: isDarkMode 
+        ? '0 3px 6px rgba(0,0,0,0.2)' 
+        : '0 3px 6px rgba(0,0,0,0.08)',
     transition: 'all 0.3s ease',
     '&:hover': {
         transform: 'translateY(-3px)',
-        boxShadow: '0 6px 12px rgba(0,0,0,0.12)',
+        boxShadow: isDarkMode 
+            ? '0 6px 12px rgba(0,0,0,0.3)' 
+            : '0 6px 12px rgba(0,0,0,0.12)',
     },
     position: 'relative',
     '&::before': {
@@ -98,9 +105,9 @@ const StyledListItem = styled(ListItem)({
         borderTopLeftRadius: 8,
         borderBottomLeftRadius: 8,
     },
-});
+}));
 
-const ExportButton = styled(Button)({
+const ExportButton = styled(Button)(({ isDarkMode }) => ({
     borderRadius: 8,
     padding: '8px 16px',
     textTransform: 'none',
@@ -112,49 +119,79 @@ const ExportButton = styled(Button)({
         '&:hover': {
             backgroundColor: '#058e93',
             transform: 'translateY(-2px)',
-            boxShadow: '0 4px 8px rgba(6, 169, 174, 0.25)',
+            boxShadow: isDarkMode 
+                ? '0 4px 8px rgba(6, 169, 174, 0.4)' 
+                : '0 4px 8px rgba(6, 169, 174, 0.25)',
         },
     },
     '&.MuiButton-outlined': {
-        color: COLORS.primary,
-        borderColor: COLORS.primary,
+        color: isDarkMode ? '#fff' : COLORS.primary,
+        borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : COLORS.primary,
         '&:hover': {
-            borderColor: COLORS.primary,
-            backgroundColor: 'rgba(6, 169, 174, 0.08)',
+            borderColor: isDarkMode ? 'rgba(255,255,255,0.3)' : COLORS.primary,
+            backgroundColor: isDarkMode 
+                ? 'rgba(255,255,255,0.05)' 
+                : 'rgba(6, 169, 174, 0.08)',
             transform: 'translateY(-2px)',
-            boxShadow: '0 4px 8px rgba(6, 169, 174, 0.15)',
+            boxShadow: isDarkMode 
+                ? '0 4px 8px rgba(6, 169, 174, 0.3)' 
+                : '0 4px 8px rgba(6, 169, 174, 0.15)',
         },
     },
-});
+}));
 
-const InfoChip = styled(Chip)({
+const InfoChip = styled(Chip)(({ isDarkMode }) => ({
     margin: '4px 4px 4px 0',
     borderRadius: 12,
-    backgroundColor: 'rgba(25, 118, 210, 0.08)',
-    color: COLORS.secondary,
+    backgroundColor: isDarkMode 
+        ? 'rgba(255,255,255,0.05)' 
+        : 'rgba(25, 118, 210, 0.08)',
+    color: isDarkMode ? '#fff' : COLORS.secondary,
     '.MuiChip-icon': {
-        color: COLORS.secondary,
+        color: isDarkMode ? '#fff' : COLORS.secondary,
     }
-});
+}));
 
-const SearchTextField = styled(TextField)({
+const SearchTextField = styled(TextField)(({ isDarkMode }) => ({
     marginBottom: 16,
     '& .MuiOutlinedInput-root': {
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: isDarkMode 
+            ? 'rgba(255, 255, 255, 0.05)' 
+            : 'rgba(255, 255, 255, 0.9)',
         transition: 'all 0.3s ease',
         '&:hover': {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+            boxShadow: isDarkMode 
+                ? '0 4px 12px rgba(0, 0, 0, 0.2)' 
+                : '0 4px 12px rgba(0, 0, 0, 0.08)',
         },
         '&.Mui-focused': {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+            boxShadow: isDarkMode 
+                ? '0 4px 12px rgba(0, 0, 0, 0.2)' 
+                : '0 4px 12px rgba(0, 0, 0, 0.08)',
+        },
+        '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+        },
+        '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+        },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: isDarkMode ? '#06A9AE' : '#06A9AE',
         },
     },
-});
+    '& .MuiInputBase-input': {
+        color: isDarkMode ? '#fff' : '#212B36',
+    },
+    '& .MuiInputLabel-root': {
+        color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary,
+    },
+}));
 
 const LESSON_PLANS_API = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans';
 
 const LessonExport = ({ sidebarOpen }) => {
+    const { isDarkMode } = useTheme();
     const [approvedLessons, setApprovedLessons] = useState([]);
     const [userGradeNumber, setUserGradeNumber] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -333,7 +370,9 @@ const LessonExport = ({ sidebarOpen }) => {
         <Box
             sx={{
                 minHeight: '100vh',
-                background: COLORS.background.default,
+                background: isDarkMode 
+                    ? 'linear-gradient(135deg, #1E1E1E 0%, #2D3436 100%)'
+                    : COLORS.background.default,
                 position: 'absolute',
                 top: 0,
                 left: 0,
@@ -353,8 +392,8 @@ const LessonExport = ({ sidebarOpen }) => {
                 <Container maxWidth="lg">
                     <Fade in={true} timeout={500}>
                         <Box>
-                            <DashboardCard>
-                                <CardHeader bgcolor={COLORS.primary}>
+                            <DashboardCard isDarkMode={isDarkMode}>
+                                <CardHeader bgcolor={COLORS.primary} isDarkMode={isDarkMode}>
                                     <Box display="flex" alignItems="center">
                                         <AssignmentIcon sx={{ mr: 1 }} />
                                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -368,7 +407,17 @@ const LessonExport = ({ sidebarOpen }) => {
                                             <CircularProgress sx={{ color: COLORS.primary }} />
                                         </Box>
                                     ) : error ? (
-                                        <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+                                        <Alert 
+                                            severity="error" 
+                                            sx={{ 
+                                                m: 2,
+                                                bgcolor: isDarkMode ? 'rgba(255, 72, 66, 0.15)' : 'rgba(255, 72, 66, 0.08)',
+                                                borderLeft: `4px solid ${COLORS.error}`,
+                                                borderRadius: 2
+                                            }}
+                                        >
+                                            {error}
+                                        </Alert>
                                     ) : (
                                         <>
                                             <Typography
@@ -376,7 +425,7 @@ const LessonExport = ({ sidebarOpen }) => {
                                                 sx={{
                                                     p: 2,
                                                     fontWeight: 700,
-                                                    color: COLORS.text.primary,
+                                                    color: isDarkMode ? '#fff' : COLORS.text.primary,
                                                 }}
                                             >
                                                 Giáo án đã duyệt {userGradeNumber ? `- Khối ${userGradeNumber}` : ''}
@@ -388,10 +437,13 @@ const LessonExport = ({ sidebarOpen }) => {
                                                 placeholder="Tìm kiếm theo tên giáo án..."
                                                 value={searchTerm}
                                                 onChange={handleSearchChange}
+                                                isDarkMode={isDarkMode}
                                                 InputProps={{
                                                     startAdornment: (
                                                         <InputAdornment position="start">
-                                                            <SearchIcon sx={{ color: COLORS.text.secondary }} />
+                                                            <SearchIcon sx={{ 
+                                                                color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary 
+                                                            }} />
                                                         </InputAdornment>
                                                     ),
                                                     endAdornment: searchTerm && (
@@ -402,9 +454,9 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                 edge="end"
                                                                 size="small"
                                                                 sx={{
-                                                                    color: COLORS.text.secondary,
+                                                                    color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary,
                                                                     '&:hover': {
-                                                                        color: COLORS.text.primary,
+                                                                        color: isDarkMode ? '#fff' : COLORS.text.primary,
                                                                     }
                                                                 }}
                                                             >
@@ -415,18 +467,28 @@ const LessonExport = ({ sidebarOpen }) => {
                                                 }}
                                             />
 
-                                            <Divider sx={{ mb: 3 }} />
+                                            <Divider sx={{ 
+                                                mb: 3,
+                                                bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' 
+                                            }} />
 
                                             {approvedLessons.length === 0 ? (
                                                 <Box
                                                     sx={{
                                                         p: 4,
                                                         textAlign: 'center',
-                                                        backgroundColor: COLORS.background.secondary,
+                                                        backgroundColor: isDarkMode 
+                                                            ? 'rgba(255,255,255,0.05)' 
+                                                            : COLORS.background.secondary,
                                                         borderRadius: 2,
                                                     }}
                                                 >
-                                                    <Typography variant="body1" color={COLORS.text.secondary}>
+                                                    <Typography 
+                                                        variant="body1" 
+                                                        sx={{ 
+                                                            color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary 
+                                                        }}
+                                                    >
                                                         Không có giáo án nào đã duyệt cho Khối {userGradeNumber || 'của bạn'}.
                                                     </Typography>
                                                 </Box>
@@ -435,11 +497,18 @@ const LessonExport = ({ sidebarOpen }) => {
                                                     sx={{
                                                         p: 4,
                                                         textAlign: 'center',
-                                                        backgroundColor: COLORS.background.secondary,
+                                                        backgroundColor: isDarkMode 
+                                                            ? 'rgba(255,255,255,0.05)' 
+                                                            : COLORS.background.secondary,
                                                         borderRadius: 2,
                                                     }}
                                                 >
-                                                    <Typography variant="body1" color={COLORS.text.secondary}>
+                                                    <Typography 
+                                                        variant="body1" 
+                                                        sx={{ 
+                                                            color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary 
+                                                        }}
+                                                    >
                                                         Không tìm thấy giáo án nào phù hợp với từ khóa "{searchTerm}".
                                                     </Typography>
                                                 </Box>
@@ -447,10 +516,20 @@ const LessonExport = ({ sidebarOpen }) => {
                                                 <>
                                                     <List sx={{ p: 0 }}>
                                                         {paginatedLessons.map((lesson) => (
-                                                            <StyledListItem key={lesson.lessonId || lesson.id}>
+                                                            <StyledListItem 
+                                                                key={lesson.lessonId || lesson.id}
+                                                                isDarkMode={isDarkMode}
+                                                            >
                                                                 <Grid container alignItems="center" spacing={2}>
                                                                     <Grid item xs={12} md={7} lg={8}>
-                                                                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                                                                        <Typography 
+                                                                            variant="h6" 
+                                                                            sx={{ 
+                                                                                fontWeight: 600, 
+                                                                                mb: 1,
+                                                                                color: isDarkMode ? '#fff' : COLORS.text.primary 
+                                                                            }}
+                                                                        >
                                                                             {lesson.name || 'Untitled Lesson'}
                                                                         </Typography>
                                                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -459,18 +538,21 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                                     size="small"
                                                                                     icon={<PersonIcon />}
                                                                                     label={lesson.user}
+                                                                                    isDarkMode={isDarkMode}
                                                                                 />
                                                                             )}
                                                                             <InfoChip
                                                                                 size="small"
                                                                                 icon={<SchoolIcon />}
                                                                                 label={`Khối ${lesson.gradeNumber || userGradeNumber}`}
+                                                                                isDarkMode={isDarkMode}
                                                                             />
                                                                             {lesson.module && (
                                                                                 <InfoChip
                                                                                     size="small"
                                                                                     icon={<BookmarkIcon />}
                                                                                     label={lesson.module}
+                                                                                    isDarkMode={isDarkMode}
                                                                                 />
                                                                             )}
                                                                             {lesson.createdAt && (
@@ -478,6 +560,7 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                                     size="small"
                                                                                     icon={<ScheduleIcon />}
                                                                                     label={`Ngày tạo: ${(lesson.createdAt)}`}
+                                                                                    isDarkMode={isDarkMode}
                                                                                 />
                                                                             )}
                                                                         </Box>
@@ -495,6 +578,7 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                                 startIcon={<PictureAsPdfIcon />}
                                                                                 onClick={() => exportToPDF(lesson)}
                                                                                 size="small"
+                                                                                isDarkMode={isDarkMode}
                                                                             >
                                                                                 PDF
                                                                             </ExportButton>
@@ -503,6 +587,7 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                                 startIcon={<DescriptionIcon />}
                                                                                 onClick={() => exportToWord(lesson)}
                                                                                 size="small"
+                                                                                isDarkMode={isDarkMode}
                                                                             >
                                                                                 Word
                                                                             </ExportButton>
@@ -530,7 +615,7 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                         margin: '0 4px',
                                                                         borderRadius: '4px',
                                                                         '&.MuiPaginationItem-root': {
-                                                                            color: COLORS.text.secondary,
+                                                                            color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary,
                                                                         },
                                                                         '&.Mui-selected': {
                                                                             backgroundColor: COLORS.primary,
@@ -540,7 +625,9 @@ const LessonExport = ({ sidebarOpen }) => {
                                                                             },
                                                                         },
                                                                         '&:hover': {
-                                                                            backgroundColor: 'rgba(6, 169, 174, 0.08)',
+                                                                            backgroundColor: isDarkMode 
+                                                                                ? 'rgba(6, 169, 174, 0.2)' 
+                                                                                : 'rgba(6, 169, 174, 0.08)',
                                                                         },
                                                                     }}
                                                                 />

@@ -7,6 +7,10 @@ import {
     Edit as EditIcon,
     Delete as DeleteIcon
 } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import { useLocation } from 'react-router-dom';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 // Add color constants similar to CurriculumFramework
 const COLORS = {
@@ -44,11 +48,28 @@ const CurriculumDetail = () => {
     const [formData, setFormData] = useState({
         curriculumContent: '',
         curriculumGoal: '',
-        curriculumSubSection: ''
+        curriculumSubSectionId: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // State for curriculum sub-sections
+    const [curriculumSubSections, setCurriculumSubSections] = useState([]);
     useEffect(() => {
+        // Fetch curriculum sub-sections
+        const fetchSubSections = async () => {
+            try {
+                const subSectionsResponse = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums/sub-sections');
+                if (subSectionsResponse.data.code === 0 && subSectionsResponse.data.data) {
+                    console.log("API Response:", subSectionsResponse.data.data);
+                    setCurriculumSubSections(subSectionsResponse.data.data);
+                } else {
+                    console.error('Failed to fetch curriculum sub-sections:', subSectionsResponse.data.message);
+                }
+            } catch (err) {
+                console.error('Error fetching curriculum sub-sections:', err);
+            }
+        };
+
         const fetchCurriculum = async () => {
             try {
                 const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums/${id}`);
@@ -66,6 +87,7 @@ const CurriculumDetail = () => {
 
         if (id) {
             fetchCurriculum();
+            fetchSubSections();
         } else {
             setError('No curriculum ID provided');
             setLoading(false);
@@ -97,13 +119,14 @@ const CurriculumDetail = () => {
                 curriculumContent: formData.curriculumContent,
                 curriculumGoal: formData.curriculumGoal,
                 curriculumId: parseInt(id),
-                curriculumSubSection: formData.curriculumSubSection
+                curriculumSubSectionId: formData.curriculumSubSectionId
             });
 
             if (response.data.code === 0 || response.data.code === 21) {
                 alert('Thêm nội dung cần đạt thành công!');
                 setShowAddModal(false);
-                setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSection: '' });
+                setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSectionId: '' });
+                setIsSubmitting(false);
                 await refreshCurriculumData();
             } else {
                 alert('Lỗi khi thêm: ' + (response.data.message || 'Unknown error'));
@@ -128,14 +151,15 @@ const CurriculumDetail = () => {
                 curriculumContent: formData.curriculumContent,
                 curriculumGoal: formData.curriculumGoal,
                 curriculumId: parseInt(id),
-                curriculumSubSection: formData.curriculumSubSection
+                curriculumSubSectionId: formData.curriculumSubSectionId
             });
 
             if (response.data.code === 0) {
                 alert('Cập nhật nội dung cần đạt thành công!');
                 setShowEditModal(false);
                 setEditingDetail(null);
-                setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSection: '' });
+                setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSectionId: '' });
+                setIsSubmitting(false);
                 await refreshCurriculumData();
             } else {
                 alert('Lỗi khi cập nhật: ' + (response.data.message || 'Unknown error'));
@@ -158,6 +182,7 @@ const CurriculumDetail = () => {
             console.log('Delete response code:', response.data.code);
             if (response.data.code === 0 || response.data.code === 31) {
                 alert('Xóa nội dung cần đạt thành công!');
+                setIsSubmitting(false);
                 await refreshCurriculumData();
             } else {
                 alert('Lỗi khi xóa: ' + (response.data.message || 'Unknown error'));
@@ -173,7 +198,7 @@ const CurriculumDetail = () => {
         setFormData({
             curriculumContent: detail.curriculumContent,
             curriculumGoal: detail.curriculumGoal,
-            curriculumSubSection: detail.curriculumSubSection || ''
+            curriculumSubSectionId: detail.curriculumSubSectionId || ''
         });
         setShowEditModal(true);
     };
@@ -732,8 +757,8 @@ const CurriculumDetail = () => {
                                         Mạch kiến thức:
                                     </label>
                                     <select
-                                        value={formData.curriculumSubSection}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, curriculumSubSection: e.target.value }))}
+                                        value={formData.curriculumSubSectionId}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, curriculumSubSectionId: e.target.value }))}
                                         style={{
                                             width: '100%',
                                             padding: '12px',
@@ -748,12 +773,12 @@ const CurriculumDetail = () => {
                                         onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
                                     >
                                         <option value="">-- Chọn mạch kiến thức --</option>
-                                        {curriculum.curriculumDetails.map((detail) => (
+                                        {curriculumSubSections.map((section) => (
                                             <option
-                                                key={detail.curriculumSubSection}
-                                                value={detail.curriculumSubSection}
+                                                key={section.curriculumSubSectionId}
+                                                value={section.curriculumSubSectionId}
                                             >
-                                                {detail.curriculumSubSection}
+                                                {section.curriculumSubSectionName}
                                             </option>
                                         ))}
                                     </select>
@@ -763,7 +788,7 @@ const CurriculumDetail = () => {
                                     <button
                                         onClick={() => {
                                             setShowAddModal(false);
-                                            setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSection: '' });
+                                            setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSectionId: '' });
                                         }}
                                         style={{
                                             padding: '12px 24px',
@@ -941,8 +966,8 @@ const CurriculumDetail = () => {
                                         Mạch kiến thức:
                                     </label>
                                     <select
-                                        value={formData.curriculumSubSection}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, curriculumSubSection: e.target.value }))}
+                                        value={formData.curriculumSubSectionId}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, curriculumSubSectionId: e.target.value }))}
                                         style={{
                                             width: '100%',
                                             padding: '12px',
@@ -957,12 +982,12 @@ const CurriculumDetail = () => {
                                         onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
                                     >
                                         <option value="">-- Chọn mạch kiến thức --</option>
-                                        {curriculum.curriculumDetails.map((detail) => (
+                                        {curriculumSubSections.map((section) => (
                                             <option
-                                                key={detail.curriculumSubSection}
-                                                value={detail.curriculumSubSection}
+                                                key={section.curriculumSubSectionId}
+                                                value={section.curriculumSubSectionId}
                                             >
-                                                {detail.curriculumSubSection}
+                                                {section.curriculumSubSectionName}
                                             </option>
                                         ))}
                                     </select>
@@ -973,7 +998,7 @@ const CurriculumDetail = () => {
                                         onClick={() => {
                                             setShowEditModal(false);
                                             setEditingDetail(null);
-                                            setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSection: '' });
+                                            setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSectionId: '' });
                                         }}
                                         style={{
                                             padding: '12px 24px',
