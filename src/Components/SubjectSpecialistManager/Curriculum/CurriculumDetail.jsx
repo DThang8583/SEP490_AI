@@ -1,42 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, IconButton } from '@mui/material';
+import { Box, IconButton, Typography, Button, Modal, TextField, MenuItem, useTheme } from '@mui/material';
 import axios from 'axios';
 import {
     Add as AddIcon,
     Edit as EditIcon,
     Delete as DeleteIcon
 } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
 import { useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-// Add color constants similar to CurriculumFramework
-const COLORS = {
-    primary: '#06A9AE',
-    secondary: '#1976d2',
-    success: '#00AB55',
-    error: '#FF4842',
-    warning: '#FFAB00',
-    background: {
-        default: 'linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%)',
-        paper: '#FFFFFF',
-        secondary: 'rgba(6, 169, 174, 0.02)',
-    },
-    text: {
-        primary: '#212B36',
-        secondary: '#637381',
-    },
-    hover: {
-        primary: 'rgba(6, 169, 174, 0.08)',
-        secondary: 'rgba(25, 118, 210, 0.08)',
-    }
-};
-
 const CurriculumDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const theme = useTheme();
     const [curriculum, setCurriculum] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -54,6 +32,7 @@ const CurriculumDetail = () => {
 
     // State for curriculum sub-sections
     const [curriculumSubSections, setCurriculumSubSections] = useState([]);
+
     useEffect(() => {
         // Fetch curriculum sub-sections
         const fetchSubSections = async () => {
@@ -213,7 +192,7 @@ const CurriculumDetail = () => {
                 sx={{
                     width: 'calc(100% - 78px)',
                     height: '100vh',
-                    background: '#f8f9fa',
+                    background: theme.palette.background.default,
                     position: 'fixed',
                     top: 0,
                     left: '78px',
@@ -243,7 +222,7 @@ const CurriculumDetail = () => {
                 sx={{
                     width: 'calc(100% - 78px)',
                     height: '100vh',
-                    background: '#f8f9fa',
+                    background: theme.palette.background.default,
                     position: 'fixed',
                     top: 0,
                     left: '78px',
@@ -260,7 +239,7 @@ const CurriculumDetail = () => {
                     justifyContent: 'center',
                     alignItems: 'center',
                     minHeight: '100vh',
-                    color: 'red'
+                    color: theme.palette.error.main
                 }}>
                     {error}
                 </div>
@@ -274,7 +253,7 @@ const CurriculumDetail = () => {
                 sx={{
                     width: 'calc(100% - 78px)',
                     height: '100vh',
-                    background: '#f8f9fa',
+                    background: theme.palette.background.default,
                     position: 'fixed',
                     top: 0,
                     left: '78px',
@@ -303,7 +282,7 @@ const CurriculumDetail = () => {
             sx={{
                 width: 'calc(100% - 78px)',
                 height: '100vh',
-                background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                background: theme.palette.background.default,
                 position: 'fixed',
                 top: 0,
                 left: '78px',
@@ -326,21 +305,15 @@ const CurriculumDetail = () => {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginBottom: '40px'
+                        marginBottom: '40px',
+                        position: 'relative'
                     }}>
-                        <h1 style={{
-                            fontSize: '32px',
-                            color: '#1a237e',
-                            margin: 0,
-                            fontWeight: '700',
-                            letterSpacing: '-0.5px'
-                        }}>Chi tiết nội dung cần đạt</h1>
                         <button
                             onClick={handleBackClick}
                             style={{
                                 padding: '12px 24px',
-                                background: 'linear-gradient(135deg, #06A9AE 0%, #048a8d 100%)',
-                                color: 'white',
+                                background: '#06A9AE',
+                                color: '#ffffff',
                                 border: 'none',
                                 borderRadius: '12px',
                                 cursor: 'pointer',
@@ -352,10 +325,21 @@ const CurriculumDetail = () => {
                         >
                             Quay lại
                         </button>
+                        <h1 style={{
+                            fontSize: '32px',
+                            color: theme.palette.text.primary,
+                            margin: 0,
+                            fontWeight: '700',
+                            letterSpacing: '-0.5px',
+                            position: 'absolute',
+                            left: '50%',
+                            transform: 'translateX(-50%)'
+                        }}>Chi tiết nội dung cần đạt</h1>
+                        <div style={{ width: '120px' }}></div> {/* Spacer to balance the layout */}
                     </div>
 
                     <div style={{
-                        backgroundColor: 'white',
+                        backgroundColor: theme.palette.background.paper,
                         padding: '32px',
                         borderRadius: '16px',
                         marginBottom: '32px',
@@ -364,7 +348,7 @@ const CurriculumDetail = () => {
                     }}>
                         <h2 style={{
                             fontSize: '24px',
-                            color: '#1a237e',
+                            color: theme.palette.text.primary,
                             marginBottom: '24px',
                             paddingBottom: '16px',
                             borderBottom: '3px solid #06A9AE',
@@ -387,17 +371,17 @@ const CurriculumDetail = () => {
                                             padding: '16px 20px',
                                             fontWeight: '600',
                                             width: '200px',
-                                            color: '#1a237e',
-                                            backgroundColor: '#f8f9fa',
+                                            color: theme.palette.text.primary,
+                                            backgroundColor: theme.palette.background.secondary,
                                             borderRadius: '12px 0 0 12px',
                                             fontSize: '15px'
                                         }}>{item.label}</td>
                                         <td style={{
                                             padding: '16px 20px',
-                                            backgroundColor: '#f8f9fa',
+                                            backgroundColor: theme.palette.background.secondary,
                                             borderRadius: '0 12px 12px 0',
                                             fontSize: '15px',
-                                            color: '#2c3e50'
+                                            color: theme.palette.text.secondary,
                                         }}>{item.value}</td>
                                     </tr>
                                 ))}
@@ -406,7 +390,7 @@ const CurriculumDetail = () => {
                     </div>
 
                     <div style={{
-                        backgroundColor: 'white',
+                        backgroundColor: theme.palette.background.paper,
                         padding: '32px',
                         borderRadius: '16px',
                         marginBottom: '32px',
@@ -422,7 +406,7 @@ const CurriculumDetail = () => {
                         }}>
                             <h2 style={{
                                 fontSize: '24px',
-                                color: '#1a237e',
+                                color: theme.palette.text.primary,
                                 margin: 0,
                                 fontWeight: '600'
                             }}>Nội dung cần đạt</h2>
@@ -430,7 +414,7 @@ const CurriculumDetail = () => {
                                 onClick={() => setShowAddModal(true)}
                                 style={{
                                     padding: '8px 20px',
-                                    background: COLORS.primary,
+                                    background: '#06A9AE',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '8px',
@@ -441,7 +425,7 @@ const CurriculumDetail = () => {
                                     alignItems: 'center',
                                     gap: '8px',
                                     transition: 'all 0.2s ease',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                                    boxShadow: '0 4px 12px rgba(6, 169, 174, 0.2)',
                                     textTransform: 'none'
                                 }}
                                 onMouseOver={(e) => {
@@ -468,8 +452,8 @@ const CurriculumDetail = () => {
                                         {['Chủ đề', 'Mạch nội dung', 'Nội dung', 'Yêu cầu cần đạt', 'Mạch kiến thức', 'Thao tác'].map((header, index) => (
                                             <th key={index} style={{
                                                 padding: '16px 20px',
-                                                background: 'linear-gradient(135deg, #06A9AE 0%, #048a8d 100%)',
-                                                color: 'white',
+                                                background: '#06A9AE',
+                                                color: '#ffffff',
                                                 textAlign: 'left',
                                                 fontWeight: '600',
                                                 fontSize: '15px',
@@ -483,37 +467,37 @@ const CurriculumDetail = () => {
                                 <tbody>
                                     {curriculum.curriculumDetails.map((detail, index) => (
                                         <tr key={detail.curriculumDetailId} style={{
-                                            backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa',
+                                            backgroundColor: index % 2 === 0 ? theme.palette.background.paper : theme.palette.background.secondary,
                                             transition: 'all 0.3s ease'
                                         }}>
                                             <td style={{
                                                 padding: '16px 20px',
-                                                borderBottom: '1px solid #e9ecef',
+                                                borderBottom: `1px solid ${theme.palette.divider}`,
                                                 fontSize: '15px'
                                             }}>{detail.curriculumTopic}</td>
                                             <td style={{
                                                 padding: '16px 20px',
-                                                borderBottom: '1px solid #e9ecef',
+                                                borderBottom: `1px solid ${theme.palette.divider}`,
                                                 fontSize: '15px'
                                             }}>{detail.curriculumSection}</td>
                                             <td style={{
                                                 padding: '16px 20px',
-                                                borderBottom: '1px solid #e9ecef',
+                                                borderBottom: `1px solid ${theme.palette.divider}`,
                                                 fontSize: '15px'
                                             }}>{detail.curriculumContent}</td>
                                             <td style={{
                                                 padding: '16px 20px',
-                                                borderBottom: '1px solid #e9ecef',
+                                                borderBottom: `1px solid ${theme.palette.divider}`,
                                                 fontSize: '15px'
                                             }}>{detail.curriculumGoal}</td>
                                             <td style={{
                                                 padding: '16px 20px',
-                                                borderBottom: '1px solid #e9ecef',
+                                                borderBottom: `1px solid ${theme.palette.divider}`,
                                                 fontSize: '15px'
                                             }}>{detail.curriculumSubSection}</td>
                                             <td style={{
                                                 padding: '16px 20px',
-                                                borderBottom: '1px solid #e9ecef',
+                                                borderBottom: `1px solid ${theme.palette.divider}`,
                                                 fontSize: '15px'
                                             }}>
                                                 <div style={{
@@ -525,16 +509,13 @@ const CurriculumDetail = () => {
                                                     <IconButton
                                                         onClick={() => openEditModal(detail)}
                                                         sx={{
-                                                            color: COLORS.primary,
-                                                            bgcolor: 'rgba(6, 169, 174, 0.08)',
+                                                            color: '#06A9AE',
+                                                            bgcolor: 'rgba(6, 169, 174, 0.1)',
                                                             borderRadius: '8px',
-                                                            p: 1,
+                                                            marginRight: '4px',
                                                             '&:hover': {
-                                                                bgcolor: 'rgba(6, 169, 174, 0.15)',
-                                                                transform: 'translateY(-2px)',
-                                                                boxShadow: '0 6px 16px rgba(0, 0, 0, 0.1)'
-                                                            },
-                                                            transition: 'all 0.2s ease'
+                                                                bgcolor: 'rgba(6, 169, 174, 0.2)',
+                                                            }
                                                         }}
                                                     >
                                                         <EditIcon sx={{ fontSize: '20px' }} />
@@ -542,16 +523,12 @@ const CurriculumDetail = () => {
                                                     <IconButton
                                                         onClick={() => handleDeleteDetail(detail.curriculumDetailId)}
                                                         sx={{
-                                                            color: COLORS.error,
-                                                            bgcolor: 'rgba(255, 72, 66, 0.08)',
+                                                            color: '#06A9AE',
+                                                            bgcolor: 'rgba(6, 169, 174, 0.1)',
                                                             borderRadius: '8px',
-                                                            p: 1,
                                                             '&:hover': {
-                                                                bgcolor: 'rgba(255, 72, 66, 0.15)',
-                                                                transform: 'translateY(-2px)',
-                                                                boxShadow: '0 6px 16px rgba(0, 0, 0, 0.1)'
-                                                            },
-                                                            transition: 'all 0.2s ease'
+                                                                bgcolor: 'rgba(6, 169, 174, 0.2)',
+                                                            }
                                                         }}
                                                     >
                                                         <DeleteIcon sx={{ fontSize: '20px' }} />
@@ -566,14 +543,14 @@ const CurriculumDetail = () => {
                     </div>
 
                     <div style={{
-                        backgroundColor: 'white',
+                        backgroundColor: theme.palette.background.paper,
                         padding: '32px',
                         borderRadius: '16px',
                         boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
                     }}>
                         <h2 style={{
                             fontSize: '24px',
-                            color: '#1a237e',
+                            color: theme.palette.text.primary,
                             marginBottom: '24px',
                             paddingBottom: '16px',
                             borderBottom: '3px solid #06A9AE',
@@ -589,8 +566,8 @@ const CurriculumDetail = () => {
                                     <tr>
                                         <th style={{
                                             padding: '16px 20px',
-                                            background: 'linear-gradient(135deg, #06A9AE 0%, #048a8d 100%)',
-                                            color: 'white',
+                                            background: '#06A9AE',
+                                            color: '#ffffff',
                                             textAlign: 'center',
                                             fontWeight: '600',
                                             width: '80px',
@@ -599,8 +576,8 @@ const CurriculumDetail = () => {
                                         }}>STT</th>
                                         <th style={{
                                             padding: '16px 20px',
-                                            background: 'linear-gradient(135deg, #06A9AE 0%, #048a8d 100%)',
-                                            color: 'white',
+                                            background: '#06A9AE',
+                                            color: '#ffffff',
                                             textAlign: 'left',
                                             fontWeight: '600',
                                             fontSize: '15px',
@@ -611,12 +588,12 @@ const CurriculumDetail = () => {
                                 <tbody>
                                     {curriculum.curriculumActivities.map((activity, index) => (
                                         <tr key={activity.curriculumActivityId} style={{
-                                            backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa',
+                                            backgroundColor: index % 2 === 0 ? theme.palette.background.paper : theme.palette.background.secondary,
                                             transition: 'all 0.3s ease'
                                         }}>
                                             <td style={{
                                                 padding: '16px 20px',
-                                                borderBottom: '1px solid #e9ecef',
+                                                borderBottom: `1px solid ${theme.palette.divider}`,
                                                 textAlign: 'center',
                                                 fontWeight: '600',
                                                 color: '#06A9AE',
@@ -624,7 +601,7 @@ const CurriculumDetail = () => {
                                             }}>{index + 1}</td>
                                             <td style={{
                                                 padding: '16px 20px',
-                                                borderBottom: '1px solid #e9ecef',
+                                                borderBottom: `1px solid ${theme.palette.divider}`,
                                                 fontSize: '15px'
                                             }}>
                                                 {activity.curriculumAcitityDescription}
@@ -637,446 +614,300 @@ const CurriculumDetail = () => {
                     </div>
 
                     {/* Add Modal */}
-                    {showAddModal && (
-                        <div style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            backgroundColor: 'rgba(0,0,0,0.5)',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            zIndex: 2000,
-                            backdropFilter: 'blur(4px)'
+                    <Modal
+                        open={showAddModal}
+                        onClose={() => setShowAddModal(false)}
+                        aria-labelledby="add-detail-modal-title"
+                        aria-describedby="add-detail-modal-description"
+                    >
+                        <Box sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 400,
+                            bgcolor: theme.palette.background.paper,
+                            border: '2px solid #06A9AE',
+                            boxShadow: 24,
+                            p: 4,
+                            borderRadius: '16px'
                         }}>
-                            <div style={{
-                                backgroundColor: 'white',
-                                padding: '32px',
-                                borderRadius: '16px',
-                                width: '600px',
-                                maxHeight: '80vh',
-                                overflow: 'auto',
-                                boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-                                border: '1px solid #e9ecef'
+                            <Typography id="add-detail-modal-title" variant="h6" component="h2" sx={{ 
+                                color: '#06A9AE',
+                                fontWeight: '600',
+                                mb: 3
                             }}>
-                                <h3 style={{
-                                    margin: '0 0 24px 0',
-                                    color: '#1a237e',
-                                    fontSize: '22px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    fontWeight: '600'
-                                }}>
-                                    <div style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '50%',
-                                        backgroundColor: 'rgba(0, 171, 85, 0.1)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        <AddIcon sx={{ fontSize: '20px', color: '#00AB55' }} />
-                                    </div>
-                                    Thêm nội dung cần đạt mới
-                                </h3>
-
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '8px',
-                                        fontWeight: '600',
-                                        color: '#1a237e',
-                                        fontSize: '14px'
-                                    }}>
-                                        Nội dung: <span style={{ color: '#d32f2f' }}>*</span>
-                                    </label>
-                                    <textarea
-                                        value={formData.curriculumContent}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, curriculumContent: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            height: '100px',
-                                            padding: '12px',
-                                            border: '2px solid #e9ecef',
-                                            borderRadius: '8px',
-                                            fontSize: '14px',
-                                            resize: 'vertical',
-                                            fontFamily: 'inherit',
-                                            transition: 'border-color 0.3s ease',
-                                            outline: 'none'
-                                        }}
-                                        placeholder="Nhập nội dung..."
-                                        onFocus={(e) => e.target.style.borderColor = '#06A9AE'}
-                                        onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-                                    />
-                                </div>
-
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '8px',
-                                        fontWeight: '600',
-                                        color: '#1a237e',
-                                        fontSize: '14px'
-                                    }}>
-                                        Yêu cầu cần đạt: <span style={{ color: '#d32f2f' }}>*</span>
-                                    </label>
-                                    <textarea
-                                        value={formData.curriculumGoal}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, curriculumGoal: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            height: '100px',
-                                            padding: '12px',
-                                            border: '2px solid #e9ecef',
-                                            borderRadius: '8px',
-                                            fontSize: '14px',
-                                            resize: 'vertical',
-                                            fontFamily: 'inherit',
-                                            transition: 'border-color 0.3s ease',
-                                            outline: 'none'
-                                        }}
-                                        placeholder="Nhập yêu cầu cần đạt..."
-                                        onFocus={(e) => e.target.style.borderColor = '#06A9AE'}
-                                        onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-                                    />
-                                </div>
-
-                                <div style={{ marginBottom: '28px' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '8px',
-                                        fontWeight: '600',
-                                        color: '#1a237e',
-                                        fontSize: '14px'
-                                    }}>
-                                        Mạch kiến thức:
-                                    </label>
-                                    <select
-                                        value={formData.curriculumSubSectionId}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, curriculumSubSectionId: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px',
-                                            border: '2px solid #e9ecef',
-                                            borderRadius: '8px',
-                                            fontSize: '14px',
-                                            transition: 'border-color 0.3s ease',
-                                            outline: 'none',
-                                            backgroundColor: 'white'
-                                        }}
-                                        onFocus={(e) => e.target.style.borderColor = '#06A9AE'}
-                                        onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-                                    >
-                                        <option value="">-- Chọn mạch kiến thức --</option>
-                                        {curriculumSubSections.map((section) => (
-                                            <option
-                                                key={section.curriculumSubSectionId}
-                                                value={section.curriculumSubSectionId}
-                                            >
-                                                {section.curriculumSubSectionName}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                                    <button
-                                        onClick={() => {
-                                            setShowAddModal(false);
-                                            setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSectionId: '' });
-                                        }}
-                                        style={{
-                                            padding: '12px 24px',
-                                            background: '#6c757d',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.3s ease',
-                                            fontWeight: '500',
-                                            fontSize: '14px'
-                                        }}
-                                        onMouseOver={(e) => e.target.style.background = '#5a6268'}
-                                        onMouseOut={(e) => e.target.style.background = '#6c757d'}
-                                    >
-                                        Hủy
-                                    </button>
-                                    <button
-                                        onClick={handleAddDetail}
-                                        disabled={isSubmitting}
-                                        style={{
-                                            padding: '12px 24px',
-                                            background: isSubmitting ? '#ccc' : 'linear-gradient(135deg, #00AB55 0%, #00A048 100%)',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            transition: 'all 0.3s ease',
-                                            fontWeight: '500',
-                                            fontSize: '14px',
-                                            boxShadow: isSubmitting ? 'none' : '0 4px 12px rgba(0, 171, 85, 0.2)'
-                                        }}
-                                        onMouseOver={(e) => {
-                                            if (!isSubmitting) {
-                                                e.target.style.transform = 'translateY(-1px)';
-                                                e.target.style.boxShadow = '0 6px 16px rgba(0, 171, 85, 0.3)';
-                                            }
-                                        }}
-                                        onMouseOut={(e) => {
-                                            if (!isSubmitting) {
-                                                e.target.style.transform = 'translateY(0)';
-                                                e.target.style.boxShadow = '0 4px 12px rgba(0, 171, 85, 0.2)';
-                                            }
-                                        }}
-                                    >
-                                        <AddIcon sx={{ fontSize: '16px' }} />
-                                        {isSubmitting ? 'Đang thêm...' : 'Thêm'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                                Thêm Nội dung cần đạt mới
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                label="Mạch kiến thức"
+                                select
+                                value={formData.curriculumSubSectionId}
+                                onChange={(e) => setFormData({ ...formData, curriculumSubSectionId: e.target.value })}
+                                margin="normal"
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: '#05969A',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#06A9AE',
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#06A9AE',
+                                    }
+                                }}
+                            >
+                                {curriculumSubSections.map((section) => (
+                                    <MenuItem key={section.curriculumSubSectionId} value={section.curriculumSubSectionId}>
+                                        {section.curriculumSubSectionName}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                            <TextField
+                                fullWidth
+                                label="Nội dung cần đạt"
+                                multiline
+                                rows={4}
+                                value={formData.curriculumContent}
+                                onChange={(e) => setFormData({ ...formData, curriculumContent: e.target.value })}
+                                margin="normal"
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: '#05969A',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#06A9AE',
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#06A9AE',
+                                    }
+                                }}
+                            />
+                            <TextField
+                                fullWidth
+                                label="Mục tiêu cần đạt"
+                                multiline
+                                rows={4}
+                                value={formData.curriculumGoal}
+                                onChange={(e) => setFormData({ ...formData, curriculumGoal: e.target.value })}
+                                margin="normal"
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: '#05969A',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#06A9AE',
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#06A9AE',
+                                    }
+                                }}
+                            />
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                                <Button 
+                                    onClick={() => setShowAddModal(false)} 
+                                    sx={{ 
+                                        mr: 1,
+                                        color: '#06A9AE',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(6, 169, 174, 0.1)',
+                                        }
+                                    }}
+                                >
+                                    Hủy
+                                </Button>
+                                <Button 
+                                    variant="contained" 
+                                    onClick={handleAddDetail} 
+                                    disabled={isSubmitting}
+                                    sx={{
+                                        backgroundColor: '#06A9AE',
+                                        '&:hover': {
+                                            backgroundColor: '#05969A',
+                                        }
+                                    }}
+                                >
+                                    Lưu
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Modal>
 
                     {/* Edit Modal */}
-                    {showEditModal && (
-                        <div style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            backgroundColor: 'rgba(0,0,0,0.5)',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            zIndex: 2000,
-                            backdropFilter: 'blur(4px)'
+                    <Modal
+                        open={showEditModal}
+                        onClose={() => setShowEditModal(false)}
+                        aria-labelledby="edit-detail-modal-title"
+                        aria-describedby="edit-detail-modal-description"
+                    >
+                        <Box sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 400,
+                            bgcolor: theme.palette.background.paper,
+                            border: '2px solid #06A9AE',
+                            boxShadow: 24,
+                            p: 4,
+                            borderRadius: '16px'
                         }}>
-                            <div style={{
-                                backgroundColor: 'white',
-                                padding: '32px',
-                                borderRadius: '16px',
-                                width: '600px',
-                                maxHeight: '80vh',
-                                overflow: 'auto',
-                                boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-                                border: '1px solid #e9ecef'
-                            }}>
-                                <h3 style={{
-                                    margin: '0 0 24px 0',
-                                    color: '#1a237e',
-                                    fontSize: '22px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    fontWeight: '600'
-                                }}>
-                                    <div style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '50%',
-                                        backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        <EditIcon sx={{ fontSize: '20px', color: '#1976d2' }} />
-                                    </div>
-                                    Chỉnh sửa nội dung cần đạt
-                                </h3>
-
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '8px',
-                                        fontWeight: '600',
-                                        color: '#1a237e',
-                                        fontSize: '14px'
-                                    }}>
-                                        Nội dung: <span style={{ color: '#d32f2f' }}>*</span>
-                                    </label>
-                                    <textarea
-                                        value={formData.curriculumContent}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, curriculumContent: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            height: '100px',
-                                            padding: '12px',
-                                            border: '2px solid #e9ecef',
-                                            borderRadius: '8px',
-                                            fontSize: '14px',
-                                            resize: 'vertical',
-                                            fontFamily: 'inherit',
-                                            transition: 'border-color 0.3s ease',
-                                            outline: 'none'
-                                        }}
-                                        placeholder="Nhập nội dung..."
-                                        onFocus={(e) => e.target.style.borderColor = '#06A9AE'}
-                                        onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-                                    />
-                                </div>
-
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '8px',
-                                        fontWeight: '600',
-                                        color: '#1a237e',
-                                        fontSize: '14px'
-                                    }}>
-                                        Yêu cầu cần đạt: <span style={{ color: '#d32f2f' }}>*</span>
-                                    </label>
-                                    <textarea
-                                        value={formData.curriculumGoal}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, curriculumGoal: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            height: '100px',
-                                            padding: '12px',
-                                            border: '2px solid #e9ecef',
-                                            borderRadius: '8px',
-                                            fontSize: '14px',
-                                            resize: 'vertical',
-                                            fontFamily: 'inherit',
-                                            transition: 'border-color 0.3s ease',
-                                            outline: 'none'
-                                        }}
-                                        placeholder="Nhập yêu cầu cần đạt..."
-                                        onFocus={(e) => e.target.style.borderColor = '#06A9AE'}
-                                        onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-                                    />
-                                </div>
-
-                                <div style={{ marginBottom: '28px' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '8px',
-                                        fontWeight: '600',
-                                        color: '#1a237e',
-                                        fontSize: '14px'
-                                    }}>
-                                        Mạch kiến thức:
-                                    </label>
-                                    <select
-                                        value={formData.curriculumSubSectionId}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, curriculumSubSectionId: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px',
-                                            border: '2px solid #e9ecef',
-                                            borderRadius: '8px',
-                                            fontSize: '14px',
-                                            transition: 'border-color 0.3s ease',
-                                            outline: 'none',
-                                            backgroundColor: 'white'
-                                        }}
-                                        onFocus={(e) => e.target.style.borderColor = '#06A9AE'}
-                                        onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-                                    >
-                                        <option value="">-- Chọn mạch kiến thức --</option>
-                                        {curriculumSubSections.map((section) => (
-                                            <option
-                                                key={section.curriculumSubSectionId}
-                                                value={section.curriculumSubSectionId}
-                                            >
-                                                {section.curriculumSubSectionName}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                                    <button
-                                        onClick={() => {
-                                            setShowEditModal(false);
-                                            setEditingDetail(null);
-                                            setFormData({ curriculumContent: '', curriculumGoal: '', curriculumSubSectionId: '' });
-                                        }}
-                                        style={{
-                                            padding: '12px 24px',
-                                            background: '#6c757d',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.3s ease',
-                                            fontWeight: '500',
-                                            fontSize: '14px'
-                                        }}
-                                        onMouseOver={(e) => e.target.style.background = '#5a6268'}
-                                        onMouseOut={(e) => e.target.style.background = '#6c757d'}
-                                    >
-                                        Hủy
-                                    </button>
-                                    <button
-                                        onClick={handleEditDetail}
-                                        disabled={isSubmitting}
-                                        style={{
-                                            padding: '12px 24px',
-                                            background: isSubmitting ? '#ccc' : 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            transition: 'all 0.3s ease',
-                                            fontWeight: '500',
-                                            fontSize: '14px',
-                                            boxShadow: isSubmitting ? 'none' : '0 4px 12px rgba(25, 118, 210, 0.2)'
-                                        }}
-                                        onMouseOver={(e) => {
-                                            if (!isSubmitting) {
-                                                e.target.style.transform = 'translateY(-1px)';
-                                                e.target.style.boxShadow = '0 6px 16px rgba(25, 118, 210, 0.3)';
-                                            }
-                                        }}
-                                        onMouseOut={(e) => {
-                                            if (!isSubmitting) {
-                                                e.target.style.transform = 'translateY(0)';
-                                                e.target.style.boxShadow = '0 4px 12px rgba(25, 118, 210, 0.2)';
-                                            }
-                                        }}
-                                    >
-                                        <EditIcon sx={{ fontSize: '16px' }} />
-                                        {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <div style={{
-                        marginTop: '40px',
-                        textAlign: 'center'
-                    }}>
-                        <button
-                            onClick={handleBackClick}
-                            style={{
-                                padding: '14px 28px',
-                                background: 'linear-gradient(135deg, #06A9AE 0%, #048a8d 100%)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '12px',
-                                cursor: 'pointer',
-                                fontSize: '16px',
+                            <Typography id="edit-detail-modal-title" variant="h6" component="h2" sx={{ 
+                                color: '#06A9AE',
                                 fontWeight: '600',
-                                transition: 'all 0.3s ease',
-                                boxShadow: '0 4px 12px rgba(6, 169, 174, 0.2)'
-                            }}
-                        >
-                            Quay lại trang chương trình
-                        </button>
-                    </div>
+                                mb: 3
+                            }}>
+                                Chỉnh sửa Nội dung cần đạt
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                label="Mạch kiến thức"
+                                select
+                                value={formData.curriculumSubSectionId}
+                                onChange={(e) => setFormData({ ...formData, curriculumSubSectionId: e.target.value })}
+                                margin="normal"
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: '#05969A',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#06A9AE',
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#06A9AE',
+                                    }
+                                }}
+                            >
+                                {curriculumSubSections.map((section) => (
+                                    <MenuItem key={section.curriculumSubSectionId} value={section.curriculumSubSectionId}>
+                                        {section.curriculumSubSectionName}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                            <TextField
+                                fullWidth
+                                label="Nội dung cần đạt"
+                                multiline
+                                rows={4}
+                                value={formData.curriculumContent}
+                                onChange={(e) => setFormData({ ...formData, curriculumContent: e.target.value })}
+                                margin="normal"
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: '#05969A',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#06A9AE',
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#06A9AE',
+                                    }
+                                }}
+                            />
+                            <TextField
+                                fullWidth
+                                label="Mục tiêu cần đạt"
+                                multiline
+                                rows={4}
+                                value={formData.curriculumGoal}
+                                onChange={(e) => setFormData({ ...formData, curriculumGoal: e.target.value })}
+                                margin="normal"
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '& fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: '#05969A',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#06A9AE',
+                                        },
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#06A9AE',
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#06A9AE',
+                                    }
+                                }}
+                            />
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                                <Button 
+                                    onClick={() => setShowEditModal(false)} 
+                                    sx={{ 
+                                        mr: 1,
+                                        color: '#06A9AE',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(6, 169, 174, 0.1)',
+                                        }
+                                    }}
+                                >
+                                    Hủy
+                                </Button>
+                                <Button 
+                                    variant="contained" 
+                                    onClick={handleEditDetail} 
+                                    disabled={isSubmitting}
+                                    sx={{
+                                        backgroundColor: '#06A9AE',
+                                        '&:hover': {
+                                            backgroundColor: '#05969A',
+                                        }
+                                    }}
+                                >
+                                    Lưu
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Modal>
                 </div>
             </div>
         </Box>
