@@ -83,11 +83,13 @@ const menuItems = [
   { text: "Các Giáo án", path: "/các-Giáo-án", icon: <Calculate />, requiresLogin: true },
   { text: "Bài học", path: "/lessons", requiresLogin: true },
   { text: "Bài tập", path: "/bai-tap", requiresLogin: true },
-  { text: "Hỗ trợ", path: "/support", requiresLogin: true },
+  { text: "Khung chương trình", path: "/khung-chuong-trinh", requiresLogin: true },
 ];
 
 const settings = [
   { name: "Hồ sơ", icon: <Person />, path: "/teacher/profile" },
+  { name: "Quản lý câu lệnh", icon: <Settings />, path: "/command-management" },
+  { name: "Tạo AI", icon: <AutoAwesome />, path: "/create-ai" },
   { name: "Đăng xuất", icon: <Logout />, path: "/logout" },
 ];
 
@@ -198,7 +200,7 @@ const Navbar = () => {
               }`,
               mt: 1.5,
               minWidth: 200,
-              ml: 10,
+              ml:28
             },
           }}
           MenuListProps={{
@@ -317,13 +319,10 @@ const Navbar = () => {
                 {isLoggedIn ? (
                   <Tooltip title="Mở cài đặt">
                     <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                      <Avatar
-                        alt={userInfo?.fullname || "User"}
-                        src={userInfo?.imgURL}
+                      <Person
                         sx={{
-                          width: 40,
-                          height: 40,
-                          border: `2px solid ${isDarkMode ? "#ffffff" : "#2D3436"}`,
+                          fontSize: 40,
+                          color: theme.palette.text.primary,
                         }}
                       />
                     </IconButton>
@@ -520,13 +519,10 @@ const Navbar = () => {
                 >
                   <ListItemIcon sx={{ color: theme.palette.text.primary }}>
                     {setting.name === "Hồ sơ" ? (
-                      <Avatar
-                        alt={userInfo?.fullname || "User"}
-                        src={userInfo?.imgURL}
+                      <Person
                         sx={{
-                          width: 32,
-                          height: 32,
-                          border: `1px solid ${isDarkMode ? "#ffffff" : "#2D3436"}`,
+                          fontSize: 40,
+                          color: theme.palette.text.primary,
                         }}
                       />
                     ) : (
@@ -619,13 +615,10 @@ const Navbar = () => {
           >
             <ListItemIcon sx={{ color: isDarkMode ? "#ffffff" : "#2D3436" }}>
               {setting.name === "Hồ sơ" ? (
-                <Avatar
-                  alt={userInfo?.fullname || "User"}
-                  src={userInfo?.imgURL}
+                <Person
                   sx={{
-                    width: 32,
-                    height: 32,
-                    border: `1px solid ${isDarkMode ? "#ffffff" : "#2D3436"}`,
+                    fontSize: 40,
+                    color: theme.palette.text.primary,
                   }}
                 />
               ) : (

@@ -51,6 +51,7 @@ const CreateExerciseModal = ({ open, handleClose }) => {
   const [generationError, setGenerationError] = useState('');
   const [difficulty, setDifficulty] = useState(''); // New state for difficulty
   const [exerciseName, setExerciseName] = useState(''); // New state for exercise name
+  const [questionCount, setQuestionCount] = useState('5'); // New state for question count
 
   // Fetch Grades on modal open
   useEffect(() => {
@@ -69,6 +70,16 @@ const CreateExerciseModal = ({ open, handleClose }) => {
           );
           if (response.data.code === 0) {
             setGrades(response.data.data || []);
+            
+            // Get grade from localStorage and set corresponding gradeId
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            if (userInfo?.grade) {
+              const gradeNumber = userInfo.grade.replace('Lớp ', '');
+              const matchingGrade = response.data.data.find(g => g.gradeNumber === parseInt(gradeNumber));
+              if (matchingGrade) {
+                setGradeId(matchingGrade.gradeId);
+              }
+            }
           } else {
             setError(response.data.message || 'Failed to fetch grades.');
             setGrades([]);
@@ -217,15 +228,32 @@ const CreateExerciseModal = ({ open, handleClose }) => {
     const moduleName = selectedModule.name;
     const lessonName = selectedLesson.name;
 
-    const prompt = `Hãy tạo 5 câu hỏi trắc nghiệm môn Toán lớp ${gradeId} thuộc ${moduleName}, bài ${lessonName}, dựa theo kỹ thuật KWL. Không phân loại các câu hỏi theo K, W, L mà chỉ hiển thị danh sách câu hỏi trắc nghiệm liền mạch.
+    const prompt = `Hãy tạo ${questionCount} câu hỏi trắc nghiệm môn Toán lớp ${gradeId} thuộc ${moduleName}, bài ${lessonName}, dựa theo kỹ thuật KWL. Không phân loại các câu hỏi theo K, W, L mà chỉ hiển thị danh sách câu hỏi trắc nghiệm liền mạch.
 
 Mức độ câu hỏi: ${difficulty}.
 
 Không sử dụng cụm "chữ số", chỉ dùng "số". Hạn chế các câu hỏi lý thuyết, ưu tiên các bài toán thực tế, gần gũi với học sinh tiểu học.
 
-Mỗi câu hỏi có từ 3 đến 4 phương án lựa chọn, trong đó chỉ có một đáp án đúng.
+Mỗi câu hỏi bắt đầu bằng từ "Câu", ví dụ: "Câu 1: …". Mỗi câu có 5 phương án lựa chọn, trong đó chỉ có một đáp án đúng.
 
-Sau mỗi câu hỏi, hãy ghi rõ đáp án đúng theo định dạng "Đáp án đúng: [chữ cái của đáp án]".`;
+Viết mỗi phương án lựa chọn trên một dòng riêng biệt, theo định dạng:
+
+A. [phương án A]
+
+B. [phương án B]
+
+C. [phương án C]
+
+D. [phương án D]
+
+Sau mỗi câu hỏi, ghi rõ đáp án đúng theo định dạng:
+"Đáp án đúng: [chữ cái của đáp án]".
+
+In ra nguyên dòng dưới đây sau mỗi câu hỏi:
+
+---------
+
+`;
 
     try {
       const result = await model.generateContent(prompt);
@@ -266,7 +294,7 @@ Sau mỗi câu hỏi, hãy ghi rõ đáp án đúng theo định dạng "Đáp �
         {generationError && <Alert severity="error" sx={{ mb: 2 }}>{generationError}</Alert>}
 
         <Stack spacing={3}>
-          <FormControl fullWidth size="small" disabled={!lessonId || generating}>
+          <FormControl fullWidth size="small" disabled={generating}>
             <TextField
               label="Tên bài tập"
               value={exerciseName}
@@ -274,7 +302,7 @@ Sau mỗi câu hỏi, hãy ghi rõ đáp án đúng theo định dạng "Đáp �
               fullWidth
               size="small"
               margin="normal"
-              disabled={!lessonId || generating}
+              disabled={generating}
             />
           </FormControl>
 
@@ -328,6 +356,21 @@ Sau mỗi câu hỏi, hãy ghi rõ đáp án đúng theo định dạng "Đáp �
                <MenuItem value="trung bình">Trung bình</MenuItem>
                <MenuItem value="khó">Khó</MenuItem>
                <MenuItem value="kết hợp tăng dần độ khó">Kết hợp tăng dần độ khó</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth size="small" disabled={!lessonId || generating}>
+            <Select
+              value={questionCount}
+              onChange={(e) => setQuestionCount(e.target.value)}
+              displayEmpty
+            >
+               <MenuItem value=""><em>Chọn số lượng câu hỏi</em></MenuItem>
+               <MenuItem value="3">3 câu hỏi</MenuItem>
+               <MenuItem value="5">5 câu hỏi</MenuItem>
+               <MenuItem value="10">10 câu hỏi</MenuItem>
+               <MenuItem value="15">15 câu hỏi</MenuItem>
+               <MenuItem value="20">20 câu hỏi</MenuItem>
             </Select>
           </FormControl>
 

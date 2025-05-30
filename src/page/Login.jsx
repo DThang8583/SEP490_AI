@@ -254,7 +254,7 @@ const Login = () => {
           <form onSubmit={handleSubmit}>
             <TextField 
               fullWidth 
-              label="Username" 
+              label="Tên đăng nhập" 
               variant="outlined" 
               value={username} 
               onChange={(e) => setUsername(e.target.value)} 
@@ -345,12 +345,12 @@ const Login = () => {
           {forgotPasswordStep === 'inputEmail' && (
             <Box>
               <Typography variant="body2" sx={{ mb: 2 }}>
-                Nhập Username hoặc Email của bạn để nhận mã OTP đặt lại mật khẩu.
+                Nhập Email của bạn để nhận mã OTP đặt lại mật khẩu.
               </Typography>
               <TextField
                 autoFocus
                 margin="dense"
-                label="Username hoặc Email"
+                label="Email"
                 type="text"
                 fullWidth
                 variant="outlined"

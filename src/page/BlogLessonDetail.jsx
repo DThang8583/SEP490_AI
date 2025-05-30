@@ -83,7 +83,7 @@ const RecentUsersList = ({ comments, handleDeleteComment, handleEditClick, editi
                   color="text.secondary"
                 >
                   {/* Parse and format the timeStamp date */}
-                  {comment.timeStamp ? format(parse(comment.timeStamp, 'dd/MM/yyyy HH:mm', new Date()), 'dd/MM/yyyy HH:mm', { locale: vi }) : ''}
+                  {comment.timeStamp}
                 </Typography>
               </React.Fragment>
             }
@@ -225,25 +225,27 @@ const BlogLessonDetail = () => {
       if (response.data && response.data.code === 0 || response.data.code === 21) {
         // Thành công, xử lý bình luận
         console.log('handleSubmitComment code:', response.data?.code);
-        const userInfo = response.data.data;
-      
-        const newCommentObj = {
-          commentBody: newComment,
-          createdAt: new Date().toISOString(),
-          timeStamp: new Date().toISOString(),
-          userId: userInfo?.userId,
-          username: userInfo?.username,
-          fullname: userInfo?.fullname,
-          imgURL: userInfo?.imgURL
-        };
-      
-        setComments(prevComments => [newCommentObj, ...prevComments]);
-        setNewComment('');
-        setSnackbar({
-          open: true,
-          message: 'Bình luận đã được gửi thành công!',
-          severity: 'success'
-        });
+        
+        // Fetch lại blog details để lấy thông tin comment mới nhất
+        const blogResponse = await axios.get(
+          `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (blogResponse.data && blogResponse.data.code === 0) {
+          // Cập nhật comments với dữ liệu mới từ API
+          setComments(blogResponse.data.data.comments || []);
+          setNewComment('');
+          setSnackbar({
+            open: true,
+            message: 'Bình luận đã được gửi thành công!',
+            severity: 'success'
+          });
+        }
       } else {
         console.error('API returned non-success code for submitting comment:', response.data);
         setSnackbar({
@@ -354,6 +356,14 @@ const BlogLessonDetail = () => {
       setLoadingBlog(false);
     }
   }, [blogId]);
+
+  // Thêm useEffect mới để lưu gradeId vào localStorage
+  useEffect(() => {
+    if (lesson?.gradeId) {
+      localStorage.setItem('gradeId', lesson.gradeId);
+      console.log('GradeId saved to localStorage:', lesson.gradeId);
+    }
+  }, [lesson?.gradeId]);
 
   useEffect(() => {
     // Lấy thông tin user từ localStorage

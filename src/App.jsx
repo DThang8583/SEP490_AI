@@ -16,7 +16,6 @@ import LessonList from './Components/LessonList/LessonList';
 import ExamPrep from './Components/ExamPrep/ExamPrep';
 import ExamList from './Components/ExamPrep/ExamList';
 import ExamDetail from './Components/ExamPrep/ExamDetail';
-import Support from './Components/Support/Support';
 import Sidebar from './Components/SubjectSpecialistManager/Sidebar';
 import Dashboard from './Components/SubjectSpecialistManager/Dashboard';
 import LessonReview from './Components/SubjectSpecialistManager/Lesson/LessonReview';
@@ -53,8 +52,16 @@ import CreateAccount from './pages/Admin/Dashboard/CreateAccount';
 import SlidePreview from './page/SlidePreview';
 import GeneratedQuiz from './page/GeneratedQuiz';
 import QuizDetail from './pages/Admin/Dashboard/QuizDetail';
+import CommandManager from './page/CommandManager';
+import { MenuItem } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import CreateAI from './page/CreateAI';
+import TeacherCurriculumm from './page/TeacherCurriculumm';
+import TeacherRequirements from './page/TeacherRequirements';
 
 const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
+  const navigate = useNavigate();
+
   return (
     <>
       {!sidebarOpen && (
@@ -188,7 +195,10 @@ function App() {
                 <Route path="/Giáo-án-nháp/:lessonId" element={<PrivateRoute><DraftLessonDetail /></PrivateRoute>} />
                 <Route path="/bai-tap" element={<ExamList />} />
                 <Route path="/bai-tap/:id" element={<ExamDetail />} />
-                <Route path="/support" element={<Support />} />
+                <Route path="/khung-chuong-trinh" element={<TeacherCurriculumm />} />
+                <Route path="/command-management" element={<PrivateRoute><CommandManager /></PrivateRoute>} />
+                <Route path="/create-ai" element={<CreateAI />} />
+                <Route path="/yeu-cau-can-dat" element={<TeacherRequirements />} />
                 <Route path="/manager/*" element={
                   <PrivateRoute>
                     <ManagerRoutes sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
