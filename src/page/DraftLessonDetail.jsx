@@ -233,6 +233,11 @@ const DraftLessonDetail = () => {
       return;
     }
 
+    if (!userInfo?.id) {
+      setSnackbar({ open: true, message: 'Không tìm thấy thông tin người dùng.', severity: 'error' });
+      return;
+    }
+
     setIsSendingToPending(true);
     try {
       const token = localStorage.getItem('accessToken');
@@ -240,17 +245,37 @@ const DraftLessonDetail = () => {
         throw new Error("Authentication token not found.");
       }
 
-      const response = await axios.post(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}/pending`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 15000
-        }
-      );
+      // Clean the data by removing leading colons and extra whitespace
+      const cleanText = (text) => {
+        if (!text) return '';
+        return text.replace(/^:\s*/, '').trim();
+      };
+
+      // Prepare the data object
+      const apiBody = {
+        startUp: cleanText(lessonDetail.startUp),
+        knowLedge: cleanText(lessonDetail.knowledge),
+        goal: cleanText(lessonDetail.goal),
+        schoolSupply: cleanText(lessonDetail.schoolSupply),
+        practice: cleanText(lessonDetail.practice),
+        apply: cleanText(lessonDetail.apply),
+        userId: parseInt(userInfo.id, 10),
+        lessonId: parseInt(lessonId, 10)
+      };
+
+      // Log the data before sending
+      console.log('Sending data:', JSON.stringify(apiBody, null, 2));
+
+      const response = await axios({
+        method: 'put',
+        url: `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}/pending`,
+        data: apiBody,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000
+      });
 
       // Check for success conditions
       if (response.data && (response.data.code === 0 || response.data.message === "Updated successfully!" || response.data.message === "Updated successfully")) {
@@ -269,6 +294,7 @@ const DraftLessonDetail = () => {
       }
     } catch (err) {
       console.error("Error sending lesson to pending:", err);
+      console.error("Error details:", err.response?.data);
       
       // Check if the error message is actually a success message
       if (err.message === "Updated successfully!" || err.message === "Updated successfully") {
@@ -285,7 +311,7 @@ const DraftLessonDetail = () => {
       } else {
         setSnackbar({ 
           open: true, 
-          message: `Lỗi: ${err.message || 'Không thể gửi Giáo án cho người quản lý chuyên môn.'}`, 
+          message: `Lỗi: ${err.response?.data?.message || err.message || 'Không thể gửi Giáo án cho người quản lý chuyên môn.'}`, 
           severity: 'error' 
         });
       }

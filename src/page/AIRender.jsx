@@ -173,6 +173,7 @@ const AIRender = () => {
   const [userId, setUserId] = useState(null);
   const [lessonId, setLessonId] = useState(location.state?.lessonId || null);
   const [promptData, setPromptData] = useState(location.state?.promptData || null);
+  const [originalContent, setOriginalContent] = useState(location.state?.content || "");
 
   console.log('Initial States:', {
     content: content ? 'Content exists' : 'No content',
@@ -448,6 +449,16 @@ const AIRender = () => {
     });
   };
 
+  const handleCancelEdit = () => {
+    setContent(originalContent);
+    setIsEditing(false);
+    setSnackbar({
+      open: true,
+      message: 'Đã hủy chỉnh sửa và khôi phục nội dung ban đầu',
+      severity: 'info'
+    });
+  };
+
   console.log('Rendering AIRender component with states:', {
     isEditing,
     isSending,
@@ -594,20 +605,35 @@ const AIRender = () => {
             </Tooltip>
 
             {isEditing ? (
-              <Button
-                variant="contained"
-                startIcon={<Save />}
-                onClick={() => setIsEditing(false)}
-                sx={{
-                  backgroundColor: '#4CAF50',
-                  color: '#ffffff',
-                  '&:hover': {
-                    backgroundColor: '#388E3C',
-                  },
-                }}
-              >
-                Lưu
-              </Button>
+              <>
+                <Button
+                  variant="contained"
+                  startIcon={<Save />}
+                  onClick={() => setIsEditing(false)}
+                  sx={{
+                    backgroundColor: '#4CAF50',
+                    color: '#ffffff',
+                    '&:hover': {
+                      backgroundColor: '#388E3C',
+                    },
+                  }}
+                >
+                  Lưu
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleCancelEdit}
+                  sx={{
+                    backgroundColor: '#9E9E9E',
+                    color: '#ffffff',
+                    '&:hover': {
+                      backgroundColor: '#757575',
+                    },
+                  }}
+                >
+                  Hủy
+                </Button>
+              </>
             ) : (
               <Button
                 variant="contained"

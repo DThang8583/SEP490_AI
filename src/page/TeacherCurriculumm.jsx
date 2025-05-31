@@ -313,8 +313,8 @@ const TeacherCurriculumm = () => {
             gutterBottom 
             sx={{ 
               fontWeight: 'bold',
-              color: theme.palette.primary.main,
-              fontFamily: 'Times New Roman, serif',
+              color: isDarkMode ? '#fff' : '#000',
+              fontFamily: 'sans-serif',
               textShadow: isDarkMode ? 'none' : '1px 1px 2px rgba(0,0,0,0.1)',
             }}
           >
@@ -323,8 +323,8 @@ const TeacherCurriculumm = () => {
           <Typography 
             variant="h6" 
             sx={{
-              fontFamily: 'Times New Roman, serif',
-              color: theme.palette.text.secondary,
+              fontFamily: 'Chương trình giảng dạy',
+              color: isDarkMode ? '#fff' : '#000',
               mb: 3,
               fontWeight: 500,
             }}
@@ -353,8 +353,8 @@ const TeacherCurriculumm = () => {
               boxShadow: theme.shadows[1],
               border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
             }}>
-              <SchoolIcon sx={{ color: theme.palette.primary.main }} />
-              <Typography sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
+              <SchoolIcon sx={{ color: isDarkMode ? '#fff' : '#000' }} />
+              <Typography sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 500 }}>
                 Lớp: {commonInfo.gradeNumber}
               </Typography>
             </Box>
@@ -368,8 +368,8 @@ const TeacherCurriculumm = () => {
               boxShadow: theme.shadows[1],
               border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
             }}>
-              <MenuBookIcon sx={{ color: theme.palette.primary.main }} />
-              <Typography sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
+              <MenuBookIcon sx={{ color: isDarkMode ? '#fff' : '#000' }} />
+              <Typography sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 500 }}>
                 Chương trình: {commonInfo.curriculum}
               </Typography>
             </Box>
@@ -383,8 +383,8 @@ const TeacherCurriculumm = () => {
               boxShadow: theme.shadows[1],
               border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
             }}>
-              <BookIcon sx={{ color: theme.palette.primary.main }} />
-              <Typography sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
+              <BookIcon sx={{ color: isDarkMode ? '#fff' : '#000' }} />
+              <Typography sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 500 }}>
                 Sách: {commonInfo.book}
               </Typography>
             </Box>
@@ -395,10 +395,10 @@ const TeacherCurriculumm = () => {
           {/* Container for Semester Toggle and Requirements Button */}
           <Box sx={{
             display: 'flex',
-            justifyContent: 'space-between', // Space out items horizontally
-            alignItems: 'center', // Vertically align items
-            flexWrap: 'wrap', // Allow wrapping on smaller screens
-            gap: 2, // Add some space between items
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
           }}>
             <ToggleButtonGroup
               value={semester}
@@ -407,16 +407,16 @@ const TeacherCurriculumm = () => {
               aria-label="semester selection"
               sx={{
                 '& .MuiToggleButton-root': {
-                  color: theme.palette.primary.main,
-                  borderColor: theme.palette.primary.main,
+                  color: isDarkMode ? '#fff' : '#000',
+                  borderColor: isDarkMode ? '#fff' : '#000',
                   px: 4,
                   py: 1,
                   fontWeight: 500,
                   '&.Mui-selected': {
-                    backgroundColor: theme.palette.primary.main,
-                    color: theme.palette.primary.contrastText,
+                    backgroundColor: isDarkMode ? '#fff' : '#000',
+                    color: isDarkMode ? '#000' : '#fff',
                     '&:hover': {
-                      backgroundColor: theme.palette.primary.dark,
+                      backgroundColor: isDarkMode ? '#e0e0e0' : '#333',
                     },
                   },
                   '&:hover': {
@@ -437,8 +437,11 @@ const TeacherCurriculumm = () => {
               variant="contained"
               startIcon={<AssignmentIcon />}
               sx={{
-                bgcolor: theme.palette.primary.main,
-                '&:hover': { bgcolor: theme.palette.primary.dark },
+                bgcolor: isDarkMode ? '#fff' : '#000',
+                color: isDarkMode ? '#000' : '#fff',
+                '&:hover': { 
+                  bgcolor: isDarkMode ? '#e0e0e0' : '#333'
+                },
               }}
               onClick={handleViewRequirements}
             >
@@ -458,11 +461,11 @@ const TeacherCurriculumm = () => {
         >
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: theme.palette.primary.main }}>
+              <TableRow sx={{ bgcolor: isDarkMode ? '#000' : '#fff' }}>
                 <TableCell sx={{ width: '50px' }} />
                 <TableCell 
                   sx={{
-                    color: theme.palette.primary.contrastText,
+                    color: isDarkMode ? '#fff' : '#000',
                     fontWeight: 'bold',
                     fontSize: '1rem',
                     cursor: 'pointer',
@@ -474,15 +477,15 @@ const TeacherCurriculumm = () => {
                     direction={sortDir === 0 ? 'asc' : (sortDir === 1 ? 'desc' : undefined)}
                     sx={{
                       '& .MuiTableSortLabel-icon': {
-                        color: theme.palette.primary.contrastText + ' !important',
+                        color: isDarkMode ? '#fff' : '#000' + ' !important',
                       },
                     }}
                   >
                     Chủ đề
                   </TableSortLabel>
                 </TableCell>
-                <TableCell sx={{ color: theme.palette.primary.contrastText, fontWeight: 'bold', fontSize: '1rem' }}>Mô tả</TableCell>
-                <TableCell sx={{ color: theme.palette.primary.contrastText, fontWeight: 'bold', fontSize: '1rem' }}>Tổng số tiết</TableCell>
+                <TableCell sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 'bold', fontSize: '1rem' }}>Mô tả</TableCell>
+                <TableCell sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 'bold', fontSize: '1rem' }}>Tổng số tiết</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -500,15 +503,15 @@ const TeacherCurriculumm = () => {
                     }}
                   >
                     <TableCell>
-                      <IconButton size="small" sx={{ color: theme.palette.primary.main }}>
+                      <IconButton size="small" sx={{ color: isDarkMode ? '#fff' : '#000' }}>
                         {expandedRows[module.moduleId] ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                       </IconButton>
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>
+                    <TableCell sx={{ fontWeight: 'bold', color: isDarkMode ? '#fff' : '#000' }}>
                       Chủ đề {module.moduleId}: {module.name}
                     </TableCell>
-                    <TableCell sx={{ color: theme.palette.text.primary }}>{module.desciption}</TableCell>
-                    <TableCell sx={{ fontWeight: 500, color: theme.palette.text.primary }}>{module.totalPeriods}</TableCell>
+                    <TableCell sx={{ color: isDarkMode ? '#fff' : '#000' }}>{module.desciption}</TableCell>
+                    <TableCell sx={{ fontWeight: 500, color: isDarkMode ? '#fff' : '#000' }}>{module.totalPeriods}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
@@ -519,9 +522,9 @@ const TeacherCurriculumm = () => {
                           bgcolor: theme.palette.action.hover,
                           borderRadius: 2,
                           border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
-                          display: 'flex', // Use flexbox for layout
-                          flexDirection: 'column', // Stack children vertically
-                          alignItems: 'flex-start', // Align items to the start (left)
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
                         }}>
                           {lessonLoading[module.moduleId] ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
@@ -534,7 +537,7 @@ const TeacherCurriculumm = () => {
                               <Typography variant="subtitle1" sx={{ 
                                 fontWeight: 'bold', 
                                 mb: 1,
-                                color: theme.palette.primary.main,
+                                color: isDarkMode ? '#fff' : '#000',
                               }}>
                                 Danh sách bài học:
                               </Typography>
@@ -542,14 +545,14 @@ const TeacherCurriculumm = () => {
                                 <TableBody>
                                   {lessons[module.moduleId].map((lesson) => (
                                     <TableRow key={lesson.lessonId}>
-                                      <TableCell sx={{ fontWeight: 500, color: theme.palette.text.primary, borderBottom: 'none' }}>
+                                      <TableCell sx={{ fontWeight: 500, color: isDarkMode ? '#fff' : '#000', borderBottom: 'none' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                          <SubjectIcon sx={{ color: theme.palette.primary.main }} />
+                                          <SubjectIcon sx={{ color: isDarkMode ? '#fff' : '#000' }} />
                                           {lesson.name}
                                         </Box>
                                       </TableCell>
-                                      <TableCell sx={{ color: theme.palette.text.primary, borderBottom: 'none' }}>
-                                        Tổng số tiết: <Box component="span" sx={{ color: '#ff5252', fontWeight: 'normal' }}>{lesson.totalPeriods}</Box>
+                                      <TableCell sx={{ color: isDarkMode ? '#fff' : '#000', borderBottom: 'none' }}>
+                                        Tổng số tiết: <Box component="span" sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 'normal' }}>{lesson.totalPeriods}</Box>
                                       </TableCell>
                                       <TableCell sx={{ borderBottom: 'none' }}>
                                         <IconButton 
@@ -558,7 +561,7 @@ const TeacherCurriculumm = () => {
                                             e.stopPropagation();
                                             handleViewLesson(lesson.lessonId);
                                           }}
-                                          sx={{ color: theme.palette.primary.main }}
+                                          sx={{ color: isDarkMode ? '#fff' : '#000' }}
                                         >
                                           <VisibilityIcon />
                                         </IconButton>
@@ -569,7 +572,7 @@ const TeacherCurriculumm = () => {
                               </Table>
                             </Box>
                           ) : (
-                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
+                            <Typography variant="body2" sx={{ color: isDarkMode ? '#fff' : '#000', mb: 2 }}>
                               Không có bài học nào cho chủ đề này.
                             </Typography>
                           )}
@@ -600,7 +603,7 @@ const TeacherCurriculumm = () => {
               variant="h6" 
               sx={{
                 fontFamily: 'Times New Roman, serif',
-                color: theme.palette.text.secondary,
+                color: isDarkMode ? '#fff' : '#000',
                 fontWeight: 500,
               }}
             >
@@ -616,8 +619,8 @@ const TeacherCurriculumm = () => {
           fullWidth
         >
           <DialogTitle sx={{ 
-            bgcolor: theme.palette.primary.main,
-            color: theme.palette.primary.contrastText,
+            bgcolor: isDarkMode ? '#000' : '#fff',
+            color: isDarkMode ? '#fff' : '#000',
             fontWeight: 'bold'
           }}>
             Chi tiết bài học
@@ -632,45 +635,53 @@ const TeacherCurriculumm = () => {
             ) : lessonDetails ? (
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ color: theme.palette.primary.main, mb: 2 }}>
+                  <Typography variant="h6" sx={{ color: isDarkMode ? '#fff' : '#000', mb: 2 }}>
                     {lessonDetails.name}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
-                    <Typography variant="subtitle2" color="text.secondary">Mô tả</Typography>
-                    <Typography>{lessonDetails.description}</Typography>
+                    <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#fff' : '#000' }}>Mô tả</Typography>
+                    <Typography sx={{ color: isDarkMode ? '#fff' : '#000' }}>{lessonDetails.description}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
-                    <Typography variant="subtitle2" color="text.secondary">Loại bài học</Typography>
-                    <Typography>{lessonDetails.lessonType}</Typography>
+                    <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#fff' : '#000' }}>Loại bài học</Typography>
+                    <Typography sx={{ color: isDarkMode ? '#fff' : '#000' }}>{lessonDetails.lessonType}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
-                    <Typography variant="subtitle2" color="text.secondary">Tổng số tiết</Typography>
-                    <Typography>{lessonDetails.totalPeriods}</Typography>
+                    <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#fff' : '#000' }}>Tổng số tiết</Typography>
+                    <Typography sx={{ color: isDarkMode ? '#fff' : '#000' }}>{lessonDetails.totalPeriods}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
-                    <Typography variant="subtitle2" color="text.secondary">Chủ đề</Typography>
-                    <Typography>{lessonDetails.module}</Typography>
+                    <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#fff' : '#000' }}>Chủ đề</Typography>
+                    <Typography sx={{ color: isDarkMode ? '#fff' : '#000' }}>{lessonDetails.module}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={12}>
                   <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
-                    <Typography variant="subtitle2" color="text.secondary">Ghi chú</Typography>
-                    <Typography>{lessonDetails.note}</Typography>
+                    <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#fff' : '#000' }}>Ghi chú</Typography>
+                    <Typography sx={{ color: isDarkMode ? '#fff' : '#000' }}>{lessonDetails.note}</Typography>
                   </Paper>
                 </Grid>
               </Grid>
             ) : null}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseLessonDetails} color="primary">
+            <Button 
+              onClick={handleCloseLessonDetails} 
+              sx={{ 
+                color: isDarkMode ? '#fff' : '#000',
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                }
+              }}
+            >
               Đóng
             </Button>
           </DialogActions>

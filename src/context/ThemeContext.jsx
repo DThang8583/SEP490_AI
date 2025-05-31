@@ -35,7 +35,7 @@ export const ThemeProvider = ({ children }) => {
     },
     typography: {
       fontFamily: 'sans-serif',
-    },
+    },     
     components: {
       MuiAppBar: {
         styleOverrides: {

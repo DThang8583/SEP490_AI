@@ -20,6 +20,12 @@ import {
   Chip,
   Avatar,
   Switch,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Grid
 } from '@mui/material';
 import {
   GetApp as DownloadIcon,
@@ -44,6 +50,16 @@ const TotalAccounts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [roleIdFilter, setRoleIdFilter] = useState('');
+  const [schoolIdFilter, setSchoolIdFilter] = useState('');
+  const [isActiveFilter, setIsActiveFilter] = useState(true);
+  const [roles, setRoles] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [schools, setSchools] = useState([]);
+  const [loadingFilters, setLoadingFilters] = useState(true);
+  const [filterError, setFilterError] = useState(null);
+  const [selectedGradeNumber, setSelectedGradeNumber] = useState(null);
+  const [gradeNumberToIdMap, setGradeNumberToIdMap] = useState({});
   const navigate = useNavigate();
 
   const fetchAccounts = async () => {
@@ -61,6 +77,10 @@ const TotalAccounts = () => {
           SortOrder: sortOrder,
           Page: page,
           PageSize: itemsPerPage,
+          RoleId: roleIdFilter || undefined,
+          GradeId: selectedGradeNumber !== null ? gradeNumberToIdMap[selectedGradeNumber] : undefined,
+          SchoolId: schoolIdFilter || undefined,
+          IsActive: isActiveFilter === true ? true : (isActiveFilter === false ? false : undefined),
         },
       });
 
@@ -83,20 +103,79 @@ const TotalAccounts = () => {
   };
 
   useEffect(() => {
-    fetchAccounts();
-  }, [page, itemsPerPage, searchTerm, sortColumn, sortOrder]);
+    const fetchFilterData = async () => {
+      try {
+        setLoadingFilters(true);
+        setFilterError(null);
+        const token = localStorage.getItem('accessToken');
+        const headers = { Authorization: `Bearer ${token}` };
 
-  const handlePageChange = (newPage) => {
+        const [rolesResponse, gradesResponse] = await Promise.all([
+          axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/roles', { headers }),
+          axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades', { headers }),
+        ]);
+
+        if (rolesResponse.data?.code === 0) setRoles(rolesResponse.data.data);
+        
+        if (gradesResponse.data?.code === 0) {
+            const gradeMap = {};
+            gradesResponse.data.data.forEach(grade => {
+                gradeMap[grade.gradeNumber] = grade.gradeId;
+            });
+            setGradeNumberToIdMap(gradeMap);
+            setGrades(gradesResponse.data.data);
+        }
+
+      } catch (err) {
+        console.error('Error fetching filter data:', err);
+        setFilterError('Không thể tải dữ liệu bộ lọc.');
+      } finally {
+        setLoadingFilters(false);
+      }
+    };
+
+    fetchFilterData();
+  }, []);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [page, itemsPerPage, searchTerm, sortColumn, sortOrder, roleIdFilter, selectedGradeNumber, schoolIdFilter, isActiveFilter, gradeNumberToIdMap]);
+
+  const handlePageChange = (event, newPage) => {
     setPage(newPage);
   };
 
-  const handleItemsPerPageChange = (newItemsPerPage) => {
-    setItemsPerPage(newItemsPerPage);
+  const handleItemsPerPageChange = (event) => {
+    setItemsPerPage(parseInt(event.target.value, 10));
     setPage(1);
   };
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
+    setPage(1);
+  };
+
+  const handleRoleFilterChange = (event) => {
+    setRoleIdFilter(event.target.value);
+    setPage(1);
+  };
+
+  const handleGradeButtonClick = (gradeNumber) => {
+      if (selectedGradeNumber === gradeNumber) {
+          setSelectedGradeNumber(null);
+      } else {
+          setSelectedGradeNumber(gradeNumber);
+      }
+      setPage(1);
+  };
+
+  const handleSchoolFilterChange = (event) => {
+    setSchoolIdFilter(event.target.value);
+    setPage(1);
+  };
+
+  const handleIsActiveFilterChange = (event) => {
+    setIsActiveFilter(event.target.checked ? true : false);
     setPage(1);
   };
 
@@ -120,7 +199,8 @@ const TotalAccounts = () => {
       'Số điện thoại',
       'Ngày sinh',
       'Giới tính',
-      'Địa chỉ'
+      'Địa chỉ',
+      'Trạng thái hoạt động'
     ];
 
     const processRow = (row) => {
@@ -134,7 +214,8 @@ const TotalAccounts = () => {
         row.phoneNumber || '',
         row.dateOfBirth || '',
         row.gender === 'Male' ? 'Nam' : row.gender === 'Female' ? 'Nữ' : '',
-        row.address || ''
+        row.address || '',
+        row.isActive ? 'Hoạt động' : 'Không hoạt động'
       ];
 
       return values.map(value => {
@@ -166,44 +247,38 @@ const TotalAccounts = () => {
   };
 
   const getRoleChip = (role) => {
+    let color = "default";
+    let icon = <PersonIcon />;
+    let label = role;
+
     switch (role.toLowerCase()) {
       case 'administrator':
-        return (
-          <Chip
-            icon={<AdminIcon />}
-            label="Admin"
-            color="error"
-            size="small"
-          />
-        );
+        color = "error";
+        icon = <AdminIcon />;
+        break;
       case 'subject specialist manager':
-        return (
-          <Chip
-            icon={<TeacherIcon />}
-            label="Quản lý"
-            color="primary"
-            size="small"
-          />
-        );
+      case 'tổ trưởng chuyên môn':
+        color = "primary";
+        icon = <TeacherIcon />;
+        break;
       case 'teacher':
-        return (
-          <Chip
-            icon={<TeacherIcon />}
-            label="Giáo viên"
-            color="success"
-            size="small"
-          />
-        );
+      case 'giáo viên':
+        color = "warning";
+        icon = <TeacherIcon />;
+        break;
       default:
-        return (
-          <Chip
-            icon={<PersonIcon />}
-            label="Người dùng"
-            color="default"
-            size="small"
-          />
-        );
+        // default color and icon are already set
+        break;
     }
+
+    return (
+      <Chip
+        icon={icon}
+        label={label}
+        color={color}
+        size="small"
+      />
+    );
   };
 
   const handleEdit = (userId) => {
@@ -250,175 +325,181 @@ const TotalAccounts = () => {
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        mb: 3,
-        gap: 2,
-        flexWrap: 'wrap'
+        mb: 3 
       }}>
-        <Typography variant="h4" component="h1">
-          Danh sách tài khoản
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="contained" color="primary" onClick={() => navigate('/admin/create-account')}>
+        <Typography variant="h4" component="h1">Danh sách tài khoản</Typography>
+        <Box>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            startIcon={<DownloadIcon />} 
+            onClick={exportToCSV} 
+            sx={{ mr: 1 }}
+          >
+            Xuất CSV
+          </Button>
+          <Button 
+            variant="contained" 
+            color="secondary" 
+            onClick={() => navigate('/admin/create-account')}
+          >
             Tạo Tài Khoản
           </Button>
-          <Tooltip title="Xuất CSV">
-            <IconButton onClick={exportToCSV} color="primary">
-              <DownloadIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Làm mới">
-            <IconButton onClick={fetchAccounts} color="primary">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
         </Box>
       </Box>
 
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Tìm kiếm theo tên, email, trường học..."
-          value={searchTerm}
-          onChange={handleSearch}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Box>
+      {filterError && <Alert severity="error" sx={{ mb: 2 }}>{filterError}</Alert>}
+
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              fullWidth
+              label="Tìm kiếm theo tên, email, trường..."
+              value={searchTerm}
+              onChange={handleSearch}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <FormControl fullWidth disabled={loadingFilters}>
+              <InputLabel>Vai trò</InputLabel>
+              <Select
+                value={roleIdFilter}
+                label="Vai trò"
+                onChange={handleRoleFilterChange}
+              >
+                <MenuItem value=""><em>Tất cả</em></MenuItem>
+                {roles.map((role) => (
+                  <MenuItem key={role.roleId} value={role.roleId}>{role.roleName}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Typography variant="subtitle1" gutterBottom>Lọc theo Khối:</Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              {[1, 2, 3, 4].map(gradeNumber => (
+                <Button
+                  key={gradeNumber}
+                  variant={selectedGradeNumber === gradeNumber ? 'contained' : 'outlined'}
+                  onClick={() => handleGradeButtonClick(gradeNumber)}
+                >
+                  Khối {gradeNumber}
+                </Button>
+              ))}
+              {selectedGradeNumber !== null && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => handleGradeButtonClick(null)}
+                >
+                  Xóa lọc Khối
+                </Button>
+              )}
+            </Box>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={isActiveFilter}
+                  onChange={handleIsActiveFilterChange}
+                  name="isActiveFilter"
+                  color="primary"
+                />
+              }
+              label="Chỉ tài khoản hoạt động"
+            />
+          </Grid>
+        </Grid>
+      </Paper>
 
       {loading ? (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          p: 3,
-          flex: 1
-        }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <CircularProgress />
         </Box>
       ) : error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      ) : (
-        <Paper sx={{ 
-          width: '100%', 
-          overflow: 'hidden',
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <TableContainer sx={{ flex: 1 }}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Ảnh</TableCell>
-                  <TableCell>ID</TableCell>
-                  <TableCell 
-                    onClick={() => handleSort('fullname')}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    Họ tên
+        <Alert severity="error" sx={{ mt: 4 }}>{error}</Alert>
+      ) : ( accounts.length > 0 ? (
+        <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 650 }} aria-label="account table">
+            <TableHead>
+              <TableRow>
+                <TableCell>Ảnh</TableCell>
+                <TableCell onClick={() => handleSort('fullname')}>Họ tên</TableCell>
+                <TableCell onClick={() => handleSort('email')}>Email</TableCell>
+                <TableCell onClick={() => handleSort('role')}>Vai trò</TableCell>
+                <TableCell onClick={() => handleSort('school')}>Trường</TableCell>
+                <TableCell>Số điện thoại</TableCell>
+                <TableCell>Địa chỉ</TableCell>
+                <TableCell>Thao tác</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {accounts.map((account) => (
+                <TableRow
+                  key={account.userId}
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    <Avatar>{account.fullname ? account.fullname.charAt(0) : account.username.charAt(0)}</Avatar>
                   </TableCell>
-                  <TableCell 
-                    onClick={() => handleSort('email')}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    Email
-                  </TableCell>
-                  <TableCell 
-                    onClick={() => handleSort('role')}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    Vai trò
-                  </TableCell>
-                  <TableCell 
-                    onClick={() => handleSort('school')}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    Trường
-                  </TableCell>
-                  <TableCell>Số điện thoại</TableCell>
-                  <TableCell>Địa chỉ</TableCell>
-                  <TableCell align="center">Thao tác</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {accounts.map((account) => (
-                  <TableRow hover key={account.userId}>
-                    <TableCell>
-                      <Avatar 
-                        src={account.imgURL} 
-                        alt={account.fullname}
-                        sx={{ width: 40, height: 40 }}
-                      >
-                        {account.fullname?.charAt(0)}
-                      </Avatar>
-                    </TableCell>
-                    <TableCell>{account.userId}</TableCell>
-                    <TableCell>{account.fullname}</TableCell>
-                    <TableCell>{account.email}</TableCell>
-                    <TableCell>{getRoleChip(account.role)}</TableCell>
-                    <TableCell>
-                      {account.school ? (
-                        <Chip
-                          icon={<SchoolIcon />}
-                          label={account.school}
-                          variant="outlined"
-                          size="small"
+                  <TableCell>{account.fullname || account.username}</TableCell>
+                  <TableCell>{account.email}</TableCell>
+                  <TableCell>{getRoleChip(account.role)}</TableCell>
+                  <TableCell>{account.school || 'N/A'}</TableCell>
+                  <TableCell>{account.phoneNumber || 'N/A'}</TableCell>
+                  <TableCell>{account.address || 'N/A'}</TableCell>
+                  <TableCell>
+                    <Tooltip title="Chỉnh sửa">
+                      <IconButton onClick={() => handleEdit(account.userId)} size="small">
+                        {/* Edit icon */}
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={account.isActive ? "Vô hiệu hóa" : "Kích hoạt"}>
+                       <Switch
+                          checked={account.isActive}
+                          onChange={() => handleDelete(account.userId)}
+                          color={account.isActive ? "success" : "error"}
+                          inputProps={{ 'aria-label': 'controlled switch' }}
                         />
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          N/A
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>{account.phoneNumber}</TableCell>
-                    <TableCell>{account.address}</TableCell>
-                    <TableCell align="center">
-                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                        <Tooltip title={account.isActive ? "Vô hiệu hóa" : "Kích hoạt"}>
-                          <Switch
-                            size="small"
-                            color="success"
-                            checked={account.isActive}
-                            onChange={() => handleDelete(account.userId)}
-                            sx={{
-                              '& .MuiSwitch-switchBase.Mui-checked': {
-                                color: '#4caf50',
-                                '& + .MuiSwitch-track': {
-                                  backgroundColor: '#4caf50',
-                                },
-                              },
-                              '& .MuiSwitch-switchBase': {
-                                color: '#fff',
-                                '& + .MuiSwitch-track': {
-                                  backgroundColor: '#ccc',
-                                },
-                              },
-                            }}
-                          />
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <Paging
-            totalItems={totalCount}
-            itemsPerPage={itemsPerPage}
-            currentPage={page}
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+           <Typography>Không có tài khoản nào được tìm thấy.</Typography>
+         </Box>
+      ))}
+
+      {totalCount > 0 && (
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+           {/* Assuming Paging component handles its own state and logic for pagination */}
+          <TablePagination
+            component="div"
+            count={totalCount}
+            page={page - 1}
             onPageChange={handlePageChange}
-            onItemsPerPageChange={handleItemsPerPageChange}
-            itemsPerPageOptions={[5, 10, 25, 50]}
+            rowsPerPage={itemsPerPage}
+            onRowsPerPageChange={handleItemsPerPageChange}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            labelRowsPerPage="Số mục mỗi trang:"
+            labelDisplayedRows={({ from, to, count }) => 
+              `Đang hiển thị ${from}-${to} trên tổng số ${count}`
+            }
           />
-        </Paper>
+        </Box>
       )}
     </Box>
   );

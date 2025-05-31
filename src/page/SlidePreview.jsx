@@ -7,7 +7,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // Use your actual API Key
 const API_KEY = "AIzaSyDSf6v2-ynUdw6IS7Ac_2cSOJN7-g12c7k"; // Replace with your actual API Key
 const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Using the flash model
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Using the flash model for text analysis
+const imageModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-preview-image-generation" }); // Using the image model for image generation
 
 const SlidePreview = () => {
   const location = useLocation();
@@ -26,6 +27,7 @@ const SlidePreview = () => {
     closing: "Chúc các em học tốt!"
   });
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [generatedImages, setGeneratedImages] = useState({});
 
   // Function to analyze content in bulk with retry logic
   const analyzeLessonContent = async (lessonData) => {
@@ -132,6 +134,16 @@ Application: ${lessonData.apply || ''}
           closing: "Chúc các em học tốt!"
         });
 
+        // Trigger image generation after setting analyzed content
+        triggerImageGeneration({
+          lesson: parsedResults.LessonTitle || lessonData.lesson,
+          startUp: parsedResults.StartUp,
+          practice: parsedResults.Practice,
+          application: parsedResults.Application,
+          gameIdea: gameIdeaText || "Ý tưởng trò chơi đang cập nhật...",
+          closing: "Chúc các em học tốt!"
+        });
+
         return; // Success, exit function
       } catch (error) {
         console.error(`Attempt ${attempt + 1} failed:`, error);
@@ -193,15 +205,7 @@ Application: ${lessonData.apply || ''}
     // Remove leading AI category labels from the whole content first (fallback just in case)
     contentToFormat = contentToFormat.replace(categoryLabelRegex, '').trim();
 
-    // Add newline after patterns like 'Word:' or 'Phrase:' followed by content on the same line
-    // This helps structure content like 'Tính: a) ...' or 'So sánh: ...'
-    // Regex breakdown:
-    // (^|\n)        - Start of string or a newline (to handle cases not at the very beginning)
-    // ([A-Za-zÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸ\s]+:) - Capture one or more Vietnamese letters/spaces followed by a colon
-    // \s*         - Optional spaces after the colon
-    // (.*)          - Capture the rest of the line
-    // $             - End of the line
-    // 'gm' flags    - Global (find all matches) and Multiline (treat ^ and $ as start/end of line)
+
     const lineBreakAfterColonRegex = /(^|\n)([A-Za-zÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸ\s]+):\s*(.*)$/gm;
     contentToFormat = contentToFormat.replace(lineBreakAfterColonRegex, '$1$2:\n$3').trim();
 
@@ -243,6 +247,125 @@ Application: ${lessonData.apply || ''}
     }).filter(p => p !== null).join('');
   };
 
+  // Function to perform the second analysis to extract visual elements
+  const extractVisualPrompt = async (analyzedText) => {
+    if (!analyzedText || analyzedText.includes('[Lỗi phân tích]')) return analyzedText; // Use analyzed text directly if no content or error
+
+    const visualPromptInstruction = `Based on this educational content: "${analyzedText}", describe the key visual elements or simple scenes that could be illustrated for a child. Focus on concrete objects, characters, actions, or simple concepts. For example, if the content is about "2 apples + 3 apples", the visual prompt should be "2 apples and 3 apples". If it is about "comparing tall and short towers", the prompt should be "a tall tower and a short tower". If it is about a game, describe the main visual concept of the game. If it describes locations or objects in a scene, list them. Respond only with the description, no explanations or extra text. Keep it concise and focused on drawable things.`;
+
+    try {
+      console.log("Performing second analysis for visual prompt...");
+      const result = await model.generateContent(visualPromptInstruction);
+      const visualPromptText = result.response.text().trim();
+      console.log("Extracted visual prompt:", visualPromptText);
+      return visualPromptText || analyzedText; // Use analyzed text as fallback if second analysis yields nothing
+    } catch (error) {
+      console.error("Error during second analysis for visual prompt:", error);
+      return analyzedText; // Return original analyzed text on error
+    }
+  };
+
+  // Function to generate image from extracted visual prompt
+  const generateImageFromContent = async (visualPromptText, slideKey) => {
+    if (!visualPromptText || visualPromptText.includes('[Lỗi phân tích]')) {
+       console.warn(`Skipping image generation for ${slideKey} due to no or error content.`);
+       setGeneratedImages(prev => ({
+           ...prev,
+           [slideKey]: 'error' // Mark as error or skip
+         }));
+       return;
+    }
+    try {
+      // Using the extracted visual prompt as the prompt for image generation
+      console.log(`Sending image prompt for ${slideKey}: ${visualPromptText}`); // Log the prompt being sent
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: visualPromptText
+                  }
+                ]
+              }
+            ],
+            generationConfig: {
+              responseModalities: [
+                "TEXT",
+                "IMAGE"
+              ]
+            }
+          })
+        }
+      );
+
+      const data = await response.json();
+      console.log(`Raw image generation response for ${slideKey}:`, data); // Log the raw response
+
+      let imageData = null;
+      let imageMimeType = null;
+
+      // Check if candidates and content exist
+      if (data && data.candidates && data.candidates.length > 0 && data.candidates[0].content && data.candidates[0].content.parts) {
+        // Loop through the parts to find one with inlineData (the image data)
+        for (const part of data.candidates[0].content.parts) {
+          if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
+            imageData = part.inlineData.data;
+            imageMimeType = part.inlineData.mimeType;
+            break; // Found the image part, no need to check further
+          }
+        }
+      }
+
+      if (imageData) {
+        setGeneratedImages(prev => ({
+          ...prev,
+          [slideKey]: `data:${imageMimeType};base64,${imageData}` // Use the stored mimeType
+        }));
+      } else {
+        console.warn(`Image generation failed or returned no valid image data part for ${slideKey}. Response:`, data);
+         setGeneratedImages(prev => ({
+           ...prev,
+           [slideKey]: 'error' // Mark as error to show something different than loading
+         }));
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+      setGeneratedImages(prev => ({
+        ...prev,
+        [slideKey]: 'error' // Mark as error on fetch/API error
+      }));
+    }
+  };
+
+  // Function to trigger image generation for all sections after analysis
+  const triggerImageGeneration = async (contentData) => {
+    const sectionsToGenerate = ['lesson', 'startUp', 'practice', 'application', 'gameIdea', 'closing']; // Include closing section
+    console.log("Triggering image generation for sections:", sectionsToGenerate);
+    for (const section of sectionsToGenerate) {
+      console.log(`Checking section ${section} for image generation. Content:`, contentData[section]);
+      if (contentData[section] && !contentData[section].includes('[Lỗi phân tích]')) {
+        console.log(`Processing image for section: ${section}`);
+        // Perform second analysis to get visual prompt
+        const visualPrompt = await extractVisualPrompt(contentData[section]);
+        // Generate image using the visual prompt
+        await generateImageFromContent(visualPrompt, section);
+      } else {
+         console.log(`No valid content for section ${section}, skipping image generation or marking as error.`);
+          setGeneratedImages(prev => ({
+             ...prev,
+             [section]: contentData[section] && contentData[section].includes('[Lỗi phân tích]') ? 'error' : undefined // Mark as error if analysis failed, keep undefined if just no content
+           }));
+      }
+    }
+  };
 
   useEffect(() => {
     const startAnalysis = async () => {
@@ -309,6 +432,9 @@ Application: ${lessonData.apply || ''}
   const currentContent = analyzedContents[currentSlideData.contentKey];
   const currentTitle = currentSlideData.title === 'Tiêu đề' ? analyzedContents.lesson || lessonData.lesson : currentSlideData.title;
 
+  console.log(`Rendering Slide: ${currentSlideData.title}, Content Key: ${currentSlideData.contentKey}`);
+  console.log(`Analyzed Content for ${currentSlideData.contentKey}:`, currentContent);
+  console.log(`Generated Image state for ${currentSlideData.contentKey}:`, generatedImages[currentSlideData.contentKey]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
@@ -395,14 +521,36 @@ Application: ${lessonData.apply || ''}
             </Typography>
 
             {currentSlideData.imagePlaceholder && (
-                 <Box sx={{
-                  width: '80%',
-                  maxWidth: 600, // Max width for image placeholder
-                  height: 300,
-                  backgroundColor: '#e0e0e0', // Gray placeholder color
-                  borderRadius: 2,
-                  mb: 2 // Add margin below image placeholder
-                }} />
+              <Box sx={{
+                width: '80%',
+                maxWidth: 600,
+                height: 300,
+                borderRadius: 2,
+                mb: 2,
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#e0e0e0'
+              }}>
+                {generatedImages[currentSlideData.contentKey] === 'error' ? (
+                  <Typography variant="body2" color="error">
+                    Lỗi khi tải hình ảnh. Vui lòng thử lại sau.
+                  </Typography>
+                ) : generatedImages[currentSlideData.contentKey] ? (
+                  <img
+                    src={generatedImages[currentSlideData.contentKey]}
+                    alt={`Generated illustration for ${currentSlideData.title}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain'
+                    }}
+                  />
+                ) : (
+                  <CircularProgress />
+                )}
+              </Box>
             )}
 
             {/* Display formatted analyzed content */}

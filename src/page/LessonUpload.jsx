@@ -135,7 +135,7 @@ const LessonUpload = () => {
       });
       
       const response = await axios.post(
-        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs',
+        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs',
         {
           title,
           body,

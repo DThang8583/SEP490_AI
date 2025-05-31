@@ -67,42 +67,42 @@ const AdminDashboard = () => {
   };
 
   const menuItems = [
-    {
-      text: 'Tổng quan',
-      icon: <DashboardIcon />,
+    { 
+      text: 'Tổng quan', 
+      icon: <DashboardIcon />, 
       path: '/admin',
       description: 'Xem tổng quan hệ thống'
     },
-    {
-      text: 'Quản lý tài khoản',
-      icon: <GroupIcon />,
+    { 
+      text: 'Quản lý tài khoản', 
+      icon: <GroupIcon />, 
       path: '/admin/quan-ly-tai-khoan',
       description: 'Quản lý người dùng hệ thống'
     },
-    {
-      text: 'Quản lý Giáo án',
-      icon: <MenuBookIcon />,
+    { 
+      text: 'Quản lý Giáo án', 
+      icon: <MenuBookIcon />, 
       path: '/admin/quan-ly-giao-an',
       description: 'Quản lý nội dung Giáo án'
     },
-    {
-      text: 'Quản lý bài tập tạo',
-      icon: <QuizIcon />,
+    { 
+      text: 'Quản lý bài tập tạo', 
+      icon: <QuizIcon />, 
       path: '/admin/quan-ly-bai-tap',
       description: 'Quản lý ngân hàng đề thi'
     },
-    {
-      text: 'Quản lý trường học',
-      icon: <SchoolIcon />,
+    { 
+      text: 'Quản lý trường học', 
+      icon: <SchoolIcon />, 
       path: '/admin/quan-ly-truong',
       description: 'Quản lý thông tin trường học'
     },
   ];
 
   const drawer = (
-    <Box sx={{
-      height: '100%',
-      display: 'flex',
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
       flexDirection: 'column',
       background: isDarkMode ? '#1E1E1E' : theme.palette.primary.main,
       color: '#fff',
@@ -110,10 +110,10 @@ const AdminDashboard = () => {
       width: isMobile ? drawerWidth : (isCollapsed ? collapsedDrawerWidth : drawerWidth),
       overflowX: 'hidden',
     }}>
-      <Box sx={{
-        p: 3,
-        display: 'flex',
-        alignItems: 'center',
+      <Box sx={{ 
+        p: 3, 
+        display: 'flex', 
+        alignItems: 'center', 
         justifyContent: isCollapsed ? 'center' : 'flex-start',
         borderBottom: `1px solid ${theme.palette.divider}`,
         minHeight: '64px',
@@ -140,9 +140,9 @@ const AdminDashboard = () => {
             >
                 <SchoolIcon />
             </Avatar>
-          <Typography
-            variant="h6"
-            sx={{
+          <Typography 
+            variant="h6" 
+            sx={{ 
               fontWeight: 700,
               color: '#fff',
               opacity: isCollapsed ? 0 : 1,
@@ -159,8 +159,8 @@ const AdminDashboard = () => {
 
       <Divider sx={{ bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)', my: 2 }} />
 
-      <List sx={{
-        flex: 1,
+      <List sx={{ 
+        flex: 1, 
         px: isCollapsed ? 1 : 2,
         py: 0,
         display: 'flex',
@@ -203,27 +203,27 @@ const AdminDashboard = () => {
         {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-                <Tooltip
-                    key={item.text}
+          <Tooltip 
+            key={item.text}
                     title={isCollapsed ? item.text : ''}
-                    placement="right"
+            placement="right"
                     arrow
-                >
-                    <ListItem
-                        button
-                        component={Link}
-                        to={item.path}
+          >
+            <ListItem
+              button
+              component={Link}
+              to={item.path}
                         selected={isActive}
-                        sx={{
+              sx={{
                             borderRadius: '12px',
                             mb: 1,
                             px: isCollapsed ? 1 : 1.5,
                             py: 1.5,
                             width: isCollapsed ? 50 : '100%',
                             justifyContent: isCollapsed ? 'center' : 'flex-start',
-                        }}
-                    >
-                        <ListItemIcon sx={{
+              }}
+            >
+              <ListItemIcon sx={{ 
                             color: isActive ? '#fff' : 'rgba(255,255,255,0.7)',
                             minWidth: isCollapsed ? 'auto' : 35,
                             display: 'flex',
@@ -231,13 +231,13 @@ const AdminDashboard = () => {
                             justifyContent: 'center',
                             mr: isCollapsed ? 0 : 1.5,
                             transition: 'margin 0.4s, color 0.3s',
-                        }}>
-                            {item.icon}
-                        </ListItemIcon>
+              }}>
+                {item.icon}
+              </ListItemIcon>
 
-                        <ListItemText
-                            primary={item.text}
-                            primaryTypographyProps={{
+              <ListItemText 
+                primary={item.text}
+                primaryTypographyProps={{
                                 fontSize: '0.95rem',
                                 fontWeight: isActive ? 600 : 400,
                                 opacity: isCollapsed ? 0 : 1,
@@ -247,15 +247,15 @@ const AdminDashboard = () => {
                                 color: isActive ? '#fff' : 'rgba(255,255,255,0.85)',
                                 transition: 'opacity 0.4s, max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s',
                                 pl: isCollapsed ? 0 : '4px',
-                            }}
-                        />
-                    </ListItem>
-                </Tooltip>
+                }}
+              />
+            </ListItem>
+          </Tooltip>
             );
         })}
       </List>
 
-      <Box sx={{
+      <Box sx={{ 
           p: isCollapsed ? 1 : 2,
           borderTop: `1px solid ${theme.palette.divider}`,
           display: 'flex',
@@ -455,8 +455,8 @@ const AdminDashboard = () => {
       <AdminNavbar onMenuClick={handleDrawerToggle} isMobile={isMobile} />
       <Box
         component="nav"
-        sx={{
-          width: { sm: drawerWidth },
+        sx={{ 
+          width: { sm: drawerWidth }, 
           flexShrink: { sm: 0 },
           width: isMobile ? drawerWidth : (isCollapsed ? collapsedDrawerWidth : drawerWidth),
           transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -472,8 +472,8 @@ const AdminDashboard = () => {
             }}
             sx={{
               display: { xs: 'block', sm: 'none' },
-              '& .MuiDrawer-paper': {
-                boxSizing: 'border-box',
+              '& .MuiDrawer-paper': { 
+                boxSizing: 'border-box', 
                 width: drawerWidth,
                 border: 'none',
                 boxShadow: theme.shadows[2],
@@ -489,8 +489,8 @@ const AdminDashboard = () => {
             open={!isCollapsed}
             sx={{
               display: { xs: 'none', sm: 'block' },
-              '& .MuiDrawer-paper': {
-                boxSizing: 'border-box',
+              '& .MuiDrawer-paper': { 
+                boxSizing: 'border-box', 
                 border: 'none',
                 boxShadow: theme.shadows[2],
                 mt: '64px',

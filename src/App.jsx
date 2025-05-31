@@ -8,7 +8,7 @@ import Footer from './Components/Landing/Footer';
 import Home from './Components/Landing/Home';
 import CreateLesson from '../src/page/CreateLesson';
 import Login from './page/Login';
-
+import CreateBlog from './page/CreateBlog';
 import AIRender from './page/AIRender';
 import ChoiceSignUp from './page/ChoiceSignUp';
 import ChoiceChatorClick from './page/ChoiceChatorClick';
@@ -180,9 +180,9 @@ const AppContent = () => {
           <Route path="/giao-an-da-tao" element={<AIRender />} />
           <Route path="/ChoiceChatorClick" element={<ChoiceChatorClick />} />
           <Route path="/cac-bai-hoc" element={<LessonList />} />
-          <Route path="/blog" element={<PrivateRoute><AllLessons /></PrivateRoute>} />
+          <Route path="/danh-sach-bai-dang" element={<PrivateRoute><AllLessons /></PrivateRoute>} />
           <Route path="/chi-tiet-bai-dang/:blogId" element={<PrivateRoute><BlogLessonDetail /></PrivateRoute>} />
-          <Route path="/Đăng-Giáo-án" element={<PrivateRoute><LessonUpload /></PrivateRoute>} />
+          <Route path="/Đăng-giáo-án" element={<PrivateRoute><LessonUpload /></PrivateRoute>} />
           <Route path="/giao-an-bi-tu-choi" element={<PrivateRoute><RejectedLessons /></PrivateRoute>} />
           <Route path="/giao-an-cho-duyet" element={<PrivateRoute><PendingLessons /></PrivateRoute>} />
           <Route path="/giao-an-da-duyet" element={<PrivateRoute><ApprovedLessons /></PrivateRoute>} />
@@ -195,7 +195,8 @@ const AppContent = () => {
           <Route path="/bai-tap/:id" element={<ExamDetail />} />
           <Route path="/khung-chuong-trinh" element={<TeacherCurriculumm />} />
           <Route path="/command-management" element={<PrivateRoute><CommandManager /></PrivateRoute>} />
-          <Route path="/generated-quiz" element={<PrivateRoute><GeneratedQuiz/></PrivateRoute>} />
+          <Route path="/bai-tap-AI-tao" element={<PrivateRoute><GeneratedQuiz/></PrivateRoute>} />
+          <Route path="/tao-bai-dang" element={<PrivateRoute><CreateBlog/></PrivateRoute>} />
           <Route path="/yeu-cau-can-dat" element={<TeacherRequirements />} />
           <Route path="/manager/*" element={
             <PrivateRoute>

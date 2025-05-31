@@ -86,7 +86,7 @@ const lessonCategories = [
 ];
 
 const menuItems = [
-  { text: "Blog", path: "/blog", icon: <Calculate />, requiresLogin: true },
+  { text: "Bài đăng", path: "/danh-sach-bai-dang", icon: <Calculate />, requiresLogin: true },
   { text: "Bài học", path: "/lessons", requiresLogin: true },
   { text: "Bài tập", path: "/bai-tap", requiresLogin: true },
   { text: "Khung chương trình cho giáo viên", path: "/khung-chuong-trinh", requiresLogin: true },
@@ -145,13 +145,13 @@ const Navbar = () => {
       logout();
       navigate('/login');
     } else if (path === '/tao-giao-an') {
-      if (!isLoggedIn || !userInfo?.userId) {
+      if (!isLoggedIn || !userInfo?.id) {
         navigate('/login'); 
         return;
       }
 
       try {
-        const userId = userInfo.userId;
+        const userId = userInfo.id;
         const apiUrl = `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/${userId}`;
         const response = await axios.get(apiUrl);
         const userData = response.data.data;
@@ -352,7 +352,7 @@ const Navbar = () => {
                   onClick={() => handleNavigation('/tao-giao-an')}
                   sx={{
                     ml: 2,
-                    backgroundColor: '#FF6B6B',
+                    backgroundColor: '#FFFFFF',
                     '&:hover': {
                       backgroundColor: '#FF5252',
                     }

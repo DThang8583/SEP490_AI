@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -14,16 +14,18 @@ import {
   Stack,
   Divider,
   Button,
-  TextField
+  TextField,
+  InputAdornment,
+  useTheme
 } from '@mui/material';
-import { School as SchoolIcon } from '@mui/icons-material';
+import { School as SchoolIcon, Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import axios from 'axios';
-import { useTheme } from '../context/ThemeContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 
 const AllLessons = () => {
-  const { isDarkMode } = useTheme();
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const navigate = useNavigate();
   const { blogId } = useParams();
   const [blogs, setBlogs] = useState([]);
@@ -38,6 +40,16 @@ const AllLessons = () => {
     hasNextPage: false,
     hasPreviousPage: false
   });
+  const [currentSearchTerm, setCurrentSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const searchInputRef = React.useRef(null);
+
+  // Auto focus search input on mount
+  useEffect(() => {
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, []);
 
   const fetchBlogs = async (page = 1, pageSize = 10, currentSearchTerm = '') => {
     try {
@@ -107,21 +119,35 @@ const AllLessons = () => {
     }
   };
 
+  // Debounce search term
   useEffect(() => {
-    // Initial fetch on component mount
-    fetchBlogs(1, pagination.pageSize, ''); // Fetch initial data without search term initially
-  }, []); // Empty dependency array means this runs only once on mount
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(currentSearchTerm);
+    }, 500); // Wait for 500ms after user stops typing
 
-  const handlePageChange = (event, newPage) => {
-    fetchBlogs(newPage, pagination.pageSize, searchTerm); // Use current search term for pagination
+    return () => clearTimeout(timer);
+  }, [currentSearchTerm]);
+
+  const handleSearch = (event) => {
+    const value = event.target.value;
+    setCurrentSearchTerm(value);
+    setPagination({ ...pagination, currentPage: 1 }); // Reset to first page when searching
   };
 
-  const handleSearch = () => {
-    fetchBlogs(1, pagination.pageSize, searchTerm); // Fetch from page 1 with the new search term
+  useEffect(() => {
+    fetchBlogs(pagination.currentPage, pagination.pageSize, debouncedSearchTerm);
+  }, [pagination.currentPage, pagination.pageSize, debouncedSearchTerm]); // Use debouncedSearchTerm instead of currentSearchTerm
+
+  const handlePageChange = (event, newPage) => {
+    fetchBlogs(newPage, pagination.pageSize, debouncedSearchTerm); // Use debouncedSearchTerm
   };
 
   const handleViewLesson = (blogId) => {
     navigate(`/chi-tiet-bai-dang/${blogId}`);
+  };
+
+  const handleCreateBlog = () => {
+    navigate('/tao-bai-dang');
   };
 
   if (loading) {
@@ -152,20 +178,42 @@ const AllLessons = () => {
     >
       <Container maxWidth="lg">
         <Stack direction="row" alignItems="center" spacing={2} mb={4}>
-          <SchoolIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+          <SchoolIcon sx={{ fontSize: 32, color: theme.palette.primary.main }} />
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
             Danh sách bài đăng
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
             <TextField
-              label="Tìm kiếm bài viết"
+              inputRef={searchInputRef}
+              label="Tìm kiếm bài đăng"
               variant="outlined"
               size="small"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={currentSearchTerm}
+              onChange={handleSearch}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
             />
-            <Button variant="contained" onClick={handleSearch} disabled={loading}>
-              Tìm kiếm
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{
+                ml: 2,
+                backgroundColor: isDarkMode ? theme.palette.primary.main : '#FFFFFF',
+                color: isDarkMode ? '#FFFFFF' : theme.palette.primary.main,
+                '&:hover': {
+                  backgroundColor: isDarkMode ? theme.palette.primary.dark : '#FF5252',
+                  color: '#FFFFFF'
+                }
+              }}
+              startIcon={<AddIcon />}
+              onClick={handleCreateBlog}
+            >
+              Đăng bài
             </Button>
           </Box>
         </Stack>
@@ -203,6 +251,7 @@ const AllLessons = () => {
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
                         lineHeight: 1.3,
+                        color: isDarkMode ? '#FFFFFF' : 'inherit'
                       }}
                     >
                       {blog.title}
@@ -218,6 +267,7 @@ const AllLessons = () => {
                         WebkitLineClamp: 3,
                         WebkitBoxOrient: 'vertical',
                         minHeight: '4.5em',
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'inherit'
                       }}
                     >
                       {blog.body}
@@ -242,7 +292,13 @@ const AllLessons = () => {
                         sx={{ 
                           borderRadius: '8px',
                           textTransform: 'none',
-                          minWidth: '100px'
+                          minWidth: '100px',
+                          borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'inherit',
+                          color: isDarkMode ? '#FFFFFF' : 'inherit',
+                          '&:hover': {
+                            borderColor: isDarkMode ? '#FFFFFF' : 'inherit',
+                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'inherit'
+                          }
                         }}
                       >
                         Xem chi tiết

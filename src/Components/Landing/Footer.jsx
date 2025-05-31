@@ -11,7 +11,7 @@ const Footer = () => {
       { text: 'Về chúng tôi', href: '/about' },
       { text: 'Sự nghiệp', href: '/careers' },
       { text: 'Tin tức', href: '/news' },
-      { text: 'Blog', href: '/blog' },
+      { text: 'Blog', href: '/danh-sach-bai-dang' },
     ],
     support: [
       { text: 'Trung tâm hỗ trợ', href: '/support' },

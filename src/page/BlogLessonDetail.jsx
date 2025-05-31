@@ -148,7 +148,7 @@ const BlogLessonDetail = () => {
       }
 
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs/${blogId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -212,7 +212,7 @@ const BlogLessonDetail = () => {
       console.log('Token:', token);
 
       const response = await axios.post(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}/comments`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs/${blogId}/comments`,
         { body: newComment },
         {
           headers: {
@@ -228,7 +228,7 @@ const BlogLessonDetail = () => {
         
         // Fetch lại blog details để lấy thông tin comment mới nhất
         const blogResponse = await axios.get(
-          `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}`,
+          `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs/${blogId}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`
@@ -285,7 +285,7 @@ const BlogLessonDetail = () => {
       }
 
       const response = await axios.put(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}/comments/${commentId}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs/${blogId}/comments/${commentId}`,
         { body: editedCommentBody },
         {
           headers: {
@@ -387,7 +387,7 @@ const BlogLessonDetail = () => {
       }
 
       const response = await axios.delete(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}/comments/${commentId}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs/${blogId}/comments/${commentId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
