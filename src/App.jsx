@@ -84,16 +84,16 @@ const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
       <Sidebar open={sidebarOpen} toggleSidebar={toggleSidebar} />
       <Routes>
         <Route path="/dashboard" element={<Dashboard sidebarOpen={sidebarOpen} />} />
-        <Route path="/lesson-review" element={<LessonReview sidebarOpen={sidebarOpen} />} />
-        <Route path="/content-approval" element={<ContentApproval sidebarOpen={sidebarOpen} />} />
-        <Route path="/curriculum-analysis" element={<CurriculumAnalysis sidebarOpen={sidebarOpen} />} />
-        <Route path="/curriculum-framework" element={<CurriculumFramework sidebarOpen={sidebarOpen} />} />
-        <Route path="/curriculum" element={<CurriculumFramework sidebarOpen={sidebarOpen} />} />
-        <Route path="/curriculum-detail/:id" element={<CurriculumDetail sidebarOpen={sidebarOpen} />} />
-        <Route path="/lesson-export" element={<LessonExport sidebarOpen={sidebarOpen} />} />
-        <Route path="/profile" element={<Profile sidebarOpen={sidebarOpen} />} />
-        <Route path="/change-password" element={<ChangePassword sidebarOpen={sidebarOpen} />} />
-        <Route path="/forgot-password" element={<ForgotPassword sidebarOpen={sidebarOpen} />} />
+        <Route path="/xemxet" element={<LessonReview sidebarOpen={sidebarOpen} />} />
+        <Route path="/pheduyet" element={<ContentApproval sidebarOpen={sidebarOpen} />} />
+        <Route path="/phantichchuongtrinh" element={<CurriculumAnalysis sidebarOpen={sidebarOpen} />} />
+        <Route path="/khungchuongtrinh" element={<CurriculumFramework sidebarOpen={sidebarOpen} />} />
+        <Route path="/chuongtrinh" element={<CurriculumFramework sidebarOpen={sidebarOpen} />} />
+        <Route path="/thongtinchuongtrinh/:id" element={<CurriculumDetail sidebarOpen={sidebarOpen} />} />
+        <Route path="/xuatgiaoan" element={<LessonExport sidebarOpen={sidebarOpen} />} />
+        <Route path="/trangcanhan" element={<Profile sidebarOpen={sidebarOpen} />} />
+        <Route path="/doimatkhau" element={<ChangePassword sidebarOpen={sidebarOpen} />} />
+        <Route path="/quenmatkhau" element={<ForgotPassword sidebarOpen={sidebarOpen} />} />
         <Route
           path="/admin/dashboard"
           element={
@@ -158,7 +158,7 @@ const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
 const AppContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
-  const isManagerRoute = location.pathname.startsWith('/manager');
+  const isManagerRoute = location.pathname.startsWith('/quanly');
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   const toggleSidebar = (value) => {
@@ -193,10 +193,10 @@ const AppContent = () => {
           <Route path="/bai-tap/:id" element={<ExamDetail />} />
           <Route path="/khung-chuong-trinh" element={<TeacherCurriculumm />} />
           <Route path="/command-management" element={<PrivateRoute><CommandManager /></PrivateRoute>} />
-          <Route path="/bai-tap-AI-tao" element={<PrivateRoute><GeneratedQuiz/></PrivateRoute>} />
-          <Route path="/tao-bai-dang" element={<PrivateRoute><CreateBlog/></PrivateRoute>} />
+          <Route path="/bai-tap-AI-tao" element={<PrivateRoute><GeneratedQuiz /></PrivateRoute>} />
+          <Route path="/tao-bai-dang" element={<PrivateRoute><CreateBlog /></PrivateRoute>} />
           <Route path="/yeu-cau-can-dat" element={<TeacherRequirements />} />
-          <Route path="/manager/*" element={
+          <Route path="/quanly/*" element={
             <PrivateRoute>
               <ManagerRoutes sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
             </PrivateRoute>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { 
+import {
   Box, Container, Paper, Typography, TextField, Button, Link, InputAdornment, IconButton, Alert, Snackbar, CircularProgress,
   Dialog,
   DialogTitle,
@@ -86,10 +86,10 @@ const Login = () => {
         // Chuyển hướng dựa trên role
         switch (userInfo.role) {
           case "Tổ trưởng chuyên môn":
-            navigate("/manager/dashboard", { replace: true });
+            navigate("/quanly/dashboard", { replace: true });
             break;
-            case "Tổ phó":
-            navigate("/manager/dashboard", { replace: true });
+          case "Tổ phó":
+            navigate("/quanly/dashboard", { replace: true });
             break;
           case "Administrator":
             navigate("/admin", { replace: true });
@@ -150,26 +150,26 @@ const Login = () => {
         'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/auth/email',
         { email: forgotPasswordEmail }
       );
-      
+
       if (response.data && response.data.code === 0) {
         setForgotPasswordStep('inputResetDetails');
         setForgotPasswordError('');
       } else {
-        if(forgotPasswordOpen) {
-             setForgotPasswordError(response.data?.message || 'Có lỗi xảy ra. Không thể gửi mã OTP.');
+        if (forgotPasswordOpen) {
+          setForgotPasswordError(response.data?.message || 'Có lỗi xảy ra. Không thể gửi mã OTP.');
         } else {
-             setError(response.data?.message || 'Có lỗi xảy ra. Không thể gửi mã OTP.');
-             setSuccess('');
+          setError(response.data?.message || 'Có lỗi xảy ra. Không thể gửi mã OTP.');
+          setSuccess('');
         }
       }
 
     } catch (error) {
       console.error('Forgot password error:', error);
-      if(forgotPasswordOpen) {
-          setForgotPasswordError(error.response?.data?.message || 'Đã xảy ra lỗi khi yêu cầu đặt lại mật khẩu.');
+      if (forgotPasswordOpen) {
+        setForgotPasswordError(error.response?.data?.message || 'Đã xảy ra lỗi khi yêu cầu đặt lại mật khẩu.');
       } else {
-          setError(error.response?.data?.message || 'Đã xảy ra lỗi khi yêu cầu đặt lại mật khẩu.');
-          setSuccess('');
+        setError(error.response?.data?.message || 'Đã xảy ra lỗi khi yêu cầu đặt lại mật khẩu.');
+        setSuccess('');
       }
     } finally {
       setForgotPasswordLoading(false);
@@ -253,27 +253,27 @@ const Login = () => {
             </Typography>
           </Box>
           <form onSubmit={handleSubmit}>
-            <TextField 
-              fullWidth 
-              label="Tên đăng nhập" 
-              variant="outlined" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
-              required 
+            <TextField
+              fullWidth
+              label="Tên đăng nhập"
+              variant="outlined"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
               sx={{ mb: 3 }}
               disabled={loading}
-              InputProps={{ 
-                startAdornment: (<InputAdornment position="start"><Email /></InputAdornment>) 
+              InputProps={{
+                startAdornment: (<InputAdornment position="start"><Email /></InputAdornment>)
               }}
             />
-            <TextField 
-              fullWidth 
-              label="Mật khẩu" 
-              type={showPassword ? 'text' : 'password'} 
-              variant="outlined" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
+            <TextField
+              fullWidth
+              label="Mật khẩu"
+              type={showPassword ? 'text' : 'password'}
+              variant="outlined"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
               sx={{ mb: 3 }}
               disabled={loading}
               InputProps={{
@@ -285,14 +285,14 @@ const Login = () => {
                 </InputAdornment>),
               }}
             />
-            <Button 
-              type="submit" 
-              fullWidth 
-              variant="contained" 
-              sx={{ 
-                py: 1.5, 
-                borderRadius: '12px', 
-                backgroundColor: '#FF6B6B', 
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{
+                py: 1.5,
+                borderRadius: '12px',
+                backgroundColor: '#FF6B6B',
                 color: '#ffffff',
                 position: 'relative',
                 '&:hover': {
@@ -302,16 +302,16 @@ const Login = () => {
               disabled={loading}
             >
               {loading ? (
-                <CircularProgress 
-                  size={24} 
-                  sx={{ 
+                <CircularProgress
+                  size={24}
+                  sx={{
                     color: 'white',
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
                     marginTop: '-12px',
                     marginLeft: '-12px',
-                  }} 
+                  }}
                 />
               ) : (
                 'Đăng nhập'
@@ -325,13 +325,13 @@ const Login = () => {
           </Box>
         </Paper>
       </Container>
-      <Snackbar 
+      <Snackbar
         open={!!error || !!success}
-        autoHideDuration={6000} 
-        onClose={() => setError('')} 
+        autoHideDuration={6000}
+        onClose={() => setError('')}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert 
+        <Alert
           onClose={() => setError('')}
           severity={error ? 'error' : 'success'}
           sx={{ width: '100%' }}

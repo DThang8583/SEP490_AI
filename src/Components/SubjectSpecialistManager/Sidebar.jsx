@@ -36,16 +36,16 @@ const Sidebar = ({ open }) => {
     };
 
     const menuItems = [
-        { text: 'Tổng quan', path: '/manager/dashboard', icon: <DashboardIcon /> },
-        { text: 'Giáo án đã xem xét', path: '/manager/lesson-review', icon: <LibraryBooksIcon /> },
-        { text: 'Phê duyệt nội dung', path: '/manager/content-approval', icon: <CheckCircleIcon /> },
-        { text: 'Xuất giáo án', path: '/manager/lesson-export', icon: <FileDownloadIcon /> },
-        { text: 'Khung chương trình', path: '/manager/curriculum-framework', icon: <AccountTreeIcon /> },
-        { text: 'Phân tích chương trình', path: '/manager/curriculum-analysis', icon: <AnalyticsIcon /> },
+        { text: 'Tổng quan', path: '/quanly/dashboard', icon: <DashboardIcon /> },
+        { text: 'Giáo án đã xem xét', path: '/quanly/xemxet', icon: <LibraryBooksIcon /> },
+        { text: 'Phê duyệt nội dung', path: '/quanly/pheduyet', icon: <CheckCircleIcon /> },
+        { text: 'Xuất giáo án', path: '/quanly/xuatgiaoan', icon: <FileDownloadIcon /> },
+        { text: 'Khung chương trình', path: '/quanly/khungchuongtrinh', icon: <AccountTreeIcon /> },
+        { text: 'Phân tích chương trình', path: '/quanly/phantichchuongtrinh', icon: <AnalyticsIcon /> },
     ];
 
     const profileItems = [
-        { text: 'Trang cá nhân', path: '/manager/profile', icon: <PersonIcon /> },
+        { text: 'Trang cá nhân', path: '/quanly/trangcanhan', icon: <PersonIcon /> },
         { text: 'Đăng xuất', path: '/login', icon: <LogoutIcon />, action: handleLogout },
     ];
 
@@ -97,7 +97,7 @@ const Sidebar = ({ open }) => {
                         cursor: 'pointer',
                         width: '100%',
                         justifyContent: isCollapsed ? 'center' : 'flex-start',
-                    }} onClick={() => navigate('/manager/dashboard')}>
+                    }} onClick={() => navigate('/quanly/dashboard')}>
                         <Avatar
                             sx={{
                                 bgcolor: isDarkMode ? '#2D3436' : 'white',
@@ -160,9 +160,9 @@ const Sidebar = ({ open }) => {
                                             mb: 1,
                                             px: isCollapsed ? 1 : 1.5,
                                             py: 1.5,
-                                            background: isActive 
-                                                ? isDarkMode 
-                                                    ? 'rgba(255,255,255,0.1)' 
+                                            background: isActive
+                                                ? isDarkMode
+                                                    ? 'rgba(255,255,255,0.1)'
                                                     : 'rgba(255,255,255,0.15)'
                                                 : 'transparent',
                                             backdropFilter: 'blur(10px)',
@@ -184,8 +184,8 @@ const Sidebar = ({ open }) => {
                                                 borderRadius: '0 4px 4px 0',
                                             } : {},
                                             '&:hover': {
-                                                background: isDarkMode 
-                                                    ? 'rgba(255,255,255,0.05)' 
+                                                background: isDarkMode
+                                                    ? 'rgba(255,255,255,0.05)'
                                                     : 'rgba(255,255,255,0.1)',
                                                 transform: 'translateY(-2px)',
                                                 transition: 'all 0.3s',
@@ -245,18 +245,18 @@ const Sidebar = ({ open }) => {
                                     mb: 1,
                                     px: 2,
                                     py: 1.5,
-                                    background: isDarkMode 
-                                        ? 'rgba(255, 255, 255, 0.05)' 
+                                    background: isDarkMode
+                                        ? 'rgba(255, 255, 255, 0.05)'
                                         : 'rgba(255, 255, 255, 0.1)',
                                     backdropFilter: 'blur(10px)',
                                     cursor: 'pointer',
                                     '&:hover': {
-                                        background: isDarkMode 
-                                            ? 'rgba(255, 255, 255, 0.15)' 
+                                        background: isDarkMode
+                                            ? 'rgba(255, 255, 255, 0.15)'
                                             : 'rgba(255, 255, 255, 0.25)',
                                         transform: 'translateY(-2px)',
-                                        boxShadow: isDarkMode 
-                                            ? '0 4px 8px rgba(0,0,0,0.3)' 
+                                        boxShadow: isDarkMode
+                                            ? '0 4px 8px rgba(0,0,0,0.3)'
                                             : '0 4px 8px rgba(0,0,0,0.2)',
                                         transition: 'all 0.3s',
                                     }
@@ -311,29 +311,29 @@ const Sidebar = ({ open }) => {
                                             mb: 1,
                                             px: 2,
                                             py: 1.5,
-                                            background: item.text === 'Đăng xuất' 
-                                                ? isDarkMode 
-                                                    ? 'rgba(255, 255, 255, 0.05)' 
+                                            background: item.text === 'Đăng xuất'
+                                                ? isDarkMode
+                                                    ? 'rgba(255, 255, 255, 0.05)'
                                                     : 'rgba(255, 255, 255, 0.1)'
-                                                : (isActive 
-                                                    ? isDarkMode 
-                                                        ? 'rgba(255,255,255,0.1)' 
+                                                : (isActive
+                                                    ? isDarkMode
+                                                        ? 'rgba(255,255,255,0.1)'
                                                         : 'rgba(255,255,255,0.15)'
                                                     : 'transparent'),
                                             backdropFilter: 'blur(10px)',
                                             cursor: 'pointer',
                                             '&:hover': {
-                                                background: item.text === 'Đăng xuất' 
-                                                    ? isDarkMode 
-                                                        ? 'rgba(255, 255, 255, 0.15)' 
+                                                background: item.text === 'Đăng xuất'
+                                                    ? isDarkMode
+                                                        ? 'rgba(255, 255, 255, 0.15)'
                                                         : 'rgba(255, 255, 255, 0.25)'
-                                                    : isDarkMode 
-                                                        ? 'rgba(255,255,255,0.05)' 
+                                                    : isDarkMode
+                                                        ? 'rgba(255,255,255,0.05)'
                                                         : 'rgba(255,255,255,0.1)',
                                                 transform: item.text === 'Đăng xuất' ? 'translateY(-2px)' : 'none',
-                                                boxShadow: item.text === 'Đăng xuất' 
-                                                    ? isDarkMode 
-                                                        ? '0 4px 8px rgba(0,0,0,0.3)' 
+                                                boxShadow: item.text === 'Đăng xuất'
+                                                    ? isDarkMode
+                                                        ? '0 4px 8px rgba(0,0,0,0.3)'
                                                         : '0 4px 8px rgba(0,0,0,0.2)'
                                                     : 'none',
                                                 transition: 'all 0.3s',
@@ -387,10 +387,10 @@ const Sidebar = ({ open }) => {
                     severity="success"
                     variant="filled"
                     onClose={() => setSnackbarOpen(false)}
-                    sx={{ 
-                        width: '100%', 
-                        boxShadow: isDarkMode 
-                            ? '0 4px 12px rgba(0,0,0,0.3)' 
+                    sx={{
+                        width: '100%',
+                        boxShadow: isDarkMode
+                            ? '0 4px 12px rgba(0,0,0,0.3)'
                             : '0 4px 12px rgba(0,0,0,0.15)'
                     }}
                 >
