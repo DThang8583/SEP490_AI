@@ -203,7 +203,7 @@ const AIRender = () => {
   useEffect(() => {
     console.log('Checking content for redirect');
     if (!location.state?.content) {
-        navigate("/CreateLesson");
+        navigate("/tao-giao-an");
     }
   }, [location.state?.content, navigate]);
 
@@ -345,7 +345,7 @@ const AIRender = () => {
     }
 
     // Navigate to the draft lessons page after saving
-    navigate('/draft-lessons');
+    navigate('/giao-an-nhap');
   };
 
   const handleSendToManager = async () => {
@@ -425,7 +425,7 @@ const AIRender = () => {
 
     } catch (error) {
       console.error("Error sending lesson:", error);
-      console.error("API Error:", error);
+      console.error("API Error details:", error);
       setSnackbar({
         open: true,
         message: `Lỗi khi gửi Giáo án: ${error.message}`,
@@ -435,7 +435,7 @@ const AIRender = () => {
       setIsSending(false);
     }
 
-    navigate('/pending-lessons');
+    navigate('/giao-an-cho-duyet');
   };
 
   const handleCopyContent = () => {
@@ -470,7 +470,7 @@ const AIRender = () => {
       <Box sx={{ width: '100%', maxWidth: '1200px', mx: 'auto', px: 2 }}>
         <Button
           startIcon={<ArrowBack />}
-          onClick={() => navigate("/CreateLesson")}
+          onClick={() => navigate("/tao-giao-an")}
           sx={{
             mb: 3,
             color: isDarkMode ? '#ffffff' : '#2D3436',

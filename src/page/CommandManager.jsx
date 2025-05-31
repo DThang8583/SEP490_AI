@@ -26,7 +26,6 @@ import { useTheme } from '../context/ThemeContext';
 
 const CommandManager = () => {
   const { isDarkMode } = useTheme();
-  const [grades, setGrades] = useState([]);
   const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [selectedGrade, setSelectedGrade] = useState('');
@@ -38,32 +37,13 @@ const CommandManager = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
-  // Fetch grades
+  // Set grade from userInfo on mount
   useEffect(() => {
-    const fetchGrades = async () => {
-      try {
-        const response = await axios.get(
-          'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades'
-        );
-        console.log('Grades API Response:', response.data);
-        setGrades(response.data.data);
-
-        // Get grade from localStorage and set corresponding gradeId
-        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-        console.log('User Info from localStorage:', userInfo);
-        if (userInfo?.grade) {
-          const gradeNumber = userInfo.grade.replace('Lớp ', '');
-          const matchingGrade = response.data.data.find(g => g.gradeNumber === parseInt(gradeNumber));
-          console.log('Matching Grade:', matchingGrade);
-          if (matchingGrade) {
-            setSelectedGrade(matchingGrade.gradeId);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching grades:', error);
-      }
-    };
-    fetchGrades();
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    if (userInfo?.grade) {
+      const gradeNumber = userInfo.grade.replace('Lớp ', '');
+      setSelectedGrade(gradeNumber);
+    }
   }, []);
 
   // Fetch modules when grade is selected
@@ -118,13 +98,6 @@ const CommandManager = () => {
     };
     fetchLessonDetails();
   }, [selectedLesson]);
-
-  const handleGradeChange = (event) => {
-    setSelectedGrade(event.target.value);
-    setSelectedModule('');
-    setSelectedLesson(null);
-    setEditingSection(null);
-  };
 
   const handleModuleChange = (event) => {
     setSelectedModule(event.target.value);
@@ -439,7 +412,7 @@ const CommandManager = () => {
             mb: 4,
           }}
         >
-          Quản lý giáo án
+          Quản lý câu lệnh
         </Typography>
 
         <Paper
@@ -456,33 +429,7 @@ const CommandManager = () => {
           }}
         >
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <FormControl fullWidth>
-                <InputLabel sx={{ color: isDarkMode ? 'rgb(176, 176, 176)' : 'rgb(102, 102, 102)' }}>
-                  Khối
-                </InputLabel>
-                <Select
-                  value={selectedGrade}
-                  label="Khối"
-                  disabled={true}
-                  sx={{
-                    borderRadius: '12px',
-                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
-                    '& .MuiSelect-select': {
-                      color: isDarkMode ? '#ffffff' : '#2D3436',
-                    },
-                  }}
-                >
-                  {grades.map((grade) => (
-                    <MenuItem key={grade.gradeId} value={grade.gradeId}>
-                      Khối {grade.gradeNumber}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel sx={{ color: isDarkMode ? 'rgb(176, 176, 176)' : 'rgb(102, 102, 102)' }}>
                   Chọn Chủ đề
@@ -509,7 +456,7 @@ const CommandManager = () => {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel sx={{ color: isDarkMode ? 'rgb(176, 176, 176)' : 'rgb(102, 102, 102)' }}>
                   Chọn Bài học

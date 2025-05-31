@@ -39,7 +39,7 @@ const ChoiceChatorClick = () => {
       icon: <RocketLaunch sx={{ fontSize: 40 }} />,
       color: "rgb(76, 175, 80)",
       hoverColor: "rgb(56, 142, 60)",
-      path: "/CreateLesson",
+      path: "/tao-giao-an",
       features: [
         "Mẫu Giáo án đa dạng",
         "Tạo nhanh trong vài phút",
@@ -53,7 +53,7 @@ const ChoiceChatorClick = () => {
       icon: <Psychology sx={{ fontSize: 40 }} />,
       color: "rgb(255, 107, 107)",
       hoverColor: "rgb(255, 82, 82)",
-      path: "/CreateLessonByChat",
+      path: "/tao-giao-anByChat",
       features: [
         "Tương tác thông minh với AI",
         "Tùy chỉnh chi tiết",

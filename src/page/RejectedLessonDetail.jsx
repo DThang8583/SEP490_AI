@@ -262,7 +262,7 @@ const RejectedLessonDetail = () => {
         
         // Navigate back to draft lessons page after a short delay
         setTimeout(() => {
-          navigate('/draft-lessons');
+          navigate('/giao-an-nhap');
         }, 1500);
       } else {
         throw new Error(response.data.message || "Failed to move lesson to draft status.");
@@ -280,7 +280,7 @@ const RejectedLessonDetail = () => {
         
         // Navigate back to draft lessons page after a short delay
         setTimeout(() => {
-          navigate('/draft-lessons');
+          navigate('/giao-an-nhap');
         }, 1500);
       } else {
         setSnackbar({ 

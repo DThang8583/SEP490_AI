@@ -498,7 +498,7 @@ const BlogLessonDetail = () => {
               {blogDetails && (
                 <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 1 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Lesson Plan ID: {blogDetails.lessonPlanId}
+                     {blogDetails.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Danh mục: {blogDetails.category}

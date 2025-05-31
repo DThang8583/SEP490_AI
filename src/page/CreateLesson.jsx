@@ -194,7 +194,7 @@ const CreatLesson = () => {
       setSuccess('Đã tạo giáo án thành công!');
       
       // Chuyển hướng đến trang hiển thị kết quả
-      navigate("/AIRender", { state: { content: text, lessonId: selectedLesson, promptData: lessonData } });
+      navigate("/giao-an-da-tao", { state: { content: text, lessonId: selectedLesson, promptData: lessonData } });
     } catch (err) {
       setError('Có lỗi xảy ra khi tạo giáo án. Vui lòng thử lại.');
       console.error('Error:', err);

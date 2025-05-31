@@ -115,13 +115,11 @@ const CreateExerciseModal = ({ open, handleClose }) => {
             setModules(response.data.data.modules || []);
             setLessonId(''); // Reset lesson when module changes
             setLessons([]); // Clear lessons when module changes
-            setExerciseName(''); // Reset exercise name when grade changes
           } else {
             setError(response.data.message || `Failed to fetch modules for grade ${gradeId}.`);
             setModules([]);
             setLessonId('');
             setLessons([]);
-            setExerciseName('');
           }
         } catch (err) {
           console.error(`Error fetching modules for grade ${gradeId}:`, err);
@@ -129,7 +127,6 @@ const CreateExerciseModal = ({ open, handleClose }) => {
           setModules([]);
           setLessonId('');
           setLessons([]);
-          setExerciseName('');
         } finally {
           setLoadingModules(false);
         }
@@ -161,19 +158,16 @@ const CreateExerciseModal = ({ open, handleClose }) => {
           if (response.data.code === 0) {
             setLessons(response.data.data.lessons || []);
             setLessonId(''); // Reset lesson when module changes
-            setExerciseName(''); // Reset exercise name when module changes
           } else {
             setError(response.data.message || `Failed to fetch lessons for module ${moduleId}.`);
             setLessons([]);
             setLessonId('');
-            setExerciseName('');
           }
         } catch (err) {
           console.error(`Error fetching lessons for module ${moduleId}:`, err);
           setError(err.message || 'An error occurred while fetching lessons.');
           setLessons([]);
           setLessonId('');
-          setExerciseName('');
         } finally {
           setLoadingLessons(false);
         }
@@ -190,18 +184,15 @@ const CreateExerciseModal = ({ open, handleClose }) => {
     setGradeId(event.target.value);
     setModuleId(''); // Reset module and lesson when grade changes
     setLessonId('');
-    setExerciseName(''); // Reset exercise name when grade changes
   };
 
   const handleModuleChange = (event) => {
     setModuleId(event.target.value);
     setLessonId(''); // Reset lesson when module changes
-    setExerciseName(''); // Reset exercise name when module changes
   };
 
   const handleLessonChange = (event) => {
     setLessonId(event.target.value);
-    setExerciseName(''); // Reset exercise name when lesson changes
   };
 
   const handleCreateExercise = async () => {
@@ -228,46 +219,29 @@ const CreateExerciseModal = ({ open, handleClose }) => {
     const moduleName = selectedModule.name;
     const lessonName = selectedLesson.name;
 
-    const prompt = `Hãy tạo ${questionCount} câu hỏi trắc nghiệm môn Toán lớp ${gradeId} thuộc ${moduleName}, bài ${lessonName}, dựa theo kỹ thuật KWL. Không phân loại các câu hỏi theo K, W, L mà chỉ hiển thị danh sách câu hỏi trắc nghiệm liền mạch.
-
-Mức độ câu hỏi: ${difficulty}.
-
-Không sử dụng cụm "chữ số", chỉ dùng "số". Hạn chế các câu hỏi lý thuyết, ưu tiên các bài toán thực tế, gần gũi với học sinh tiểu học.
-
-Mỗi câu hỏi bắt đầu bằng từ "Câu", ví dụ: "Câu 1: …". Mỗi câu có 5 phương án lựa chọn, trong đó chỉ có một đáp án đúng.
-
-Viết mỗi phương án lựa chọn trên một dòng riêng biệt, theo định dạng:
-
-A. [phương án A]
-
-B. [phương án B]
-
-C. [phương án C]
-
-D. [phương án D]
-
-Sau mỗi câu hỏi, ghi rõ đáp án đúng theo định dạng:
-"Đáp án đúng: [chữ cái của đáp án]".
-
-In ra nguyên dòng dưới đây sau mỗi câu hỏi:
-
----------
-
-`;
+    const prompt = `Hãy tạo ${questionCount} câu hỏi trắc nghiệm môn Toán lớp ${gradeId} thuộc ${moduleName}, bài ${lessonName}, dựa theo kỹ thuật KWL. Không phân loại các câu hỏi theo K, W, L mà chỉ hiển thị danh sách câu hỏi trắc nghiệm liền mạch.\n\nMức độ câu hỏi: ${difficulty}.\n\nKhông sử dụng cụm \"chữ số\", chỉ dùng \"số\". Hạn chế các câu hỏi lý thuyết, ưu tiên các bài toán thực tế, gần gũi với học sinh tiểu học.\n\nMỗi câu hỏi bắt đầu bằng từ \"Câu\", ví dụ: \"Câu 1: …\". Mỗi câu có 5 phương án lựa chọn, trong đó chỉ có một đáp án đúng.\n\nViết mỗi phương án lựa chọn trên một dòng riêng biệt, theo định dạng:\n\nA. [phương án A]\n\nB. [phương án B]\n\nC. [phương án C]\n\nD. [phương án D]\n\nSau mỗi câu hỏi, ghi rõ đáp án đúng theo định dạng:\n\"Đáp án đúng: [chữ cái của đáp án]\"`;
 
     try {
-      const result = await model.generateContent(prompt);
-      let text = result.response.text();
-      
-      handleClose(); // Close modal first
-      navigate('/generated-quiz', { state: { content: text, exerciseName: exerciseName, lessonId: lessonId } }); // Navigate to quiz page with content, exercise name, and lesson ID
+        // Call the generative model
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        const text = response.text();
+
+        console.log('Generated Content:', text);
+
+        // Navigate to the generated quiz page, passing the content, lessonId, AND exerciseName
+        navigate('/generated-quiz', { state: { content: text, lessonId: lessonId, exerciseName: exerciseName } });
+
+        handleClose(); // Close the modal after navigation
+
     } catch (err) {
-      console.error("Error generating quiz:", err);
-      setGenerationError('Failed to generate quiz. Please try again.');
+        console.error('Error generating quiz:', err);
+        setGenerationError(err.message || 'An error occurred during generation.');
+        // Do NOT navigate on error
     } finally {
-      setGenerating(false);
+        setGenerating(false);
     }
-  };
+};
 
   return (
     <Modal

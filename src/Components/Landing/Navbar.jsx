@@ -55,25 +55,25 @@ const float = keyframes`
 const lessonCategories = [
   { 
     text: "Giáo án đang chờ duyệt", 
-    path: "/pending-lessons",
+    path: "/giao-an-cho-duyet",
     icon: <HourglassTop />, 
     requiresTeacher: true 
   },
   { 
     text: "Giáo án đã chấp nhận", 
-    path: "/approved-lessons",
+    path: "/giao-an-da-duyet",
     icon: <CheckCircleOutline />, 
     requiresTeacher: true 
   },
   { 
     text: "Giáo án bị từ chối", 
-    path: "/rejected-lessons",
+    path: "/giao-an-bi-tu-choi",
     icon: <Cancel />,
     requiresTeacher: true 
   },
   { 
     text: "Giáo án nháp", 
-    path: "/draft-lessons",
+    path: "/giao-an-nhap",
     icon: <EditNote />, 
     requiresTeacher: true 
   }
@@ -284,7 +284,7 @@ const Navbar = () => {
                 <Button
                   variant="contained"
                   startIcon={<AutoAwesome />}
-                  onClick={() => handleNavigation('/CreateLesson')}
+                  onClick={() => handleNavigation('/tao-giao-an')}
                   sx={{
                     ml: 2,
                     backgroundColor: '#FF6B6B',

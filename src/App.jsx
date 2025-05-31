@@ -6,9 +6,9 @@ import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './Components/Landing/Navbar';
 import Footer from './Components/Landing/Footer';
 import Home from './Components/Landing/Home';
-import CreateLesson from './page/CreateLesson';
+import CreateLesson from '../src/page/CreateLesson';
 import Login from './page/Login';
-import CreateLessonByChat from './page/CreateLessonByChat';
+
 import AIRender from './page/AIRender';
 import ChoiceSignUp from './page/ChoiceSignUp';
 import ChoiceChatorClick from './page/ChoiceChatorClick';
@@ -174,20 +174,19 @@ function App() {
             <main style={{ flex: 1 }}>
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/CreateLesson" element={<CreateLesson />} />
+                <Route path="/tao-giao-an" element={<CreateLesson />} />
                 <Route path="/register" element={<ChoiceSignUp />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/CreateLessonByChat" element={<CreateLessonByChat />} />
-                <Route path="/AIRender" element={<AIRender />} />
+                <Route path="/giao-an-da-tao" element={<AIRender />} />
                 <Route path="/ChoiceChatorClick" element={<ChoiceChatorClick />} />
                 <Route path="/cac-bai-hoc" element={<LessonList />} />
                 <Route path="/các-giáo-án" element={<PrivateRoute><AllLessons /></PrivateRoute>} />
-                <Route path="/blog-lesson/:blogId" element={<PrivateRoute><BlogLessonDetail /></PrivateRoute>} />
+                <Route path="/chi-tiet-bai-dang/:blogId" element={<PrivateRoute><BlogLessonDetail /></PrivateRoute>} />
                 <Route path="/Đăng-Giáo-án" element={<PrivateRoute><LessonUpload /></PrivateRoute>} />
-                <Route path="/rejected-lessons" element={<PrivateRoute><RejectedLessons /></PrivateRoute>} />
-                <Route path="/pending-lessons" element={<PrivateRoute><PendingLessons /></PrivateRoute>} />
-                <Route path="/approved-lessons" element={<PrivateRoute><ApprovedLessons /></PrivateRoute>} />
-                <Route path="/draft-lessons" element={<PrivateRoute><DraftLessons /></PrivateRoute>} />
+                <Route path="/giao-an-bi-tu-choi" element={<PrivateRoute><RejectedLessons /></PrivateRoute>} />
+                <Route path="/giao-an-cho-duyet" element={<PrivateRoute><PendingLessons /></PrivateRoute>} />
+                <Route path="/giao-an-da-duyet" element={<PrivateRoute><ApprovedLessons /></PrivateRoute>} />
+                <Route path="/giao-an-nhap" element={<PrivateRoute><DraftLessons /></PrivateRoute>} />
                 <Route path="/Giáo-án-đang-chờ/:lessonId" element={<PrivateRoute><PendingLessonDetail /></PrivateRoute>} />
                 <Route path="/Giáo-án-đã-chấp-nhận/:lessonId" element={<PrivateRoute><ApprovedLessonDetail /></PrivateRoute>} />
                 <Route path="/Giáo-án-đã-từ-chối/:lessonId" element={<PrivateRoute><RejectedLessonDetail /></PrivateRoute>} />
@@ -210,12 +209,12 @@ function App() {
                 <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
                 <Route path="/teacher/profile" element={<PrivateRoute><TeacherProfile /></PrivateRoute>} />
                 <Route path="/ChoiceChatorClick" element={<PrivateRoute><ChoiceChatorClick /></PrivateRoute>} />
-                <Route path="/CreateLesson" element={<PrivateRoute><CreateLesson /></PrivateRoute>} />
-                <Route path="/AIRender" element={<PrivateRoute><AIRender /></PrivateRoute>} />
-                <Route path="/rejected-lessons" element={<PrivateRoute><RejectedLessons /></PrivateRoute>} />
-                <Route path="/pending-lessons" element={<PrivateRoute><PendingLessons /></PrivateRoute>} />
-                <Route path="/approved-lessons" element={<PrivateRoute><ApprovedLessons /></PrivateRoute>} />
-                <Route path="/draft-lessons" element={<PrivateRoute><DraftLessons /></PrivateRoute>} />
+                <Route path="/tao-giao-an" element={<PrivateRoute><CreateLesson /></PrivateRoute>} />
+                <Route path="/giao-an-da-tao" element={<PrivateRoute><AIRender /></PrivateRoute>} />
+                <Route path="/giao-an-bi-tu-choi" element={<PrivateRoute><RejectedLessons /></PrivateRoute>} />
+                <Route path="/giao-an-cho-duyet" element={<PrivateRoute><PendingLessons /></PrivateRoute>} />
+                <Route path="/giao-an-da-duyet" element={<PrivateRoute><ApprovedLessons /></PrivateRoute>} />
+                <Route path="/giao-an-nhap" element={<PrivateRoute><DraftLessons /></PrivateRoute>} />
                 <Route path="/Giáo-án-đang-chờ/:lessonId" element={<PrivateRoute><PendingLessonDetail /></PrivateRoute>} />
                 <Route path="/Giáo-án-đã-chấp-nhận/:lessonId" element={<PrivateRoute><ApprovedLessonDetail /></PrivateRoute>} />
                 <Route path="/Giáo-án-đã-từ-chối/:lessonId" element={<PrivateRoute><RejectedLessonDetail /></PrivateRoute>} />

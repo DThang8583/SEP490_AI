@@ -143,7 +143,7 @@ const parseContent = (generatedText) => {
   return sections;
 };
 
-const AIRender = () => {
+const /giao-an-da-tao = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
@@ -203,7 +203,7 @@ const AIRender = () => {
   useEffect(() => {
     console.log('Checking content for redirect');
     if (!location.state?.content) {
-        navigate("/CreateLesson");
+        navigate("/tao-giao-an");
     }
   }, [location.state?.content, navigate]);
 
@@ -447,7 +447,7 @@ const AIRender = () => {
     });
   };
 
-  console.log('Rendering AIRender component with states:', {
+  console.log('Rendering /giao-an-da-tao component with states:', {
     isEditing,
     isSending,
     snackbar,
@@ -469,7 +469,7 @@ const AIRender = () => {
       <Box sx={{ width: '100%', maxWidth: '1200px', mx: 'auto', px: 2 }}>
         <Button
           startIcon={<ArrowBack />}
-          onClick={() => navigate("/CreateLesson")}
+          onClick={() => navigate("/tao-giao-an")}
           sx={{
             mb: 3,
             color: isDarkMode ? '#ffffff' : '#2D3436',
@@ -687,4 +687,4 @@ const AIRender = () => {
   );
 };
 
-export default AIRender;
+export default /giao-an-da-tao;
