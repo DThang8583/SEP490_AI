@@ -629,7 +629,7 @@ const TeacherProfile = () => {
                   }}
                 >
                   <SchoolIcon sx={{ color: 'rgb(255, 107, 107)' }} />
-                  Lớp: {profile?.grade || 'N/A'}
+                  {profile?.grade || 'N/A'}
                 </Typography>
               </Paper>
             </Grid>

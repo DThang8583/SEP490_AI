@@ -28,17 +28,8 @@ import { useTheme as useThemeContext } from '../../context/ThemeContext';
 const AdminNavbar = ({ onMenuClick, isMobile }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = useState(null);
   const { logout } = useAuth();
   const { isDarkMode, toggleTheme } = useThemeContext();
-
-  const handleProfileMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
 
   const handleLogout = () => {
     logout();
@@ -61,7 +52,7 @@ const AdminNavbar = ({ onMenuClick, isMobile }) => {
         {isMobile && (
           <IconButton
             color="inherit"
-            aria-label="open drawer"
+            aria-label="Mở menu"
             edge="start"
             onClick={onMenuClick}
             sx={{ mr: 2 }}
@@ -82,81 +73,10 @@ const AdminNavbar = ({ onMenuClick, isMobile }) => {
             fontWeight: 600,
           }}
         >
-          Admin Dashboard
+          Bảng điều khiển Admin
         </Typography>
 
         <Box sx={{ flexGrow: 1 }} />
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-
-          <Tooltip title="Tài khoản">
-            <IconButton
-              edge="end"
-              onClick={handleProfileMenuOpen}
-              color="inherit"
-            >
-              <Avatar 
-                sx={{ 
-                  width: 32, 
-                  height: 32,
-                  bgcolor: theme.palette.primary.main,
-                }}
-              >
-                <PersonIcon />
-              </Avatar>
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title={isDarkMode ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}>
-            <IconButton 
-              onClick={toggleTheme} 
-              color="inherit"
-              sx={{
-                color: theme.palette.text.primary,
-                '&:hover': {
-                  bgcolor: theme.palette.action.hover,
-                },
-              }}
-            >
-              {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
-            </IconButton>
-          </Tooltip>
-        </Box>
-
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          onClick={handleMenuClose}
-          PaperProps={{
-            sx: {
-              mt: 1.5,
-              minWidth: 200,
-              boxShadow: theme.shadows[4],
-            },
-          }}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-        >
-          <Box sx={{ px: 2, py: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              Admin User
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              admin@example.com
-            </Typography>
-          </Box>
-          <Divider />
-          <MenuItem onClick={() => navigate('/admin/profile')}>
-            <PersonIcon sx={{ mr: 2 }} />
-            Thông tin cá nhân
-          </MenuItem>
-          <Divider />
-          <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-            <LogoutIcon sx={{ mr: 2 }} />
-            Đăng xuất
-          </MenuItem>
-        </Menu>
       </Toolbar>
     </AppBar>
   );

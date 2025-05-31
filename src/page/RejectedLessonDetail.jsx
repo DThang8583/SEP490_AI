@@ -180,7 +180,7 @@ const RejectedLessonDetail = () => {
           children: [
             new Paragraph({ text: lessonDetail.lesson || 'Giáo án', heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
             new Paragraph({ text: `Chủ đề: ${lessonDetail.module || 'N/A'}`, heading: HeadingLevel.HEADING_2 }),
-            new Paragraph({ text: `Ngày gửi: ${(lessonDetail.createdAt)}`, style: "SubtleReference" }),
+            new Paragraph({ text: `Ngày tạo: ${(lessonDetail.createdAt)}`, style: "SubtleReference" }),
             new Paragraph({ text: "", spacing: { after: 200 } }),
 
             new Paragraph({ text: "1. Mục tiêu", heading: HeadingLevel.HEADING_1 }),
@@ -411,7 +411,7 @@ const RejectedLessonDetail = () => {
                    <Typography variant="h6">{lessonDetail.module || 'N/A'}</Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                   <Typography variant="body2" color="text.secondary">Ngày gửi:</Typography>
+                   <Typography variant="body2" color="text.secondary">Ngày tạo:</Typography>
                    <Typography variant="h6">{(lessonDetail.createdAt)}</Typography>
                 </Grid>
               </Grid>
