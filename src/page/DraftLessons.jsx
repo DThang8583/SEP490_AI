@@ -336,7 +336,7 @@ const DraftLessons = () => {
           </Grid>
 
           {/* Hiển thị loading skeleton hoặc nội dung */}
-           {/* Hiển thị loading nếu đang fetch lessons HOẶC (đang fetch filter options VÀ CHƯA có gradeIdFilter) */} // Điều kiện loading được sửa
+           {/* Hiển thị loading nếu đang fetch lessons HOẶC (đang fetch filter options VÀ CHƯA có gradeIdFilter) */}
           {loading || (loadingFilterOptions && !gradeIdFilter) ? (
              renderSkeletons()
           ) : !error && lessons.length === 0 ? (

@@ -333,21 +333,6 @@ const ApprovedLessonDetail = () => {
                 </Button>
               </span>
             </Tooltip>
-            <Tooltip title="Làm thành Slide">
-              <span>
-                <Button
-                  variant="contained"
-                  color="info"
-                  startIcon={<Description />}
-                  onClick={() => {
-                    navigate('/slide-preview', { state: { lessonData: lessonDetail } });
-                  }}
-                  disabled={!lessonDetail}
-                >
-                  Làm thành Slide
-                </Button>
-              </span>
-            </Tooltip>
             <Tooltip title="Đăng Giáo án">
               <span>
                 <Button 
