@@ -12,16 +12,26 @@ import {
   MenuItem,
   Grid,
   Paper,
-  useTheme
+  Container,
+  CircularProgress,
+  Card,
+  CardContent,
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import {
+  ArrowBack as ArrowBackIcon,
+  PersonAdd as PersonAddIcon,
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Lock as LockIcon,
+  SupervisorAccount as RoleIcon,
+  School as SchoolIcon,
+  Class as GradeIcon,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const CreateAccount = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
 
   const [formData, setFormData] = useState({
     username: '',
@@ -38,10 +48,13 @@ const CreateAccount = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setDataLoading(true);
         // Fetch school info
         const schoolResponse = await axios.get(
           'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/schools/1'
@@ -69,6 +82,8 @@ const CreateAccount = () => {
       } catch (err) {
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
         console.error('Error fetching data:', err);
+      } finally {
+        setDataLoading(false);
       }
     };
 
@@ -121,6 +136,9 @@ const CreateAccount = () => {
     if (validationErrors[name]) {
       setValidationErrors(prev => ({ ...prev, [name]: '' }));
     }
+    // Clear success/error messages
+    if (success) setSuccess('');
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -131,6 +149,7 @@ const CreateAccount = () => {
     }
 
     try {
+      setLoading(true);
       const submitData = {
         ...formData,
         roleId: parseInt(formData.roleId),
@@ -152,10 +171,11 @@ const CreateAccount = () => {
           password: '',
           email: '',
           roleId: '',
-          schoolId: '',
+          schoolId: formData.schoolId, // Keep school ID
           gradeId: '',
         });
         setValidationErrors({});
+        setError('');
       } else {
         console.log('Error response data:', response.data);
         setError('Có lỗi xảy ra khi tạo tài khoản.');
@@ -164,275 +184,295 @@ const CreateAccount = () => {
       console.log('Error response:', err.response?.data);
       console.log('Error details:', err);
       setError('Không thể tạo tài khoản. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (dataLoading) {
+    return (
+      <Container maxWidth="md">
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          minHeight: '50vh',
+          flexDirection: 'column',
+          gap: 2,
+        }}>
+          <CircularProgress size={50} sx={{ color: '#1976d2' }} />
+          <Typography variant="h6" color="#1976d2">Đang tải dữ liệu...</Typography>
+        </Box>
+      </Container>
+    );
+  }
+
   return (
-    <Box
-      sx={{
-        p: 3,
-        minHeight: 'calc(100vh - 64px)',
-        background: isDarkMode
-          ? theme.palette.background.default
-          : 'linear-gradient(135deg, rgb(245, 247, 250) 0%, rgb(255, 255, 255) 100%)',
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(-1)}
-          sx={{
-            color: isDarkMode ? theme.palette.text.primary : 'rgb(102, 102, 102)',
-            '&:hover': {
-              backgroundColor: theme.palette.action.hover,
-            },
-          }}
-        >
-          Quay lại
-        </Button>
-        <Typography variant="h4" component="h1" sx={{ color: theme.palette.text.primary }}>
-          Tạo Tài Khoản Mới
-        </Typography>
-      </Box>
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      
-      <Paper
-        sx={{
-          p: 3,
-          backgroundColor: isDarkMode ? theme.palette.background.paper : 'rgba(255, 255, 255, 0.85)',
-          backdropFilter: 'blur(12px)',
-          border: `1px solid ${isDarkMode ? theme.palette.divider : 'rgba(0, 0, 0, 0.08)'}`,
-          borderRadius: '12px',
-        }}
-      >
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Tên đăng nhập"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                required
-                error={!!validationErrors.username}
-                helperText={validationErrors.username}
-                sx={{
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.text.secondary,
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: isDarkMode ? theme.palette.divider : '#d0d0d0',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                    '& input': {
-                      color: theme.palette.text.primary,
-                    },
-                  },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                error={!!validationErrors.email}
-                helperText={validationErrors.email}
-                sx={{
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.text.secondary,
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: isDarkMode ? theme.palette.divider : '#d0d0d0',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                    '& input': {
-                      color: theme.palette.text.primary,
-                    },
-                  },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Mật khẩu"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                error={!!validationErrors.password}
-                helperText={validationErrors.password}
-                sx={{
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.text.secondary,
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: isDarkMode ? theme.palette.divider : '#d0d0d0',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                    '& input': {
-                      color: theme.palette.text.primary,
-                    },
-                  },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required error={!!validationErrors.roleId}
-                sx={{
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.text.secondary,
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: isDarkMode ? theme.palette.divider : '#d0d0d0',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                    '& .MuiSelect-select': {
-                      color: theme.palette.text.primary,
-                    },
-                  },
-                }}
-              >
-                <InputLabel>Vai trò</InputLabel>
-                <Select
-                  name="roleId"
-                  value={formData.roleId}
-                  onChange={handleChange}
-                  label="Vai trò"
-                >
-                  {roles.map((role) => (
-                    <MenuItem key={role.roleId} value={role.roleId}
-                      sx={{ color: theme.palette.text.primary }}
-                    >
-                      {role.roleName}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {validationErrors.roleId && (
-                  <Typography color="error" variant="caption">
-                    {validationErrors.roleId}
+    <Box sx={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      py: 4
+    }}>
+      <Container maxWidth="md">
+        {/* Header */}
+        <Card sx={{ 
+          mb: 3, 
+          background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+          color: 'white',
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(25, 118, 210, 0.3)'
+        }}>
+          <CardContent sx={{ py: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <PersonAddIcon sx={{ fontSize: 32 }} />
+                <Box>
+                  <Typography variant="h4" component="h1" fontWeight="600">
+                    Tạo tài khoản mới
                   </Typography>
-                )}
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required error={!!validationErrors.gradeId}
-                sx={{
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.text.secondary,
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: isDarkMode ? theme.palette.divider : '#d0d0d0',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
-                     '& .MuiSelect-select': {
-                      color: theme.palette.text.primary,
-                    },
-                  },
-                }}
-              >
-                <InputLabel>Khối</InputLabel>
-                <Select
-                  name="gradeId"
-                  value={formData.gradeId}
-                  onChange={handleChange}
-                  label="Khối"
-                >
-                  {grades.map((grade) => (
-                    <MenuItem key={grade.gradeId} value={grade.gradeId}
-                      sx={{ color: theme.palette.text.primary }}
-                    >
-                      Khối {grade.gradeNumber}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {validationErrors.gradeId && (
-                  <Typography color="error" variant="caption">
-                    {validationErrors.gradeId}
+                  <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
+                    Thêm tài khoản giáo viên hoặc quản trị viên
                   </Typography>
-                )}
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Trường học"
-                value={schoolInfo ? `${schoolInfo.name} - ${schoolInfo.description}` : 'Đang tải...'}
-                disabled
-                sx={{
-                  '& .MuiInputBase-input.Mui-disabled': {
-                    WebkitTextFillColor: isDarkMode ? theme.palette.text.secondary : 'rgba(0, 0, 0, 0.6)',
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: theme.palette.text.secondary,
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: isDarkMode ? theme.palette.divider : '#d0d0d0',
-                    },
-                  },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
+                </Box>
+              </Box>
               <Button
-                type="submit"
+                startIcon={<ArrowBackIcon />}
+                onClick={() => navigate(-1)}
                 variant="contained"
-                color="primary"
-                size="large"
-                sx={{
-                  mt: 2,
-                  bgcolor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
-                  '&:hover': {
-                    bgcolor: theme.palette.primary.dark,
-                  },
+                sx={{ 
+                  bgcolor: 'rgba(255,255,255,0.2)', 
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+                  borderRadius: 2
                 }}
               >
-                Tạo Tài Khoản
+                Quay lại
               </Button>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Success/Error Messages */}
+        {success && (
+          <Alert 
+            severity="success" 
+            sx={{ 
+              mb: 2, 
+              borderRadius: 2,
+              boxShadow: '0 2px 10px rgba(76, 175, 80, 0.2)'
+            }}
+          >
+            {success}
+          </Alert>
+        )}
+
+        {error && (
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 2, 
+              borderRadius: 2,
+              boxShadow: '0 2px 10px rgba(244, 67, 54, 0.2)'
+            }}
+          >
+            {error}
+          </Alert>
+        )}
+        
+        {/* Form */}
+        <Card sx={{ 
+          borderRadius: 3, 
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          background: '#ffffff'
+        }}>
+          <CardContent sx={{ p: 4 }}>
+            <Box sx={{ mb: 3, textAlign: 'center' }}>
+              <Typography variant="h5" fontWeight="600" color="primary" gutterBottom>
+                Thông tin tài khoản
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Vui lòng điền đầy đủ thông tin để tạo tài khoản mới
+              </Typography>
+            </Box>
+
+            <form onSubmit={handleSubmit}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Tên đăng nhập"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required
+                    error={!!validationErrors.username}
+                    helperText={validationErrors.username}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                    InputProps={{
+                      startAdornment: <PersonIcon sx={{ color: 'primary.main', mr: 1 }} />
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    error={!!validationErrors.email}
+                    helperText={validationErrors.email}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                    InputProps={{
+                      startAdornment: <EmailIcon sx={{ color: 'primary.main', mr: 1 }} />
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Mật khẩu"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    error={!!validationErrors.password}
+                    helperText={validationErrors.password}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                    InputProps={{
+                      startAdornment: <LockIcon sx={{ color: 'primary.main', mr: 1 }} />
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <FormControl 
+                    fullWidth 
+                    required 
+                    error={!!validationErrors.roleId}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  >
+                    <InputLabel>Vai trò</InputLabel>
+                    <Select
+                      name="roleId"
+                      value={formData.roleId}
+                      onChange={handleChange}
+                      label="Vai trò"
+                      startAdornment={<RoleIcon sx={{ color: 'primary.main', mr: 1 }} />}
+                    >
+                      {roles.map((role) => (
+                        <MenuItem key={role.roleId} value={role.roleId}>
+                          {role.roleName}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {validationErrors.roleId && (
+                      <Typography color="error" variant="caption" sx={{ mt: 0.5, ml: 1 }}>
+                        {validationErrors.roleId}
+                      </Typography>
+                    )}
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <FormControl 
+                    fullWidth 
+                    required 
+                    error={!!validationErrors.gradeId}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  >
+                    <InputLabel>Khối lớp</InputLabel>
+                    <Select
+                      name="gradeId"
+                      value={formData.gradeId}
+                      onChange={handleChange}
+                      label="Khối lớp"
+                      startAdornment={<GradeIcon sx={{ color: 'primary.main', mr: 1 }} />}
+                    >
+                      {grades.map((grade) => (
+                        <MenuItem key={grade.gradeId} value={grade.gradeId}>
+                          Khối {grade.gradeNumber}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {validationErrors.gradeId && (
+                      <Typography color="error" variant="caption" sx={{ mt: 0.5, ml: 1 }}>
+                        {validationErrors.gradeId}
+                      </Typography>
+                    )}
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Trường học"
+                    value={schoolInfo ? `${schoolInfo.name} - ${schoolInfo.description}` : 'Đang tải...'}
+                    disabled
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                    InputProps={{
+                      startAdornment: <SchoolIcon sx={{ color: 'primary.main', mr: 1 }} />
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      size="large"
+                      disabled={loading}
+                      startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <PersonAddIcon />}
+                      sx={{ 
+                        borderRadius: 3,
+                        px: 4,
+                        py: 1.5,
+                        fontSize: '16px',
+                        fontWeight: 600,
+                        boxShadow: '0 4px 20px rgba(25, 118, 210, 0.3)',
+                        '&:hover': {
+                          boxShadow: '0 6px 25px rgba(25, 118, 210, 0.4)',
+                        }
+                      }}
+                    >
+                      {loading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
+                    </Button>
+                  </Box>
+                </Grid>
+              </Grid>
+            </form>
+          </CardContent>
+        </Card>
+      </Container>
     </Box>
   );
 };

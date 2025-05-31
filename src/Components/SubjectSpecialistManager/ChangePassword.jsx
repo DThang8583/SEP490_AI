@@ -32,7 +32,7 @@ const FormItem = ({ icon, label, children }) => {
                     mr: 1,
                     display: 'flex',
                     alignItems: 'center',
-                    color: theme.palette.primary.main
+                    color: '#06A9AE'
                 }}>
                     {icon}
                 </Box>
@@ -54,7 +54,7 @@ const ChangePassword = ({ sidebarOpen }) => {
     console.log('UserInfo in ChangePassword:', userInfo);
 
     const [formData, setFormData] = useState({
-        usernameOrEmail: '',
+        oldPassword: '',
         newPassword: '',
         confirmedPassword: ''
     });
@@ -65,11 +65,12 @@ const ChangePassword = ({ sidebarOpen }) => {
         severity: 'success'
     });
     const [errors, setErrors] = useState({
-        usernameOrEmail: '',
+        oldPassword: '',
         newPassword: '',
         confirmedPassword: ''
     });
     const [showPassword, setShowPassword] = useState({
+        oldPassword: false,
         newPassword: false,
         confirmedPassword: false
     });
@@ -77,26 +78,15 @@ const ChangePassword = ({ sidebarOpen }) => {
 
     const sidebarWidth = sidebarOpen ? 60 : 240; // sidebarOpen = true: thu nhỏ, false: mở rộng
 
-    // ONLY auto-fill username/email once when userInfo is available
-    useEffect(() => {
-        if (userInfo && !formData.usernameOrEmail) {
-            const usernameOrEmail = userInfo.email || userInfo.username || userInfo.fullName || '';
-            if (usernameOrEmail) {
-                setFormData(prev => ({
-                    ...prev,
-                    usernameOrEmail: usernameOrEmail
-                }));
-            }
-        }
-    }, [userInfo]); // Only depend on userInfo
+    // Remove auto-fill logic since we don't want to auto-fill old password
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         console.log('handleChange called:', name, value); // Debug log
 
-        // Không cho phép ký tự trắng trong mật khẩu mới và xác nhận mật khẩu
+        // Không cho phép ký tự trắng trong tất cả các trường mật khẩu
         let processedValue = value;
-        if (name === 'newPassword' || name === 'confirmedPassword') {
+        if (name === 'oldPassword' || name === 'newPassword' || name === 'confirmedPassword') {
             processedValue = value.replace(/\s/g, ''); // Loại bỏ tất cả ký tự trắng
         }
 
@@ -115,14 +105,10 @@ const ChangePassword = ({ sidebarOpen }) => {
 
     const validateForm = () => {
         const newErrors = {
-            usernameOrEmail: '',
+            oldPassword: '',
             newPassword: '',
             confirmedPassword: ''
         };
-
-        if (!formData.usernameOrEmail) {
-            newErrors.usernameOrEmail = 'Tên đăng nhập hoặc Email là bắt buộc';
-        }
 
         if (!formData.newPassword) {
             newErrors.newPassword = 'Mật khẩu mới là bắt buộc';
@@ -137,7 +123,7 @@ const ChangePassword = ({ sidebarOpen }) => {
         }
 
         setErrors(newErrors);
-        return !newErrors.usernameOrEmail && !newErrors.newPassword && !newErrors.confirmedPassword;
+        return !newErrors.oldPassword && !newErrors.newPassword && !newErrors.confirmedPassword;
     };
 
     const handleSubmit = async () => {
@@ -148,7 +134,7 @@ const ChangePassword = ({ sidebarOpen }) => {
             const response = await axios.put(
                 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users',
                 {
-                    usernameOrEmail: formData.usernameOrEmail,
+                    oldPassword: formData.oldPassword,
                     newPassword: formData.newPassword,
                     confirmedPassword: formData.confirmedPassword
                 },
@@ -165,9 +151,10 @@ const ChangePassword = ({ sidebarOpen }) => {
                 severity: 'success'
             });
 
-            // Reset ONLY password fields after successful submission
+            // Reset tất cả các trường mật khẩu sau khi submit thành công
             setFormData(prev => ({
                 ...prev,
+                oldPassword: '',
                 newPassword: '',
                 confirmedPassword: ''
             }));
@@ -245,7 +232,7 @@ const ChangePassword = ({ sidebarOpen }) => {
                                 sx={{
                                     position: 'relative',
                                     height: 150,
-                                    background: theme.palette.primary.main,
+                                    background: 'linear-gradient(135deg, #06A9AE 0%, #048b8f 100%)',
                                     overflow: 'hidden',
                                 }}
                             >
@@ -284,21 +271,32 @@ const ChangePassword = ({ sidebarOpen }) => {
 
                                 <Grid container spacing={3}>
                                     <Grid item xs={12} md={8}>
-                                        <FormItem icon={<PersonOutline />} label="Tên đăng nhập/Email">
+                                        <FormItem icon={<PersonOutline />} label="Mật khẩu cũ">
                                             <TextField
-                                                name="usernameOrEmail"
-                                                value={formData.usernameOrEmail}
+                                                name="oldPassword"
+                                                type={showPassword.oldPassword ? 'text' : 'password'}
+                                                value={formData.oldPassword}
                                                 onChange={handleChange}
                                                 fullWidth
-                                                placeholder="Nhập tên đăng nhập hoặc email của bạn"
+                                                placeholder="Nhập mật khẩu cũ"
                                                 variant="outlined"
-                                                error={!!errors.usernameOrEmail}
-                                                helperText={errors.usernameOrEmail}
-                                                disabled={!!userInfo}
+                                                error={!!errors.oldPassword}
+                                                helperText={errors.oldPassword}
+                                                InputProps={{
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <IconButton
+                                                                onClick={() => handleTogglePasswordVisibility('oldPassword')}
+                                                                edge="end"
+                                                            >
+                                                                {showPassword.oldPassword ? <VisibilityOff /> : <Visibility />}
+                                                            </IconButton>
+                                                        </InputAdornment>
+                                                    )
+                                                }}
                                                 sx={{
                                                     '& .MuiOutlinedInput-root': {
                                                         borderRadius: '10px',
-                                                        backgroundColor: userInfo ? '#f5f5f5' : 'transparent',
                                                     }
                                                 }}
                                             />
@@ -376,11 +374,11 @@ const ChangePassword = ({ sidebarOpen }) => {
                                                     py: 1.5,
                                                     px: 4,
                                                     borderRadius: '10px',
-                                                    borderColor: theme.palette.primary.main,
-                                                    color: theme.palette.primary.main,
+                                                    borderColor: '#06A9AE',
+                                                    color: '#06A9AE',
                                                     '&:hover': {
-                                                        borderColor: theme.palette.primary.dark,
-                                                        backgroundColor: theme.palette.action.hover,
+                                                        borderColor: '#048b8f',
+                                                        backgroundColor: 'rgba(6, 169, 174, 0.04)',
                                                     },
                                                     textTransform: 'none',
                                                     fontSize: '1rem',
@@ -398,9 +396,9 @@ const ChangePassword = ({ sidebarOpen }) => {
                                                     py: 1.5,
                                                     px: 4,
                                                     borderRadius: '10px',
-                                                    backgroundColor: theme.palette.primary.main,
+                                                    backgroundColor: '#06A9AE',
                                                     '&:hover': {
-                                                        backgroundColor: theme.palette.primary.dark,
+                                                        backgroundColor: '#048b8f',
                                                     },
                                                     boxShadow: '0 4px 10px rgba(6, 169, 174, 0.3)',
                                                     textTransform: 'none',
@@ -427,7 +425,13 @@ const ChangePassword = ({ sidebarOpen }) => {
                 open={snackbar.open}
                 autoHideDuration={6000}
                 onClose={() => setSnackbar({ ...snackbar, open: false })}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                sx={{
+                    top: '50% !important',
+                    left: '50% !important',
+                    transform: 'translate(-50%, -50%) !important',
+                    position: 'fixed !important'
+                }}
             >
                 <Alert
                     onClose={() => setSnackbar({ ...snackbar, open: false })}
@@ -435,8 +439,16 @@ const ChangePassword = ({ sidebarOpen }) => {
                     variant="filled"
                     sx={{
                         width: '100%',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                        borderRadius: '10px'
+                        minWidth: '400px',
+                        maxWidth: '500px',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                        borderRadius: '12px',
+                        fontSize: '1rem',
+                        fontWeight: 500,
+                        ...(snackbar.severity === 'success' && {
+                            backgroundColor: '#06A9AE',
+                            color: '#fff'
+                        })
                     }}
                 >
                     {snackbar.message}

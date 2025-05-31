@@ -35,6 +35,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 import { keyframes } from '@mui/system';
 import axios from 'axios';
 import { format } from 'date-fns';
@@ -46,8 +47,9 @@ const float = keyframes`
 `;
 
 const TeacherProfile = () => {
-  const { userInfo, updateUserInfo } = useAuth();
+  const { userInfo, updateUserInfo, logout } = useAuth();
   const { isDarkMode } = useTheme();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -64,14 +66,189 @@ const TeacherProfile = () => {
     wardId: 0,
   });
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
+    oldPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = React.useRef(null);
-  const [usernameOrEmailInput, setUsernameOrEmailInput] = useState('');
+  const [validationErrors, setValidationErrors] = useState({
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    address: '',
+    dateOfBirth: '',
+  });
+  const [passwordValidationErrors, setPasswordValidationErrors] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  // Validation functions
+  const validateFullName = (name) => {
+    if (!name || name.trim().length === 0) {
+      return 'Họ và tên là bắt buộc';
+    }
+    if (name.trim().length < 2) {
+      return 'Họ và tên phải có ít nhất 2 ký tự';
+    }
+    if (name.trim().length > 50) {
+      return 'Họ và tên không được vượt quá 50 ký tự';
+    }
+    return '';
+  };
+
+  const validateEmail = (email) => {
+    if (!email || email.trim().length === 0) {
+      return 'Email là bắt buộc';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return 'Email không đúng định dạng';
+    }
+    if (email.length > 100) {
+      return 'Email không được vượt quá 100 ký tự';
+    }
+    return '';
+  };
+
+  const validatePhoneNumber = (phone) => {
+    if (!phone || phone.trim().length === 0) {
+      return 'Số điện thoại là bắt buộc';
+    }
+    const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
+    if (!phoneRegex.test(phone.trim())) {
+      return 'Số điện thoại không đúng định dạng (VD: 0987654321)';
+    }
+    return '';
+  };
+
+  const validateAddress = (address) => {
+    if (!address || address.trim().length === 0) {
+      return 'Địa chỉ là bắt buộc';
+    }
+    if (address.trim().length < 5) {
+      return 'Địa chỉ phải có ít nhất 5 ký tự';
+    }
+    if (address.length > 200) {
+      return 'Địa chỉ không được vượt quá 200 ký tự';
+    }
+    return '';
+  };
+
+  const validateDateOfBirth = (date) => {
+    if (!date || date.trim().length === 0) {
+      return 'Ngày sinh là bắt buộc';
+    }
+    
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return 'Ngày sinh không đúng định dạng';
+    }
+    
+    const today = new Date();
+    const minAge = new Date();
+    minAge.setFullYear(today.getFullYear() - 22);
+    
+    const maxAge = new Date();
+    maxAge.setFullYear(today.getFullYear() - 100);
+    
+    if (dateObj > today) {
+      return 'Ngày sinh không được là ngày trong tương lai';
+    }
+    
+    if (dateObj > minAge) {
+      return 'Bạn phải đủ 18 tuổi';
+    }
+    
+    if (dateObj < maxAge) {
+      return 'Ngày sinh không hợp lệ';
+    }
+    
+    return '';
+  };
+
+  const validateAllFields = () => {
+    const errors = {
+      fullName: validateFullName(formData.fullName),
+      email: validateEmail(formData.email),
+      phoneNumber: validatePhoneNumber(formData.phoneNumber),
+      address: validateAddress(formData.address),
+      dateOfBirth: validateDateOfBirth(formData.dateOfBirth),
+    };
+    
+    setValidationErrors(errors);
+    
+    // Return true if no errors
+    return !Object.values(errors).some(error => error !== '');
+  };
+
+  // Password validation functions
+  const validateOldPassword = (password) => {
+    if (!password || password.trim().length === 0) {
+      return 'Mật khẩu cũ là bắt buộc';
+    }
+    return '';
+  };
+
+  const validateNewPassword = (password) => {
+    if (!password || password.trim().length === 0) {
+      return 'Mật khẩu mới là bắt buộc';
+    }
+    if (password.length < 8) {
+      return 'Mật khẩu phải có ít nhất 8 ký tự';
+    }
+    if (password.length > 50) {
+      return 'Mật khẩu không được vượt quá 50 ký tự';
+    }
+    
+    // Check for at least one uppercase letter
+    if (!/[A-Z]/.test(password)) {
+      return 'Mật khẩu phải có ít nhất 1 chữ cái viết hoa';
+    }
+    
+    // Check for at least one lowercase letter
+    if (!/[a-z]/.test(password)) {
+      return 'Mật khẩu phải có ít nhất 1 chữ cái viết thường';
+    }
+    
+    // Check for at least one number
+    if (!/\d/.test(password)) {
+      return 'Mật khẩu phải có ít nhất 1 chữ số';
+    }
+    
+    // Check for at least one special character
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt';
+    }
+    
+    return '';
+  };
+
+  const validateConfirmPassword = (confirmPassword, newPassword) => {
+    if (!confirmPassword || confirmPassword.trim().length === 0) {
+      return 'Xác nhận mật khẩu là bắt buộc';
+    }
+    if (confirmPassword !== newPassword) {
+      return 'Mật khẩu xác nhận không khớp';
+    }
+    return '';
+  };
+
+  const validatePasswordFields = () => {
+    const errors = {
+      oldPassword: validateOldPassword(passwordData.oldPassword),
+      newPassword: validateNewPassword(passwordData.newPassword),
+      confirmPassword: validateConfirmPassword(passwordData.confirmPassword, passwordData.newPassword),
+    };
+    
+    setPasswordValidationErrors(errors);
+    
+    // Return true if no errors
+    return !Object.values(errors).some(error => error !== '');
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -184,9 +361,23 @@ const TeacherProfile = () => {
 
   const handleEdit = () => {
     setEditMode(true);
+    // Clear any existing validation errors when entering edit mode
+    setValidationErrors({
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      address: '',
+      dateOfBirth: '',
+    });
   };
 
   const handleSave = async () => {
+    // Validate all fields before submitting
+    if (!validateAllFields()) {
+      setError('Vui lòng kiểm tra lại thông tin nhập vào');
+      return;
+    }
+
     try {
       // Lấy userId từ localStorage
       const userInfoStr = localStorage.getItem('userInfo');
@@ -250,6 +441,15 @@ const TeacherProfile = () => {
         setSuccess('Cập nhật thông tin thành công');
         setEditMode(false);
         
+        // Clear validation errors after successful save
+        setValidationErrors({
+          fullName: '',
+          email: '',
+          phoneNumber: '',
+          address: '',
+          dateOfBirth: '',
+        });
+        
         // Cập nhật profile với dữ liệu mới
         setProfile(prev => ({
           ...prev,
@@ -282,38 +482,33 @@ const TeacherProfile = () => {
   };
 
   const handleChangePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('Mật khẩu mới không khớp');
+    // Validate all password fields before submitting
+    if (!validatePasswordFields()) {
+      setError('Vui lòng kiểm tra lại thông tin mật khẩu');
       return;
     }
 
     try {
-      // Lấy username hoặc email từ trường nhập liệu
-      if (!usernameOrEmailInput) {
-          setError('Vui lòng nhập Username hoặc Email.');
-          return;
-      }
-      const usernameOrEmail = usernameOrEmailInput;
       const accessToken = localStorage.getItem('accessToken');
 
       if (!accessToken) {
-          setError('Vui lòng đăng nhập lại để đổi mật khẩu.');
-          return;
+        setError('Vui lòng đăng nhập lại để đổi mật khẩu.');
+        return;
       }
 
       const response = await axios.put(
-          'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users',
-          {
-              usernameOrEmail: usernameOrEmail,
-              newPassword: passwordData.newPassword,
-              confirmedPassword: passwordData.confirmPassword,
+        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users',
+        {
+          oldPassword: passwordData.oldPassword,
+          newPassword: passwordData.newPassword,
+          confirmedPassword: passwordData.confirmPassword,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
           },
-          {
-              headers: {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'Content-Type': 'application/json',
-              },
-          }
+        }
       );
 
       console.log('Change Password API Response:', response);
@@ -321,15 +516,26 @@ const TeacherProfile = () => {
 
       // Giả định code 0 hoặc 22 là thành công dựa trên các API khác
       if (response.data && (response.data.code === 0 || response.data.code === 22)) {
-        setSuccess('Đổi mật khẩu thành công');
+        setSuccess('Đổi mật khẩu thành công. Đang đăng xuất...');
         setChangePasswordMode(false);
         setPasswordData({
-          currentPassword: '',
+          oldPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+        setPasswordValidationErrors({
+          oldPassword: '',
           newPassword: '',
           confirmPassword: '',
         });
         // Xóa thông báo lỗi nếu có
         setError('');
+        
+        // Logout sau 2 giây để user có thể thấy thông báo thành công
+        setTimeout(() => {
+          logout();
+          navigate('/login');
+        }, 2000);
       } else {
         // Xử lý phản hồi lỗi từ API
         setError(response.data?.message || 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
@@ -639,8 +845,20 @@ const TeacherProfile = () => {
                 fullWidth
                 label="Họ và tên"
                 value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setFormData({ ...formData, fullName: newValue });
+                  // Real-time validation
+                  if (editMode) {
+                    setValidationErrors(prev => ({
+                      ...prev,
+                      fullName: validateFullName(newValue)
+                    }));
+                  }
+                }}
                 disabled={!editMode}
+                error={editMode && !!validationErrors.fullName}
+                helperText={editMode ? validationErrors.fullName : ''}
                 InputProps={{
                   startAdornment: <PersonIcon sx={{ mr: 1, color: 'rgb(255, 107, 107)' }} />,
                 }}
@@ -667,8 +885,20 @@ const TeacherProfile = () => {
                 fullWidth
                 label="Email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setFormData({ ...formData, email: newValue });
+                  // Real-time validation
+                  if (editMode) {
+                    setValidationErrors(prev => ({
+                      ...prev,
+                      email: validateEmail(newValue)
+                    }));
+                  }
+                }}
                 disabled={!editMode}
+                error={editMode && !!validationErrors.email}
+                helperText={editMode ? validationErrors.email : ''}
                 InputProps={{
                   startAdornment: <EmailIcon sx={{ mr: 1, color: 'rgb(255, 107, 107)' }} />,
                 }}
@@ -695,8 +925,20 @@ const TeacherProfile = () => {
                 fullWidth
                 label="Số điện thoại"
                 value={formData.phoneNumber}
-                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setFormData({ ...formData, phoneNumber: newValue });
+                  // Real-time validation
+                  if (editMode) {
+                    setValidationErrors(prev => ({
+                      ...prev,
+                      phoneNumber: validatePhoneNumber(newValue)
+                    }));
+                  }
+                }}
                 disabled={!editMode}
+                error={editMode && !!validationErrors.phoneNumber}
+                helperText={editMode ? validationErrors.phoneNumber : ''}
                 InputProps={{
                   startAdornment: <PhoneIcon sx={{ mr: 1, color: 'rgb(255, 107, 107)' }} />,
                 }}
@@ -723,8 +965,20 @@ const TeacherProfile = () => {
                 fullWidth
                 label="Địa chỉ"
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setFormData({ ...formData, address: newValue });
+                  // Real-time validation
+                  if (editMode) {
+                    setValidationErrors(prev => ({
+                      ...prev,
+                      address: validateAddress(newValue)
+                    }));
+                  }
+                }}
                 disabled={!editMode}
+                error={editMode && !!validationErrors.address}
+                helperText={editMode ? validationErrors.address : ''}
                 InputProps={{
                   startAdornment: <LocationIcon sx={{ mr: 1, color: 'rgb(255, 107, 107)' }} />,
                 }}
@@ -750,9 +1004,25 @@ const TeacherProfile = () => {
               <TextField
                 fullWidth
                 label="Ngày sinh"
+                type="date"
                 value={formData.dateOfBirth}
-                onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setFormData({ ...formData, dateOfBirth: newValue });
+                  // Real-time validation
+                  if (editMode) {
+                    setValidationErrors(prev => ({
+                      ...prev,
+                      dateOfBirth: validateDateOfBirth(newValue)
+                    }));
+                  }
+                }}
                 disabled={!editMode}
+                error={editMode && !!validationErrors.dateOfBirth}
+                helperText={editMode ? validationErrors.dateOfBirth : ''}
+                InputLabelProps={{
+                  shrink: true,
+                }}
                 InputProps={{
                   startAdornment: <CalendarIcon sx={{ mr: 1, color: 'rgb(255, 107, 107)' }} />,
                 }}
@@ -816,7 +1086,27 @@ const TeacherProfile = () => {
               <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                 <Button 
                   variant="outlined" 
-                  onClick={() => setEditMode(false)}
+                  onClick={() => {
+                    setEditMode(false);
+                    // Reset validation errors
+                    setValidationErrors({
+                      fullName: '',
+                      email: '',
+                      phoneNumber: '',
+                      address: '',
+                      dateOfBirth: '',
+                    });
+                    // Reset form data to original values
+                    setFormData({
+                      fullName: profile?.fullname || '',
+                      email: profile?.email || '',
+                      phoneNumber: profile?.phoneNumber || '',
+                      address: profile?.address || '',
+                      dateOfBirth: profile?.dateOfBirth || '',
+                      gender: profile?.gender === 1 ? 'Male' : 'Female',
+                      wardId: profile?.wardId || 0,
+                    });
+                  }}
                   sx={{
                     borderRadius: '12px',
                     textTransform: 'none',
@@ -852,14 +1142,39 @@ const TeacherProfile = () => {
         </Paper>
 
         {/* Change Password Dialog */}
-        <Dialog open={changePasswordMode} onClose={() => setChangePasswordMode(false)}>
+        <Dialog open={changePasswordMode} onClose={() => {
+          setChangePasswordMode(false);
+          setPasswordData({
+            oldPassword: '',
+            newPassword: '',
+            confirmPassword: '',
+          });
+          setPasswordValidationErrors({
+            oldPassword: '',
+            newPassword: '',
+            confirmPassword: '',
+          });
+          setError('');
+          setSuccess('');
+        }}>
           <DialogTitle>Đổi mật khẩu</DialogTitle>
           <DialogContent>
             <TextField
               fullWidth
-              label="Username hoặc Email"
-              value={usernameOrEmailInput}
-              onChange={(e) => setUsernameOrEmailInput(e.target.value)}
+              label="Mật khẩu cũ"
+              type="password"
+              value={passwordData.oldPassword}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setPasswordData({ ...passwordData, oldPassword: newValue });
+                // Real-time validation
+                setPasswordValidationErrors(prev => ({
+                  ...prev,
+                  oldPassword: validateOldPassword(newValue)
+                }));
+              }}
+              error={!!passwordValidationErrors.oldPassword}
+              helperText={passwordValidationErrors.oldPassword}
               sx={{ mt: 1, mb: 2 }}
             />
             <TextField
@@ -867,7 +1182,19 @@ const TeacherProfile = () => {
               label="Mật khẩu mới"
               type="password"
               value={passwordData.newPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setPasswordData({ ...passwordData, newPassword: newValue });
+                // Real-time validation
+                setPasswordValidationErrors(prev => ({
+                  ...prev,
+                  newPassword: validateNewPassword(newValue),
+                  // Also revalidate confirm password when new password changes
+                  confirmPassword: passwordData.confirmPassword ? validateConfirmPassword(passwordData.confirmPassword, newValue) : prev.confirmPassword
+                }));
+              }}
+              error={!!passwordValidationErrors.newPassword}
+              helperText={passwordValidationErrors.newPassword}
               sx={{ mt: 2 }}
             />
             <TextField
@@ -875,12 +1202,36 @@ const TeacherProfile = () => {
               label="Xác nhận mật khẩu mới"
               type="password"
               value={passwordData.confirmPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setPasswordData({ ...passwordData, confirmPassword: newValue });
+                // Real-time validation
+                setPasswordValidationErrors(prev => ({
+                  ...prev,
+                  confirmPassword: validateConfirmPassword(newValue, passwordData.newPassword)
+                }));
+              }}
+              error={!!passwordValidationErrors.confirmPassword}
+              helperText={passwordValidationErrors.confirmPassword}
               sx={{ mt: 2 }}
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setChangePasswordMode(false)}>Hủy</Button>
+            <Button onClick={() => {
+              setChangePasswordMode(false);
+              setPasswordData({
+                oldPassword: '',
+                newPassword: '',
+                confirmPassword: '',
+              });
+              setPasswordValidationErrors({
+                oldPassword: '',
+                newPassword: '',
+                confirmPassword: '',
+              });
+              setError('');
+              setSuccess('');
+            }}>Hủy</Button>
             <Button onClick={handleChangePassword} variant="contained">
               Đổi mật khẩu
             </Button>
@@ -890,12 +1241,27 @@ const TeacherProfile = () => {
         {/* Snackbar for notifications */}
         <Snackbar
           open={!!error || !!success}
-          autoHideDuration={6000}
+          autoHideDuration={4000}
           onClose={() => {
             setError('');
             setSuccess('');
           }}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
+          sx={{
+            '& .MuiSnackbarContent-root': {
+              minWidth: '350px',
+              maxWidth: '500px',
+              borderRadius: '16px',
+              fontSize: '16px',
+              fontWeight: 500,
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+              transform: 'translate(-50%, -50%)',
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              zIndex: 9999,
+            },
+          }}
         >
           <Alert
             onClose={() => {
@@ -903,7 +1269,32 @@ const TeacherProfile = () => {
               setSuccess('');
             }}
             severity={error ? 'error' : 'success'}
-            sx={{ width: '100%' }}
+            variant="filled"
+            sx={{ 
+              width: '100%',
+              borderRadius: '16px',
+              fontSize: '16px',
+              fontWeight: 500,
+              '& .MuiAlert-icon': {
+                fontSize: '24px',
+              },
+              '& .MuiAlert-message': {
+                padding: '8px 0',
+              },
+              ...(success && {
+                backgroundColor: '#06A9AE',
+                color: '#ffffff',
+                '& .MuiAlert-icon': {
+                  color: '#ffffff',
+                },
+                '& .MuiIconButton-root': {
+                  color: '#ffffff',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  },
+                },
+              }),
+            }}
           >
             {error || success}
           </Alert>
