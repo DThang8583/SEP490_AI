@@ -161,6 +161,7 @@ const AppContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
   const isManagerRoute = location.pathname.startsWith('/manager');
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   const toggleSidebar = (value) => {
     const newState = value !== undefined ? value : !sidebarOpen;
@@ -179,7 +180,7 @@ const AppContent = () => {
           <Route path="/giao-an-da-tao" element={<AIRender />} />
           <Route path="/ChoiceChatorClick" element={<ChoiceChatorClick />} />
           <Route path="/cac-bai-hoc" element={<LessonList />} />
-          <Route path="/các-giáo-án" element={<PrivateRoute><AllLessons /></PrivateRoute>} />
+          <Route path="/blog" element={<PrivateRoute><AllLessons /></PrivateRoute>} />
           <Route path="/chi-tiet-bai-dang/:blogId" element={<PrivateRoute><BlogLessonDetail /></PrivateRoute>} />
           <Route path="/Đăng-Giáo-án" element={<PrivateRoute><LessonUpload /></PrivateRoute>} />
           <Route path="/giao-an-bi-tu-choi" element={<PrivateRoute><RejectedLessons /></PrivateRoute>} />
@@ -194,13 +195,14 @@ const AppContent = () => {
           <Route path="/bai-tap/:id" element={<ExamDetail />} />
           <Route path="/khung-chuong-trinh" element={<TeacherCurriculumm />} />
           <Route path="/command-management" element={<PrivateRoute><CommandManager /></PrivateRoute>} />
+          <Route path="/generated-quiz" element={<PrivateRoute><GeneratedQuiz/></PrivateRoute>} />
           <Route path="/yeu-cau-can-dat" element={<TeacherRequirements />} />
           <Route path="/manager/*" element={
             <PrivateRoute>
               <ManagerRoutes sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
             </PrivateRoute>
           } />
-          <Route path="/teacher/profile" element={
+          <Route path="/ho-so" element={
             <PrivateRoute>
               <TeacherProfile />
             </PrivateRoute>
@@ -217,7 +219,7 @@ const AppContent = () => {
           <Route path="/slide-preview" element={<SlidePreview />} />
         </Routes>
       </main>
-      {!isManagerRoute && <Footer />}
+      {!isManagerRoute && !isAdminRoute && <Footer />}
     </div>
   );
 };

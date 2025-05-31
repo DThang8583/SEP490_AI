@@ -174,7 +174,6 @@ const DashboardOverview = () => {
             value={stats.totalUsers}
             icon={<GroupIcon />}
             color="primary"
-            subtitle="Tăng 12% so với tháng trước"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -183,7 +182,6 @@ const DashboardOverview = () => {
             value={stats.totalLessons}
             icon={<MenuBookIcon />}
             color="warning"
-            subtitle="Tăng 8% so với tháng trước"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -192,7 +190,6 @@ const DashboardOverview = () => {
             value={stats.totalExams}
             icon={<QuizIcon />}
             color="info"
-            subtitle="Tăng 15% so với tháng trước"
           />
         </Grid>
 

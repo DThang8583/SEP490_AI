@@ -193,8 +193,8 @@ const TotalLessons = () => {
                 <TableRow>
                   <TableCell>ID</TableCell>
                   <TableCell>Giáo viên</TableCell>
-                  <TableCell>Tiết học</TableCell>
-                  <TableCell>Mô-đun</TableCell>
+                  <TableCell>Tên bài học</TableCell>
+                  <TableCell>Chủ đề</TableCell>
                   <TableCell>Khối</TableCell>
                   <TableCell>Trạng thái</TableCell>
                   <TableCell>Ngày tạo</TableCell>

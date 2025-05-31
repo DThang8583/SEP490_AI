@@ -20,6 +20,12 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import {
@@ -80,14 +86,14 @@ const lessonCategories = [
 ];
 
 const menuItems = [
-  { text: "Các Giáo án", path: "/các-Giáo-án", icon: <Calculate />, requiresLogin: true },
+  { text: "Blog", path: "/blog", icon: <Calculate />, requiresLogin: true },
   { text: "Bài học", path: "/lessons", requiresLogin: true },
   { text: "Bài tập", path: "/bai-tap", requiresLogin: true },
   { text: "Khung chương trình cho giáo viên", path: "/khung-chuong-trinh", requiresLogin: true },
 ];
 
 const settings = [
-  { name: "Hồ sơ", icon: <Person />, path: "/teacher/profile" },
+  { name: "Hồ sơ", icon: <Person />, path: "/ho-so" },
   { name: "Quản lý câu lệnh", icon: <Settings />, path: "/command-management" },
   { name: "Đăng xuất", icon: <Logout />, path: "/logout" },
 ];
@@ -97,6 +103,8 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [anchorElUser, setAnchorElUser] = useState(null);
   const { isLoggedIn, userInfo, logout } = useAuth();
+  const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
+  const [profileAlertOpen, setProfileAlertOpen] = useState(false);
   
   // Add console.log for user role
   useEffect(() => {
@@ -128,16 +136,54 @@ const Navbar = () => {
     setAnchorElUser(null);
   };
 
-  const handleNavigation = (path) => {
-    if (path === '/logout') {
-      logout();
-      navigate('/login');
-    } else {
-      navigate(path);
-    }
+  const handleNavigation = async (path) => {
     handleClose();
     handleCloseUserMenu();
     setMobileMenuOpen(false);
+
+    if (path === '/logout') {
+      logout();
+      navigate('/login');
+    } else if (path === '/tao-giao-an') {
+      if (!isLoggedIn || !userInfo?.userId) {
+        navigate('/login'); 
+        return;
+      }
+
+      try {
+        const userId = userInfo.userId;
+        const apiUrl = `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/${userId}`;
+        const response = await axios.get(apiUrl);
+        const userData = response.data.data;
+
+        if (
+          userData.fullname &&
+          userData.email &&
+          userData.phoneNumber &&
+          userData.address
+        ) {
+          navigate(path);
+        } else {
+          setProfileAlertOpen(true);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setNotification({
+          open: true,
+          message: "Có lỗi xảy ra khi kiểm tra hồ sơ của bạn.",
+          severity: "error"
+        });
+      }
+    } else {
+      navigate(path);
+    }
+  };
+
+  const handleCloseNotification = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification({ ...notification, open: false });
   };
 
   const isActive = (path) => location.pathname === path
@@ -232,6 +278,15 @@ const Navbar = () => {
     </React.Fragment>
   );
 
+  const handleProfileAlertClose = () => {
+    setProfileAlertOpen(false);
+  };
+
+  const handleGoToProfile = () => {
+    setProfileAlertOpen(false);
+    navigate('/ho-so');
+  };
+
   return (
     <AppBar
       position="sticky"
@@ -269,17 +324,27 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           {!isMobile && (
             <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
-              {menuItems.map((item) => (
+              {menuItems.map((item) =>
                 (!item.requiresLogin || isLoggedIn) && (
-                  <NavButton
-                    key={item.text}
-                    text={item.text}
-                    path={item.path}
-                    icon={item.icon}
-                    isDropdown={item.text === "Bài học"}
-                  />
+                  item.text === "Bài học" ? (
+                     <NavButton
+                       key={item.text}
+                       text={item.text}
+                       path={item.path}
+                       icon={item.icon}
+                       isDropdown={true}
+                     />
+                  ) : (
+                   <NavButton
+                     key={item.text}
+                     text={item.text}
+                     path={item.path}
+                     icon={item.icon}
+                     isDropdown={false}
+                   />
+                 )
                 )
-              ))}
+              )}
               {isLoggedIn && isTeacher && (
                 <Button
                   variant="contained"
@@ -518,12 +583,11 @@ const Navbar = () => {
                 >
                   <ListItemIcon sx={{ color: theme.palette.text.primary }}>
                     {setting.name === "Hồ sơ" ? (
-                      <Person
-                        sx={{
-                          fontSize: 40,
-                          color: theme.palette.text.primary,
-                        }}
-                      />
+                      userInfo?.imgURL ? (
+                         <Avatar src={userInfo.imgURL} sx={{ width: 24, height: 24 }} />
+                      ) : (
+                         <Person />
+                      )
                     ) : (
                       setting.icon
                     )}
@@ -614,12 +678,11 @@ const Navbar = () => {
           >
             <ListItemIcon sx={{ color: isDarkMode ? "#ffffff" : "#2D3436" }}>
               {setting.name === "Hồ sơ" ? (
-                <Person
-                  sx={{
-                    fontSize: 40,
-                    color: theme.palette.text.primary,
-                  }}
-                />
+                userInfo?.imgURL ? (
+                   <Avatar src={userInfo.imgURL} sx={{ width: 24, height: 24, color: isDarkMode ? "#ffffff" : "#2D3436" }} />
+                ) : (
+                   <Person sx={{ color: isDarkMode ? "#ffffff" : "#2D3436" }} />
+                )
               ) : (
                 setting.icon
               )}
@@ -628,6 +691,69 @@ const Navbar = () => {
           </MenuItem>
         ))}
       </Menu>
+
+      {/* Profile Alert Dialog */}
+      <Dialog
+        open={profileAlertOpen}
+        onClose={handleProfileAlertClose}
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.background.paper,
+            borderRadius: 2,
+            minWidth: 320,
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
+          Thông báo
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: theme.palette.text.primary }}>
+            Bạn phải điền đầy đủ thông tin trong hồ sơ thì mới sử dụng được chức năng này
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button
+            onClick={handleProfileAlertClose}
+            sx={{
+              color: theme.palette.text.primary,
+              '&:hover': {
+                backgroundColor: 'rgba(255, 107, 107, 0.1)',
+              },
+            }}
+          >
+            Đóng
+          </Button>
+          <Button
+            onClick={handleGoToProfile}
+            variant="contained"
+            sx={{
+              backgroundColor: '#FF6B6B',
+              '&:hover': {
+                backgroundColor: '#FF5252',
+              },
+            }}
+          >
+            Đi tới hồ sơ
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </AppBar>
   );
 };

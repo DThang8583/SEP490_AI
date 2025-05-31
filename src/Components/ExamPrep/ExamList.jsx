@@ -31,7 +31,7 @@ import {
   DeleteOutline as DeleteOutlineIcon,
 } from '@mui/icons-material';
 import { useTheme as useCustomTheme } from '../../context/ThemeContext';
-import CreateExerciseModal from '../CreateExerciseModal';
+import CreateExerciseModal from '../../Components/CreateExerciseModal';
 
 const ExamList = () => {
   const navigate = useNavigate();
@@ -63,11 +63,29 @@ const ExamList = () => {
   const fetchQuizzes = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Get user info from localStorage and extract gradeId
+      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+      let userGradeId = null;
+      if (userInfo && userInfo.grade) {
+        const gradeMatch = userInfo.grade.match(/\d+/);
+        userGradeId = gradeMatch ? parseInt(gradeMatch[0], 10) : null;
+        console.log('User Grade ID from localStorage:', userGradeId);
+      }
+
+      if (userGradeId === null) {
+          console.warn('User grade information not found in localStorage. Cannot filter quizzes by grade.');
+          // Optionally, set an error or display a message to the user
+          // setError('Không thể lấy thông tin khối lớp của người dùng.');
+          // return; // Exit the function if gradeId is required
+      }
+
       const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/quizzes`, {
         params: {
           Page: page,
           PageSize: pageSize,
-          SearchTerm: searchTerm
+          SearchTerm: searchTerm,
+          ...(userGradeId !== null && { GradeId: userGradeId }) // Add GradeId parameter if available
         },
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}` // Include auth token
@@ -76,10 +94,20 @@ const ExamList = () => {
       console.log("API Quizzes response:", response.data);
       
       if (response.data && response.data.code === 0 && response.data.data) {
-        setQuizzes(response.data.data.items || []);
-        setTotalPages(response.data.data.totalPages || 1);
+        const fetchedQuizzes = response.data.data.items || [];
+
+        // Client-side filtering based on userFullName
+        const userFullName = JSON.parse(localStorage.getItem('userInfo'))?.fullName || '';
+        const filteredQuizzes = userFullName
+          ? fetchedQuizzes.filter(quiz => quiz.name && quiz.name.includes(userFullName))
+          : []; // If userFullName is empty, show no quizzes
+
+        setQuizzes(filteredQuizzes); // Update state with filtered quizzes
+        // Note: totalPages, totalRecords might not be accurate after client-side filtering
+        // You might need to adjust pagination logic or rely solely on the filtered list length
+        setTotalPages(response.data.data.totalPages || 1); // Keep original pagination data for now
         setTotalRecords(response.data.data.totalRecords || 0);
-        console.log("Danh sách bài quiz:", response.data.data.items);
+        console.log("Filtered quizzes:", filteredQuizzes);
       } else {
         setError(response.data.message || 'Không thể tải danh sách bài quiz');
       }
@@ -145,6 +173,11 @@ const ExamList = () => {
     setPage(1); // Reset về trang 1 khi tìm kiếm
     // The search will be triggered automatically by the useEffect due to searchTerm change
   };
+
+  // Get user's full name from localStorage
+  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  const userFullName = userInfo?.fullName || '';
+  console.log('User Full Name from localStorage:', userFullName);
 
   return (
     <Box
@@ -279,7 +312,7 @@ const ExamList = () => {
                             <SchoolIcon fontSize="small" color="action" />
                             {/* Use optional chaining for safety */}
                             <Typography variant="body2" color="text.secondary">
-                              {JSON.parse(localStorage.getItem('userInfo'))?.fullName || 'Unknown User'}
+                              {userFullName && quiz.name.includes(userFullName) ? quiz.name : ''}
                             </Typography>
                           </Box>
                           

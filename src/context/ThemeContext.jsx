@@ -33,6 +33,9 @@ export const ThemeProvider = ({ children }) => {
         secondary: isDarkMode ? '#B0B0B0' : '#666666',
       },
     },
+    typography: {
+      fontFamily: 'sans-serif',
+    },
     components: {
       MuiAppBar: {
         styleOverrides: {
