@@ -55,6 +55,7 @@ import {
     Notes as NotesIcon,
     Visibility as VisibilityIcon,
     Gavel as GavelIcon,
+    Block as BlockIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
@@ -1064,6 +1065,7 @@ const CurriculumFramework = () => {
                                         borderRadius: 2,
                                         overflow: 'hidden',
                                         bgcolor: theme.palette.background.paper,
+                                        border: `1px solid ${theme.palette.divider}`,
                                     }}
                                 >
                                     <Table>
@@ -1072,26 +1074,29 @@ const CurriculumFramework = () => {
                                                 <StyledTableCell sx={{
                                                     width: '80px',
                                                     color: theme.palette.text.secondary,
-                                            borderBottom: 'none'
+                                                    borderBottom: `1px solid ${theme.palette.divider}`,
+                                                    borderRight: `1px solid ${theme.palette.divider}`,
                                                 }}>STT</StyledTableCell>
                                                 <StyledTableCell sx={{
                                                     color: theme.palette.text.secondary,
-                                            borderBottom: 'none'
+                                                    borderBottom: `1px solid ${theme.palette.divider}`,
+                                                    borderRight: `1px solid ${theme.palette.divider}`,
                                                 }}>Tên chủ đề</StyledTableCell>
                                                 <StyledTableCell sx={{
                                                     width: '120px',
                                                     color: theme.palette.text.secondary,
-                                            borderBottom: 'none',
+                                                    borderBottom: `1px solid ${theme.palette.divider}`,
+                                                    borderRight: `1px solid ${theme.palette.divider}`,
                                                     textAlign: 'center'
                                                 }}>Thao tác</StyledTableCell>
                                                 <StyledTableCell align="right" sx={{
                                                     color: theme.palette.text.secondary,
-                                            borderBottom: 'none'
+                                                    borderBottom: `1px solid ${theme.palette.divider}`,
+                                                    borderRight: `1px solid ${theme.palette.divider}`,
                                                 }}>Số tiết</StyledTableCell>
                                                 <StyledTableCell sx={{
                                                     color: theme.palette.text.secondary,
-                                                    borderBottom: 'none',
-                                                    textAlign: 'center'
+                                                    borderBottom: `1px solid ${theme.palette.divider}`,
                                                 }}>Trạng thái</StyledTableCell>
                                             </TableRow>
                                         </TableHead>
@@ -1111,14 +1116,16 @@ const CurriculumFramework = () => {
                                                     >
                                                         <TableCell sx={{
                                                             color: theme.palette.text.primary,
-                                                            border: 'none'
+                                                            borderRight: `1px solid ${theme.palette.divider}`,
+                                                            borderBottom: expandedModuleId === module.moduleId ? 'none' : `1px solid ${theme.palette.divider}`,
                                                         }}>{index + 1}</TableCell>
                                                         <TableCell sx={{
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             gap: 1,
                                                             color: theme.palette.text.primary,
-                                                            border: 'none'
+                                                            borderRight: `1px solid ${theme.palette.divider}`,
+                                                            borderBottom: expandedModuleId === module.moduleId ? 'none' : `1px solid ${theme.palette.divider}`,
                                                         }}>
                                                             <MenuBookIcon sx={{ mr: 1, color: COLORS.primary, fontSize: 20 }} />
                                                             <Box sx={{ flexGrow: 1 }}>
@@ -1127,7 +1134,8 @@ const CurriculumFramework = () => {
                                                         </TableCell>
                                                         <TableCell sx={{
                                                             color: theme.palette.text.primary,
-                                                            border: 'none',
+                                                            borderRight: `1px solid ${theme.palette.divider}`,
+                                                            borderBottom: expandedModuleId === module.moduleId ? 'none' : `1px solid ${theme.palette.divider}`,
                                                             textAlign: 'center'
                                                         }}>
                                                             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
@@ -1159,13 +1167,14 @@ const CurriculumFramework = () => {
                                                                         }
                                                                     }}
                                                                 >
-                                                                    {module.isActive ? <DeleteIcon fontSize="small" /> : <CheckIcon fontSize="small" />}
+                                                                    {module.isActive ? <BlockIcon fontSize="small" /> : <CheckIcon fontSize="small" />}
                                                                 </IconButton>
                                                             </Box>
                                                         </TableCell>
                                                         <TableCell align="right" sx={{
                                                             color: theme.palette.text.primary,
-                                                            border: 'none'
+                                                            borderRight: `1px solid ${theme.palette.divider}`,
+                                                            borderBottom: expandedModuleId === module.moduleId ? 'none' : `1px solid ${theme.palette.divider}`,
                                                         }}>
                                                             <InfoChip
                                                                 icon={<AccessTimeIcon fontSize="small" sx={{ color: COLORS.primary }} />}
@@ -1179,7 +1188,7 @@ const CurriculumFramework = () => {
                                                         </TableCell>
                                                         <TableCell align="center" sx={{
                                                             color: theme.palette.text.primary,
-                                                            border: 'none'
+                                                            borderBottom: expandedModuleId === module.moduleId ? 'none' : `1px solid ${theme.palette.divider}`,
                                                         }}>
                                                             <Chip
                                                                 label={module.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
@@ -1189,14 +1198,63 @@ const CurriculumFramework = () => {
                                                         </TableCell>
                                                     </StyledTableRow>
                                                     <TableRow>
-                                                        <TableCell sx={{ paddingBottom: 0, paddingTop: 0, border: 'none' }} colSpan={3}>
+                                                        <TableCell sx={{ paddingBottom: 0, paddingTop: 0, border: 'none' }} colSpan={5}>
                                                             <Collapse in={expandedModuleId === module.moduleId} timeout="auto" unmountOnExit>
-                                                                <Box sx={{ margin: 1, ml: 8 , p: 2, bgcolor: theme.palette.background.secondary, borderRadius: 1 }}>
-                                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                                                        <Box sx={{ border: `1px solid ${COLORS.primary}`, borderRadius: 1, p: 0.5, display: 'inline-block' }}>
-                                                                            <Typography variant="h6" gutterBottom component="div" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 0, px: 1 }}>
-                                                                        Bài học:
-                                                                    </Typography>
+                                                                <Box sx={{ 
+                                                                    margin: 0, 
+                                                                    p: 3, 
+                                                                    bgcolor: theme.palette.mode === 'dark' 
+                                                                        ? 'rgba(45, 45, 45, 0.5)' 
+                                                                        : 'rgba(6, 169, 174, 0.02)', 
+                                                                    borderRadius: 0,
+                                                                    borderTop: `1px solid ${theme.palette.divider}`,
+                                                                    borderBottom: expandedModuleId === module.moduleId && index === modulesBySemester.length - 1 
+                                                                        ? 'none' 
+                                                                        : `1px solid ${theme.palette.divider}`
+                                                                }}>
+                                                                    <Box sx={{ 
+                                                                        display: 'flex', 
+                                                                        justifyContent: 'space-between', 
+                                                                        alignItems: 'center', 
+                                                                        mb: 3,
+                                                                        pb: 2,
+                                                                        borderBottom: `2px solid ${COLORS.primary}`
+                                                                    }}>
+                                                                        <Box sx={{ 
+                                                                            display: 'flex', 
+                                                                            alignItems: 'center',
+                                                                            gap: 2
+                                                                        }}>
+                                                                            <Box sx={{ 
+                                                                                bgcolor: COLORS.primary,
+                                                                                color: 'white',
+                                                                                borderRadius: 2, 
+                                                                                p: 1.5,
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 1
+                                                                            }}>
+                                                                                <MenuBookIcon fontSize="small" />
+                                                                                <Typography variant="h6" sx={{ 
+                                                                                    fontWeight: 600, 
+                                                                                    mb: 0,
+                                                                                    fontSize: '1rem'
+                                                                                }}>
+                                                                                    Danh sách Bài học
+                                                                                </Typography>
+                                                                            </Box>
+                                                                            <Chip
+                                                                                icon={<AssignmentIcon fontSize="small" />}
+                                                                                label={`${module.lessons?.length || 0} bài học`}
+                                                                                size="small"
+                                                                                sx={{
+                                                                                    bgcolor: theme.palette.mode === 'dark' 
+                                                                                        ? 'rgba(6, 169, 174, 0.2)' 
+                                                                                        : 'rgba(6, 169, 174, 0.1)',
+                                                                                    color: COLORS.primary,
+                                                                                    fontWeight: 600
+                                                                                }}
+                                                                            />
                                                                         </Box>
                                                                         <StyledButton
                                                                             variant="contained"
@@ -1204,25 +1262,47 @@ const CurriculumFramework = () => {
                                                                             startIcon={<AddIcon />}
                                                                             colors={COLORS}
                                                                             size="small"
+                                                                            sx={{
+                                                                                bgcolor: COLORS.success,
+                                                                                '&:hover': {
+                                                                                    bgcolor: '#2e7d32'
+                                                                                }
+                                                                            }}
                                                                         >
                                                                             Thêm Bài học
                                                                         </StyledButton>
                                                                     </Box>
-                                                                    {module.lessons ? (
-                                                                        <LessonDetails
-                                                                            lessons={module.lessons}
-                                                                            theme={theme}
-                                                                    colors={COLORS}
-                                                                    moduleId={module.moduleId}
-                                                                    fetchLessons={fetchLessons}
-                                                                    gradeNumber={userGradeNumber}
-                                                                    onCurriculumRefresh={fetchCurricula}
-                                                                        />
-                                                                    ) : (
-                                                                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                                                                            <CircularProgress size={20} sx={{ color: COLORS.primary }} />
-                                                                        </Box>
-                                                                    )}
+                                                                    <Box sx={{
+                                                                        bgcolor: theme.palette.background.paper,
+                                                                        borderRadius: 2,
+                                                                        border: `1px solid ${theme.palette.divider}`,
+                                                                        overflow: 'hidden',
+                                                                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                                                                    }}>
+                                                                        {module.lessons ? (
+                                                                            <LessonDetails
+                                                                                lessons={module.lessons}
+                                                                                theme={theme}
+                                                                                colors={COLORS}
+                                                                                moduleId={module.moduleId}
+                                                                                fetchLessons={fetchLessons}
+                                                                                gradeNumber={userGradeNumber}
+                                                                                onCurriculumRefresh={fetchCurricula}
+                                                                            />
+                                                                        ) : (
+                                                                            <Box sx={{ 
+                                                                                display: 'flex', 
+                                                                                justifyContent: 'center', 
+                                                                                alignItems: 'center',
+                                                                                p: 4
+                                                                            }}>
+                                                                                <CircularProgress size={24} sx={{ color: COLORS.primary, mr: 2 }} />
+                                                                                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                                                                                    Đang tải danh sách bài học...
+                                                                                </Typography>
+                                                                            </Box>
+                                                                        )}
+                                                                    </Box>
                                                                 </Box>
                                                             </Collapse>
                                                         </TableCell>

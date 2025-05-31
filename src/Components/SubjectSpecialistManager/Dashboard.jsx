@@ -102,15 +102,177 @@ const Dashboard = ({ sidebarOpen }) => {
     }, []);
 
     const fetchTotalLessons = async () => {
+        console.log('🚀 === BẮT ĐẦU GỌI API LESSONS ===');
+        console.log('⏰ Thời gian bắt đầu:', new Date().toLocaleString('vi-VN'));
+        
+        const apiUrl = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons?Page=1&PageSize=999';
+        console.log('📡 API URL:', apiUrl);
+        
         try {
-            const response = await axios.get(
-                'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons?PageNumber=1&PageSize=999'
-            );
-            if (response.data && response.data.code === 0) {
-                setAllLessonsCount(response.data.data.totalSize);
+            // Gọi API
+            console.log('📞 Đang gọi API với axios...');
+            const response = await axios.get(apiUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                timeout: 10000 // 10 giây timeout
+            });
+            
+            console.log('📊 === RESPONSE INFO ===');
+            console.log('✅ Response status:', response.status);
+            console.log('✅ Response statusText:', response.statusText);
+            console.log('✅ Response headers:', response.headers);
+            console.log('✅ Response config:', response.config);
+            
+            // Kiểm tra response.data
+            console.log('📄 === API RESPONSE DATA ===');
+            console.log('📄 Response.data type:', typeof response.data);
+            console.log('📄 Response.data keys:', Object.keys(response.data || {}));
+            console.log('📄 Response.data.code:', response.data?.code);
+            console.log('📄 Response.data.message:', response.data?.message);
+            console.log('📄 Response.data.data type:', typeof response.data?.data);
+            console.log('📄 Full response.data:', response.data);
+            
+            // Kiểm tra API response code
+            if (response.data && response.data.code !== 0) {
+                console.error('❌ API Error Code:', response.data.code);
+                console.error('❌ API Error Message:', response.data.message);
+                console.error('❌ Full response:', response.data);
+                return;
             }
+            
+            // Kiểm tra data structure
+            console.log('🔍 === KIỂM TRA DATA STRUCTURE ===');
+            console.log('🔍 response.data exists:', !!response.data);
+            console.log('🔍 response.data.data exists:', !!response.data?.data);
+            console.log('🔍 response.data.data type:', typeof response.data?.data);
+            
+            if (response.data?.data) {
+                console.log('🔍 response.data.data keys:', Object.keys(response.data.data));
+                console.log('🔍 response.data.data.items exists:', !!response.data.data.items);
+                console.log('🔍 response.data.data.totalSize exists:', !!response.data.data.totalSize);
+                console.log('🔍 response.data.data.items type:', typeof response.data.data.items);
+                console.log('🔍 response.data.data.items isArray:', Array.isArray(response.data.data.items));
+                console.log('🔍 response.data.data.totalSize:', response.data.data.totalSize);
+            }
+            
+            // Xử lý data
+            if (response.data && response.data.code === 0) {
+                console.log('📊 === XỬ LÝ DATA THÀNH CÔNG ===');
+                
+                // Kiểm tra totalSize
+                if (response.data.data && response.data.data.totalSize !== undefined) {
+                    console.log('🎯 Tổng số bài học (totalSize):', response.data.data.totalSize);
+                    setAllLessonsCount(response.data.data.totalSize);
+                } else if (response.data.data && response.data.data.items) {
+                    // Fallback: đếm từ items array
+                    const itemsCount = response.data.data.items.length;
+                    console.log('🎯 Tổng số bài học (từ items.length):', itemsCount);
+                    setAllLessonsCount(itemsCount);
+                    
+                    // Hiển thị chi tiết một vài bài học đầu tiên
+                    console.log('\n📋 === CHI TIẾT 5 BÀI HỌC ĐẦU TIÊN ===');
+                    response.data.data.items.slice(0, 5).forEach((lesson, index) => {
+                        console.log(`${index + 1}. ID: ${lesson.lessonId}`);
+                        console.log(`   Tên: "${lesson.name}"`);
+                        console.log(`   Loại: ${lesson.lessonType}`);
+                        console.log(`   Module: ${lesson.module}`);
+                        console.log(`   Số tiết: ${lesson.totalPeriods}`);
+                        console.log(`   Khối: ${lesson.gradeNumber}`);
+                        console.log('   ---');
+                    });
+                    
+                    // Thống kê lesson IDs
+                    const lessonIds = response.data.data.items.map(lesson => lesson.lessonId).filter(id => id != null);
+                    console.log('\n🔢 === THỐNG KÊ LESSON IDS ===');
+                    console.log('🔢 Tổng số lesson IDs hợp lệ:', lessonIds.length);
+                    console.log('🔢 10 IDs đầu tiên:', lessonIds.slice(0, 10));
+                    console.log('🔢 10 IDs cuối cùng:', lessonIds.slice(-10));
+                    
+                    if (lessonIds.length > 0) {
+                        console.log('🔢 Min lesson ID:', Math.min(...lessonIds));
+                        console.log('🔢 Max lesson ID:', Math.max(...lessonIds));
+                    }
+                    
+                    // Thống kê theo loại bài học
+                    const lessonTypes = {};
+                    response.data.data.items.forEach(lesson => {
+                        const type = lesson.lessonType || 'Không xác định';
+                        lessonTypes[type] = (lessonTypes[type] || 0) + 1;
+                    });
+                    
+                    console.log('\n📈 === THỐNG KÊ THEO LOẠI BÀI HỌC ===');
+                    Object.entries(lessonTypes).forEach(([type, count]) => {
+                        console.log(`📌 ${type}: ${count} bài`);
+                    });
+                    
+                    // Thống kê theo module
+                    const modules = {};
+                    response.data.data.items.forEach(lesson => {
+                        const module = lesson.module || 'Không xác định';
+                        modules[module] = (modules[module] || 0) + 1;
+                    });
+                    
+                    console.log('\n📚 === THỐNG KÊ THEO MODULE ===');
+                    Object.entries(modules).forEach(([module, count]) => {
+                        console.log(`📖 ${module}: ${count} bài`);
+                    });
+                } else {
+                    console.error('❌ Không tìm thấy totalSize hoặc items trong response.data.data');
+                    console.error('❌ response.data.data value:', response.data.data);
+                    setAllLessonsCount(0);
+                }
+                
+                console.log('🎉 === FETCH TOTAL LESSONS THÀNH CÔNG ===');
+            } else {
+                console.error('❌ Response code không phải 0 hoặc response.data không tồn tại');
+                setAllLessonsCount(0);
+            }
+            
         } catch (error) {
-            console.error('Error fetching total lessons:', error);
+            console.error('\n🚨 === LỖI KHI GỌI API LESSONS ===');
+            console.error('❌ Error type:', error.constructor.name);
+            console.error('❌ Error message:', error.message);
+            
+            if (error.stack) {
+                console.error('❌ Error stack:', error.stack);
+            }
+            
+            // Kiểm tra axios error
+            if (error.response) {
+                console.error('📄 Error Response status:', error.response.status);
+                console.error('📄 Error Response statusText:', error.response.statusText);
+                console.error('📄 Error Response headers:', error.response.headers);
+                console.error('📄 Error Response data:', error.response.data);
+            } else if (error.request) {
+                console.error('📡 Request was made but no response received');
+                console.error('📡 Request:', error.request);
+            } else {
+                console.error('⚙️ Error setting up request:', error.message);
+            }
+            
+            if (error.code) {
+                console.error('❌ Error code:', error.code);
+            }
+            
+            // Kiểm tra các loại lỗi cụ thể
+            if (error.code === 'ENOTFOUND') {
+                console.error('🌐 DNS resolution failed - Kiểm tra kết nối internet');
+            } else if (error.code === 'ECONNREFUSED') {
+                console.error('🔒 Connection refused - Server có thể đang down');
+            } else if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
+                console.error('⏰ Request timeout - Server phản hồi quá chậm');
+            } else if (error.message.includes('Network Error')) {
+                console.error('🌐 Network Error - Có thể là vấn đề CORS hoặc kết nối');
+            }
+            
+            console.error('🔍 Full error object:', error);
+            setAllLessonsCount(0);
+            
+        } finally {
+            console.log('\n⏰ Thời gian kết thúc:', new Date().toLocaleString('vi-VN'));
+            console.log('🏁 === KẾT THÚC FETCH TOTAL LESSONS ===\n');
         }
     };
 
@@ -328,8 +490,9 @@ const Dashboard = ({ sidebarOpen }) => {
 
     // Calculate stats for progress indicators
     const totalLessons = approvedLessons + rejectedLessons + pendingLessons;
-    const approvalRate = approvedLessons + rejectedLessons > 0
-        ? Math.round((approvedLessons / (approvedLessons + rejectedLessons)) * 100)
+    const totalProcessedLessonPlans = approvedLessonPlans + rejectedLessonPlans;
+    const approvalRate = totalProcessedLessonPlans > 0
+        ? Math.round((approvedLessonPlans / totalProcessedLessonPlans) * 100)
         : 0;
 
     return (

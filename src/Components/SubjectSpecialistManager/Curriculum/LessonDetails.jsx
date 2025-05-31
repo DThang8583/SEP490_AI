@@ -27,6 +27,7 @@ import {
     InputLabel,
     Select,
     MenuItem,
+    Collapse,
 } from '@mui/material';
 import {
     AccessTime as AccessTimeIcon,
@@ -40,6 +41,7 @@ import {
     Class as ClassIcon,
     ImportContacts as ImportContactsIcon,
     Check as CheckIcon,
+    Block as BlockIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
@@ -88,6 +90,78 @@ const StyledButton = styled(Button)(({ theme, colors }) => ({
 const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModulesRefresh, gradeNumber, onCurriculumRefresh }) => {
     console.log(`LessonDetails component rendered for module ${moduleId}.`); // Simple render log
     const sortedLessons = lessons ? [...lessons].sort((a, b) => a.lessonId - b.lessonId) : [];
+
+    // State for controlling expanded lesson details
+    const [expandedLessonId, setExpandedLessonId] = useState(null);
+
+    // Function to get color for lesson type
+    const getLessonTypeColor = (lessonType) => {
+        const type = lessonType?.toLowerCase() || '';
+        if (type.includes('mới') || type.includes('new')) {
+            return {
+                color: 'primary',
+                sx: {
+                    bgcolor: 'rgba(25, 118, 210, 0.1)',
+                    color: '#1976d2',
+                    fontWeight: 600
+                }
+            };
+        } else if (type.includes('luyện tập') || type.includes('practice')) {
+            return {
+                color: 'info',
+                sx: {
+                    bgcolor: 'rgba(103, 58, 183, 0.1)',
+                    color: '#673ab7',
+                    fontWeight: 600
+                }
+            };
+        } else if (type.includes('ôn tập') || type.includes('review')) {
+            return {
+                color: 'secondary',
+                sx: {
+                    bgcolor: 'rgba(156, 39, 176, 0.1)',
+                    color: '#9c27b0',
+                    fontWeight: 600
+                }
+            };
+        } else if (type.includes('thực hành')) {
+            return {
+                color: 'success',
+                sx: {
+                    bgcolor: 'rgba(46, 125, 50, 0.1)',
+                    color: '#2e7d32',
+                    fontWeight: 600
+                }
+            };
+        } else if (type.includes('kiểm tra') || type.includes('test')) {
+            return {
+                color: 'warning',
+                sx: {
+                    bgcolor: 'rgba(237, 108, 2, 0.1)',
+                    color: '#ed6c02',
+                    fontWeight: 600
+                }
+            };
+        } else if (type.includes('tổng kết') || type.includes('summary')) {
+            return {
+                color: 'info',
+                sx: {
+                    bgcolor: 'rgba(2, 136, 209, 0.1)',
+                    color: '#0288d1',
+                    fontWeight: 600
+                }
+            };
+        } else {
+            return {
+                color: 'default',
+                sx: {
+                    bgcolor: 'rgba(6, 169, 174, 0.1)',
+                    color: colors.primary,
+                    fontWeight: 600
+                }
+            };
+        }
+    };
 
     // State for controlling view lesson details dialog
     const [openLessonDetailsDialog, setOpenLessonDetailsDialog] = useState(false);
@@ -179,17 +253,23 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModul
         setEditedLessonData(null); // Clear form data
     };
 
-    // Handler for viewing lesson details
-    const handleViewLessonDetails = async (lessonId) => {
+    // Handler for lesson row click to toggle expansion
+    const handleLessonClick = async (lessonId) => {
+        // Toggle expanded state
+        if (expandedLessonId === lessonId) {
+            setExpandedLessonId(null);
+            setLessonDetails(null);
+        } else {
+            setExpandedLessonId(lessonId);
+            // Fetch lesson details
         try {
             const response = await axios.get(
-                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}/info`
+                    `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}`
             );
 
             if (response.data.code === 0 && response.data.data) {
                 console.log('Lesson Details:', response.data.data);
                 setLessonDetails(response.data.data);
-                setOpenLessonDetailsDialog(true);
             } else {
                 console.error(`Error fetching lesson details for ${lessonId}:`, response.data.message);
                 alert(`Lỗi khi lấy chi tiết bài học: ${response.data.message}`);
@@ -197,6 +277,7 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModul
         } catch (error) {
             console.error(`Error fetching lesson details for ${lessonId}:`, error);
             alert(`Đã xảy ra lỗi khi lấy chi tiết bài học.`);
+            }
         }
     };
 
@@ -264,8 +345,42 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModul
 
                 if (response.data.code === 0 || response.data.code === 22) {
                     console.log(`Lesson ${editedLessonData.lessonId} updated successfully.`);
+                    
                     // Refetch lessons for the current module to update the list
                     fetchLessons(moduleId); // Use fetchLessons prop
+                    
+                    // Refresh modules data by calling API directly
+                    try {
+                        console.log('Refreshing modules data after lesson edit...');
+                        const modulesRefreshResponse = await axios.get(
+                            `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades/${gradeNumber}/modules`
+                        );
+                        console.log('Modules refresh API response:', modulesRefreshResponse.data);
+                        
+                        // Trigger modules refresh callback if available
+                        if (onModulesRefresh) {
+                            await onModulesRefresh();
+                        }
+                    } catch (moduleError) {
+                        console.error('Error refreshing modules data:', moduleError);
+                    }
+
+                    // Refresh curriculum data by calling API directly
+                    try {
+                        console.log('Refreshing curriculum data after lesson edit...');
+                        const curriculumRefreshResponse = await axios.get(
+                            'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums'
+                        );
+                        console.log('Curriculum refresh API response:', curriculumRefreshResponse.data);
+                        
+                        // Trigger curriculum refresh callback if available
+                        if (onCurriculumRefresh) {
+                            await onCurriculumRefresh();
+                        }
+                    } catch (curriculumError) {
+                        console.error('Error refreshing curriculum data:', curriculumError);
+                    }
+                    
                     // Close dialog
                     handleCloseEditLessonDialog();
                 } else {
@@ -284,14 +399,13 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModul
 
     return (
                 <Box sx={{
-            margin: 1,
-            p: 2,
-            bgcolor: theme.palette.background.secondary,
-            borderRadius: 1,
-            ml: 4,
+            margin: 0,
+            p: 0,
+            bgcolor: 'transparent',
+            borderRadius: 0,
         }}>
             {sortedLessons.length > 0 ? (
-                <TableContainer component={Paper} sx={{ boxShadow: 'none', border: `1px solid ${theme.palette.grey[400]}`, minWidth: 800 }}>
+                <TableContainer component={Paper} sx={{ boxShadow: 'none', border: 'none', minWidth: 800 }}>
                     <Table size="small">
                         <TableHead>
                             <TableRow>
@@ -299,35 +413,73 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModul
                                 <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, borderRight: `1px solid ${theme.palette.grey[400]}` }}>Tên bài học</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, borderRight: `1px solid ${theme.palette.grey[400]}` }}>Loại bài học</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, borderRight: `1px solid ${theme.palette.grey[400]}`, textAlign: 'center' }}>Số tiết</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, textAlign: 'center' }}>Trạng thái</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, borderRight: `1px solid ${theme.palette.grey[400]}`, textAlign: 'center' }}>Trạng thái</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, textAlign: 'center' }}>Thao tác</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                     {sortedLessons.map((lesson, index) => (
-                                <TableRow key={lesson.lessonId} sx={{ '&:last-child td': { borderBottom: 0 } }}>
-                                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.grey[400]}` }}>{index + 1}</TableCell>
-                                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.grey[400]}` }}>{lesson.name}</TableCell>
-                                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.grey[400]}` }}>{lesson.lessonType}</TableCell>
-                                    <TableCell align="center" sx={{ borderRight: `1px solid ${theme.palette.grey[400]}` }}>
+                                <React.Fragment key={lesson.lessonId}>
+                                    <TableRow 
+                                        onClick={() => handleLessonClick(lesson.lessonId)}
+                                        sx={{ 
+                                            '&:last-child td': { borderBottom: 0 },
+                                            cursor: 'pointer',
+                                            '&:hover': {
+                                                backgroundColor: theme.palette.action.hover,
+                                            },
+                                            borderBottom: expandedLessonId === lesson.lessonId ? 'none' : `1px solid ${theme.palette.grey[400]}`,
+                                        }}
+                                    >
+                                        <TableCell sx={{ 
+                                            borderRight: `1px solid ${theme.palette.grey[400]}`,
+                                            borderBottom: expandedLessonId === lesson.lessonId ? 'none' : `1px solid ${theme.palette.grey[400]}`,
+                                        }}>{index + 1}</TableCell>
+                                        <TableCell sx={{ 
+                                            borderRight: `1px solid ${theme.palette.grey[400]}`,
+                                            borderBottom: expandedLessonId === lesson.lessonId ? 'none' : `1px solid ${theme.palette.grey[400]}`,
+                                        }}>{lesson.name}</TableCell>
+                                        <TableCell sx={{ 
+                                            borderRight: `1px solid ${theme.palette.grey[400]}`,
+                                            borderBottom: expandedLessonId === lesson.lessonId ? 'none' : `1px solid ${theme.palette.grey[400]}`,
+                                        }}>
+                                            <Chip
+                                                label={lesson.lessonType}
+                                                color={getLessonTypeColor(lesson.lessonType).color}
+                                                size="small"
+                                                sx={getLessonTypeColor(lesson.lessonType).sx}
+                                            />
+                                        </TableCell>
+                                        <TableCell align="center" sx={{ 
+                                            borderRight: `1px solid ${theme.palette.grey[400]}`,
+                                            borderBottom: expandedLessonId === lesson.lessonId ? 'none' : `1px solid ${theme.palette.grey[400]}`,
+                                        }}>
                             <InfoChip
                                 icon={<AccessTimeIcon fontSize="small" sx={{ color: colors.primary }} />} 
                                 label={`${lesson.totalPeriods} tiết`} 
                                 colors={colors}
                                         />
                                     </TableCell>
-                                    <TableCell align="center" sx={{ borderRight: `1px solid ${theme.palette.grey[400]}` }}>
+                                        <TableCell align="center" sx={{ 
+                                            borderRight: `1px solid ${theme.palette.grey[400]}`,
+                                            borderBottom: expandedLessonId === lesson.lessonId ? 'none' : `1px solid ${theme.palette.grey[400]}`,
+                                        }}>
                                         <Chip
                                             label={lesson.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
                                             color={lesson.isActive ? 'success' : 'error'}
                                             size="small"
                                         />
                                     </TableCell>
-                                    <TableCell align="center">
+                                        <TableCell align="center" sx={{
+                                            borderBottom: expandedLessonId === lesson.lessonId ? 'none' : `1px solid ${theme.palette.grey[400]}`,
+                                        }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                                  <IconButton
                                      size="small"
-                                     onClick={() => handleViewLessonDetails(lesson.lessonId)}
+                                         onClick={(e) => {
+                                             e.stopPropagation();
+                                             handleLessonClick(lesson.lessonId);
+                                         }}
                                      sx={{
                                          color: colors.primary,
                                          '&:hover': {
@@ -339,7 +491,25 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModul
                                  </IconButton>
                                  <IconButton
                                      size="small"
-                                                onClick={() => handleOpenToggleStatusDialog(lesson)}
+                                         onClick={(e) => {
+                                             e.stopPropagation();
+                                             handleOpenEditLessonDialog(lesson.lessonId);
+                                         }}
+                                         sx={{
+                                             color: colors.primary,
+                                             '&:hover': {
+                                                 bgcolor: colors.hover.primary
+                                             }
+                                         }}
+                                     >
+                                         <EditIcon fontSize="small" />
+                                     </IconButton>
+                                     <IconButton
+                                         size="small"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleOpenToggleStatusDialog(lesson);
+                                                    }}
                                      sx={{
                                                     color: lesson.isActive ? colors.error : colors.success,
                                          '&:hover': {
@@ -347,11 +517,399 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModul
                                          }
                                      }}
                                  >
-                                                {lesson.isActive ? <DeleteIcon fontSize="small" /> : <CheckIcon fontSize="small" />}
+                                                    {lesson.isActive ? <BlockIcon fontSize="small" /> : <CheckIcon fontSize="small" />}
                                  </IconButton>
                              </Box>
                                     </TableCell>
                                 </TableRow>
+                                    <TableRow>
+                                        <TableCell sx={{ paddingBottom: 0, paddingTop: 0, border: 'none' }} colSpan={6}>
+                                            <Collapse in={expandedLessonId === lesson.lessonId} timeout="auto" unmountOnExit>
+                                                <Box sx={{ 
+                                                    margin: 0, 
+                                                    p: 3, 
+                                                    bgcolor: theme.palette.mode === 'dark' 
+                                                        ? 'rgba(45, 45, 45, 0.5)' 
+                                                        : 'rgba(6, 169, 174, 0.02)', 
+                                                    borderRadius: 0,
+                                                    borderTop: `1px solid ${theme.palette.divider}`,
+                                                    borderBottom: expandedLessonId === lesson.lessonId && index === sortedLessons.length - 1 
+                                                        ? 'none' 
+                                                        : `1px solid ${theme.palette.divider}`
+                                                }}>
+                                                    {lessonDetails && expandedLessonId === lesson.lessonId && (
+                                                        <Box sx={{ mt: 2 }}>
+                                                            <Box sx={{ mb: 3 }}>
+                                                                <Typography variant="h5" sx={{ 
+                                                                    fontWeight: 'bold', 
+                                                                    color: colors.primary,
+                                                                    mb: 1 
+                                                                }}>
+                                                                    {lessonDetails.name} 
+                                                                </Typography>
+                                                                <Typography variant="body1" sx={{ 
+                                                                    color: theme.palette.text.secondary,
+                                                                    mb: 2
+                                                                }}>
+                                                                    {lessonDetails.description}
+                                                                </Typography>
+                                                            </Box>
+
+                                                            <Grid container spacing={2} sx={{ mb: 3 }}>
+                                                                <Grid item xs={12}>
+                                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                                                        <InfoChip
+                                                                            icon={<AccessTimeIcon />}
+                                                                            label={`Số tiết: ${lessonDetails.totalPeriods}`}
+                                                                            colors={colors}
+                                                                        />
+                                                                        {lessonDetails.lessonType && (
+                                                                            <InfoChip
+                                                                                icon={<MenuBookIcon />} 
+                                                                                label={`Loại bài học: ${lessonDetails.lessonType}`}
+                                                                                colors={colors}
+                                                                            />
+                                                                        )}
+                                                                        {lessonDetails.gradeNumber && (
+                                                                            <InfoChip
+                                                                                icon={<ClassIcon />} 
+                                                                                label={`Khối: ${lessonDetails.gradeNumber}`}
+                                                                                colors={colors}
+                                                                            />
+                                                                        )}
+                                                                         {lessonDetails.module && (
+                                                                            <InfoChip
+                                                                                icon={<ImportContactsIcon />} 
+                                                                                label={`Chủ đề: ${lessonDetails.module}`}
+                                                                                colors={colors}
+                                                                            />
+                                                                        )}
+                                                                        {lessonDetails.duration && (
+                                                                            <InfoChip
+                                                                                icon={<AccessTimeIcon />} 
+                                                                                label={`Thời lượng: ${lessonDetails.duration} phút`}
+                                                                                colors={colors}
+                                                                            />
+                                                                        )}
+                                                                    </Box>
+                                                                </Grid>
+                                                            </Grid>
+
+                                                            {/* Năng lực đặc biệt */}
+                                                            {lessonDetails.specialAbility && (
+                                                                <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(25, 118, 210, 0.05)', borderRadius: 2, borderLeft: `4px solid #1976d2` }}>
+                                                                    <Typography variant="h6" sx={{ 
+                                                                        color: '#1976d2',
+                                                                        mb: 2,
+                                                                        fontWeight: 600
+                                                                    }}>
+                                                                        🎯 Năng lực đặc biệt
+                                                                    </Typography>
+                                                                    <Typography variant="body2" sx={{ 
+                                                                        color: theme.palette.text.primary,
+                                                                        lineHeight: 1.6,
+                                                                        whiteSpace: 'pre-line'
+                                                                    }}>
+                                                                        {lessonDetails.specialAbility}
+                                                                    </Typography>
+                                                                </Box>
+                                                            )}
+
+                                                            {/* Năng lực chung */}
+                                                            {lessonDetails.generalCapacity && (
+                                                                <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(156, 39, 176, 0.05)', borderRadius: 2, borderLeft: `4px solid #9c27b0` }}>
+                                                                    <Typography variant="h6" sx={{ 
+                                                                        color: '#9c27b0',
+                                                                        mb: 2,
+                                                                        fontWeight: 600
+                                                                    }}>
+                                                                        🧠 Năng lực chung
+                                                                    </Typography>
+                                                                    <Typography variant="body2" sx={{ 
+                                                                        color: theme.palette.text.primary,
+                                                                        lineHeight: 1.6,
+                                                                        whiteSpace: 'pre-line'
+                                                                    }}>
+                                                                        {lessonDetails.generalCapacity}
+                                                                    </Typography>
+                                                                </Box>
+                                                            )}
+
+                                                            {/* Phẩm chất */}
+                                                            {lessonDetails.quality && (
+                                                                <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(46, 125, 50, 0.05)', borderRadius: 2, borderLeft: `4px solid #2e7d32` }}>
+                                                                    <Typography variant="h6" sx={{ 
+                                                                        color: '#2e7d32',
+                                                                        mb: 2,
+                                                                        fontWeight: 600
+                                                                    }}>
+                                                                        ⭐ Phẩm chất
+                                                                    </Typography>
+                                                                    <Typography variant="body2" sx={{ 
+                                                                        color: theme.palette.text.primary,
+                                                                        lineHeight: 1.6,
+                                                                        whiteSpace: 'pre-line'
+                                                                    }}>
+                                                                        {lessonDetails.quality}
+                                                                    </Typography>
+                                                                </Box>
+                                                            )}
+
+                                                            {/* Đồ dùng dạy học */}
+                                                            {lessonDetails.schoolSupply && (
+                                                                <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(237, 108, 2, 0.05)', borderRadius: 2, borderLeft: `4px solid #ed6c02` }}>
+                                                                    <Typography variant="h6" sx={{ 
+                                                                        color: '#ed6c02',
+                                                                        mb: 2,
+                                                                        fontWeight: 600
+                                                                    }}>
+                                                                        📚 Đồ dùng dạy học
+                                                                    </Typography>
+                                                                    <Typography variant="body2" sx={{ 
+                                                                        color: theme.palette.text.primary,
+                                                                        lineHeight: 1.6
+                                                                    }}>
+                                                                        {lessonDetails.schoolSupply}
+                                                                    </Typography>
+                                                                </Box>
+                                                            )}
+
+                                                            {/* Các hoạt động dạy học */}
+                                                            {(lessonDetails.startUp || lessonDetails.knowLedge || lessonDetails.practice || lessonDetails.apply) && (
+                                                                <>
+                                                                    <Typography variant="h6" sx={{ 
+                                                                        color: theme.palette.text.primary,
+                                                                        mt: 4,
+                                                                        mb: 2,
+                                                                        fontWeight: 600
+                                                                    }}>
+                                                                        📋 Các hoạt động dạy học
+                                                                    </Typography>
+
+                                                                    {/* Khởi động */}
+                                                                    {lessonDetails.startUp && (
+                                                                        <Box sx={{ mt: 2, p: 3, bgcolor: theme.palette.background.paper, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                                                <Typography variant="h6" sx={{ 
+                                                                                    color: colors.primary,
+                                                                                    fontWeight: 600,
+                                                                                    mr: 2
+                                                                                }}>
+                                                                                    🚀 Hoạt động Khởi động
+                                                                                </Typography>
+                                                                                <Chip 
+                                                                                    label={`${lessonDetails.startUp.duration} phút`}
+                                                                                    size="small"
+                                                                                    sx={{ bgcolor: 'rgba(6, 169, 174, 0.1)', color: colors.primary }}
+                                                                                />
+                                                                            </Box>
+                                                                            
+                                                                            <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                Mục tiêu:
+                                                                            </Typography>
+                                                                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2, lineHeight: 1.6 }}>
+                                                                                {lessonDetails.startUp.goal}
+                                                                            </Typography>
+
+                                                                            <Grid container spacing={2}>
+                                                                                <Grid item xs={12} md={6}>
+                                                                                    <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                        Hoạt động của giáo viên:
+                                                                                    </Typography>
+                                                                                    <Typography variant="body2" sx={{ 
+                                                                                        color: theme.palette.text.secondary, 
+                                                                                        lineHeight: 1.6,
+                                                                                        whiteSpace: 'pre-line'
+                                                                                    }}>
+                                                                                        {lessonDetails.startUp.teacherActivities}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                                <Grid item xs={12} md={6}>
+                                                                                    <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                        Hoạt động của học sinh:
+                                                                                    </Typography>
+                                                                                    <Typography variant="body2" sx={{ 
+                                                                                        color: theme.palette.text.secondary, 
+                                                                                        lineHeight: 1.6,
+                                                                                        whiteSpace: 'pre-line'
+                                                                                    }}>
+                                                                                        {lessonDetails.startUp.studentActivities}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                            </Grid>
+                                                                        </Box>
+                                                                    )}
+
+                                                                    {/* Hình thành kiến thức */}
+                                                                    {lessonDetails.knowLedge && (
+                                                                        <Box sx={{ mt: 2, p: 3, bgcolor: theme.palette.background.paper, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                                                <Typography variant="h6" sx={{ 
+                                                                                    color: '#1976d2',
+                                                                                    fontWeight: 600,
+                                                                                    mr: 2
+                                                                                }}>
+                                                                                    📚 Hoạt động Hình thành kiến thức
+                                                                                </Typography>
+                                                                                <Chip 
+                                                                                    label={`${lessonDetails.knowLedge.duration} phút`}
+                                                                                    size="small"
+                                                                                    sx={{ bgcolor: 'rgba(25, 118, 210, 0.1)', color: '#1976d2' }}
+                                                                                />
+                                                                            </Box>
+                                                                            
+                                                                            <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                Mục tiêu:
+                                                                            </Typography>
+                                                                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2, lineHeight: 1.6 }}>
+                                                                                {lessonDetails.knowLedge.goal}
+                                                                            </Typography>
+
+                                                                            <Grid container spacing={2}>
+                                                                                <Grid item xs={12} md={6}>
+                                                                                    <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                        Hoạt động của giáo viên:
+                                                                                    </Typography>
+                                                                                    <Typography variant="body2" sx={{ 
+                                                                                        color: theme.palette.text.secondary, 
+                                                                                        lineHeight: 1.6,
+                                                                                        whiteSpace: 'pre-line'
+                                                                                    }}>
+                                                                                        {lessonDetails.knowLedge.teacherActivities}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                                <Grid item xs={12} md={6}>
+                                                                                    <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                        Hoạt động của học sinh:
+                                                                                    </Typography>
+                                                                                    <Typography variant="body2" sx={{ 
+                                                                                        color: theme.palette.text.secondary, 
+                                                                                        lineHeight: 1.6,
+                                                                                        whiteSpace: 'pre-line'
+                                                                                    }}>
+                                                                                        {lessonDetails.knowLedge.studentActivities}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                            </Grid>
+                                                                        </Box>
+                                                                    )}
+
+                                                                    {/* Luyện tập */}
+                                                                    {lessonDetails.practice && (
+                                                                        <Box sx={{ mt: 2, p: 3, bgcolor: theme.palette.background.paper, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                                                <Typography variant="h6" sx={{ 
+                                                                                    color: '#9c27b0',
+                                                                                    fontWeight: 600,
+                                                                                    mr: 2
+                                                                                }}>
+                                                                                    💪 Hoạt động Luyện tập
+                                                                                </Typography>
+                                                                                <Chip 
+                                                                                    label={`${lessonDetails.practice.duration} phút`}
+                                                                                    size="small"
+                                                                                    sx={{ bgcolor: 'rgba(156, 39, 176, 0.1)', color: '#9c27b0' }}
+                                                                                />
+                                                                            </Box>
+                                                                            
+                                                                            <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                Mục tiêu:
+                                                                            </Typography>
+                                                                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2, lineHeight: 1.6 }}>
+                                                                                {lessonDetails.practice.goal}
+                                                                            </Typography>
+
+                                                                            <Grid container spacing={2}>
+                                                                                <Grid item xs={12} md={6}>
+                                                                                    <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                        Hoạt động của giáo viên:
+                                                                                    </Typography>
+                                                                                    <Typography variant="body2" sx={{ 
+                                                                                        color: theme.palette.text.secondary, 
+                                                                                        lineHeight: 1.6,
+                                                                                        whiteSpace: 'pre-line'
+                                                                                    }}>
+                                                                                        {lessonDetails.practice.teacherActivities}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                                <Grid item xs={12} md={6}>
+                                                                                    <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                        Hoạt động của học sinh:
+                                                                                    </Typography>
+                                                                                    <Typography variant="body2" sx={{ 
+                                                                                        color: theme.palette.text.secondary, 
+                                                                                        lineHeight: 1.6,
+                                                                                        whiteSpace: 'pre-line'
+                                                                                    }}>
+                                                                                        {lessonDetails.practice.studentActivities}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                            </Grid>
+                                                                        </Box>
+                                                                    )}
+
+                                                                    {/* Vận dụng */}
+                                                                    {lessonDetails.apply && (
+                                                                        <Box sx={{ mt: 2, p: 3, bgcolor: theme.palette.background.paper, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                                                <Typography variant="h6" sx={{ 
+                                                                                    color: '#2e7d32',
+                                                                                    fontWeight: 600,
+                                                                                    mr: 2
+                                                                                }}>
+                                                                                    🎯 Hoạt động Vận dụng
+                                                                                </Typography>
+                                                                                <Chip 
+                                                                                    label={`${lessonDetails.apply.duration} phút`}
+                                                                                    size="small"
+                                                                                    sx={{ bgcolor: 'rgba(46, 125, 50, 0.1)', color: '#2e7d32' }}
+                                                                                />
+                                                                            </Box>
+                                                                            
+                                                                            <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                Mục tiêu:
+                                                                            </Typography>
+                                                                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2, lineHeight: 1.6 }}>
+                                                                                {lessonDetails.apply.goal}
+                                                                            </Typography>
+
+                                                                            <Grid container spacing={2}>
+                                                                                <Grid item xs={12} md={6}>
+                                                                                    <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                        Hoạt động của giáo viên:
+                                                                                    </Typography>
+                                                                                    <Typography variant="body2" sx={{ 
+                                                                                        color: theme.palette.text.secondary, 
+                                                                                        lineHeight: 1.6,
+                                                                                        whiteSpace: 'pre-line'
+                                                                                    }}>
+                                                                                        {lessonDetails.apply.teacherActivities}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                                <Grid item xs={12} md={6}>
+                                                                                    <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                                                        Hoạt động của học sinh:
+                                                                                    </Typography>
+                                                                                    <Typography variant="body2" sx={{ 
+                                                                                        color: theme.palette.text.secondary, 
+                                                                                        lineHeight: 1.6,
+                                                                                        whiteSpace: 'pre-line'
+                                                                                    }}>
+                                                                                        {lessonDetails.apply.studentActivities}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                            </Grid>
+                                                                        </Box>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </Box>
+                                                    )}
+                                                </Box>
+                                            </Collapse>
+                                        </TableCell>
+                                    </TableRow>
+                                </React.Fragment>
                             ))}
                         </TableBody>
                     </Table>
@@ -366,7 +924,7 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModul
              <Dialog
                  open={openLessonDetailsDialog}
                  onClose={handleCloseLessonDetailsDialog}
-                 maxWidth="sm"
+                 maxWidth="lg"
                  fullWidth
              >
                  <DialogTitle>
@@ -422,55 +980,325 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModul
                                                  colors={colors}
                                              />
                                          )}
+                                         {lessonDetails.duration && (
+                                             <InfoChip
+                                                 icon={<AccessTimeIcon />} 
+                                                 label={`Thời lượng: ${lessonDetails.duration} phút`}
+                                                 colors={colors}
+                                             />
+                                         )}
                                      </Box>
                                  </Grid>
                              </Grid>
 
-                             <Box sx={{ mt: 3, p: 2, bgcolor: theme.palette.background.secondary, borderRadius: 2 }}>
-                                 <Typography variant="subtitle2" sx={{ 
-                                     color: theme.palette.text.secondary,
+                             {/* Năng lực đặc biệt */}
+                             {lessonDetails.specialAbility && (
+                                 <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(25, 118, 210, 0.05)', borderRadius: 2, borderLeft: `4px solid #1976d2` }}>
+                                     <Typography variant="h6" sx={{ 
+                                         color: '#1976d2',
                                      mb: 2,
-                                     display: 'flex',
-                                     alignItems: 'center',
-                                     gap: 1
+                                         fontWeight: 600
                                  }}>
-                                     <InfoIcon fontSize="small" />
-                                     Thông tin chi tiết khác
+                                         🎯 Năng lực đặc biệt
                                  </Typography>
-                                 <Grid container spacing={1}>
-                                     <Grid item xs={12} sm={6}> 
-                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                                             <strong>Mô tả:</strong> {lessonDetails.description}
+                                     <Typography variant="body2" sx={{ 
+                                         color: theme.palette.text.primary,
+                                         lineHeight: 1.6,
+                                         whiteSpace: 'pre-line'
+                                     }}>
+                                         {lessonDetails.specialAbility}
+                                     </Typography>
+                                 </Box>
+                             )}
+
+                             {/* Năng lực chung */}
+                             {lessonDetails.generalCapacity && (
+                                 <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(156, 39, 176, 0.05)', borderRadius: 2, borderLeft: `4px solid #9c27b0` }}>
+                                     <Typography variant="h6" sx={{ 
+                                         color: '#9c27b0',
+                                         mb: 2,
+                                         fontWeight: 600
+                                     }}>
+                                         🧠 Năng lực chung
+                                     </Typography>
+                                     <Typography variant="body2" sx={{ 
+                                         color: theme.palette.text.primary,
+                                         lineHeight: 1.6,
+                                         whiteSpace: 'pre-line'
+                                     }}>
+                                         {lessonDetails.generalCapacity}
+                                     </Typography>
+                                 </Box>
+                             )}
+
+                             {/* Phẩm chất */}
+                             {lessonDetails.quality && (
+                                 <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(46, 125, 50, 0.05)', borderRadius: 2, borderLeft: `4px solid #2e7d32` }}>
+                                     <Typography variant="h6" sx={{ 
+                                         color: '#2e7d32',
+                                         mb: 2,
+                                         fontWeight: 600
+                                     }}>
+                                         ⭐ Phẩm chất
+                                     </Typography>
+                                     <Typography variant="body2" sx={{ 
+                                         color: theme.palette.text.primary,
+                                         lineHeight: 1.6,
+                                         whiteSpace: 'pre-line'
+                                     }}>
+                                         {lessonDetails.quality}
+                                     </Typography>
+                                 </Box>
+                             )}
+
+                             {/* Đồ dùng dạy học */}
+                             {lessonDetails.schoolSupply && (
+                                 <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(237, 108, 2, 0.05)', borderRadius: 2, borderLeft: `4px solid #ed6c02` }}>
+                                     <Typography variant="h6" sx={{ 
+                                         color: '#ed6c02',
+                                         mb: 2,
+                                         fontWeight: 600
+                                     }}>
+                                         📚 Đồ dùng dạy học
+                                     </Typography>
+                                     <Typography variant="body2" sx={{ 
+                                         color: theme.palette.text.primary,
+                                         lineHeight: 1.6
+                                     }}>
+                                         {lessonDetails.schoolSupply}
+                                     </Typography>
+                                 </Box>
+                             )}
+
+                             {/* Các hoạt động dạy học */}
+                             {(lessonDetails.startUp || lessonDetails.knowLedge || lessonDetails.practice || lessonDetails.apply) && (
+                                 <>
+                                     <Typography variant="h6" sx={{ 
+                                         color: theme.palette.text.primary,
+                                         mt: 4,
+                                         mb: 2,
+                                         fontWeight: 600
+                                     }}>
+                                         📋 Các hoạt động dạy học
+                                     </Typography>
+
+                                     {/* Khởi động */}
+                                     {lessonDetails.startUp && (
+                                         <Box sx={{ mt: 2, p: 3, bgcolor: theme.palette.background.paper, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                 <Typography variant="h6" sx={{ 
+                                                     color: colors.primary,
+                                                     fontWeight: 600,
+                                                     mr: 2
+                                                 }}>
+                                                     🚀 Hoạt động Khởi động
+                                                 </Typography>
+                                                 <Chip 
+                                                     label={`${lessonDetails.startUp.duration} phút`}
+                                                     size="small"
+                                                     sx={{ bgcolor: 'rgba(6, 169, 174, 0.1)', color: colors.primary }}
+                                                 />
+                                             </Box>
+                                             
+                                             <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                 Mục tiêu:
+                                             </Typography>
+                                             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2, lineHeight: 1.6 }}>
+                                                 {lessonDetails.startUp.goal}
+                                             </Typography>
+
+                                             <Grid container spacing={2}>
+                                                 <Grid item xs={12} md={6}>
+                                                     <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                         Hoạt động của giáo viên:
+                                                     </Typography>
+                                                     <Typography variant="body2" sx={{ 
+                                                         color: theme.palette.text.secondary, 
+                                                         lineHeight: 1.6,
+                                                         whiteSpace: 'pre-line'
+                                                     }}>
+                                                         {lessonDetails.startUp.teacherActivities}
                                          </Typography>
                                      </Grid>
-                                      <Grid item xs={12} sm={6}> 
-                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                                             <strong>Tổng số tiết:</strong> {lessonDetails.totalPeriods}
+                                                 <Grid item xs={12} md={6}>
+                                                     <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                         Hoạt động của học sinh:
+                                                     </Typography>
+                                                     <Typography variant="body2" sx={{ 
+                                                         color: theme.palette.text.secondary, 
+                                                         lineHeight: 1.6,
+                                                         whiteSpace: 'pre-line'
+                                                     }}>
+                                                         {lessonDetails.startUp.studentActivities}
                                          </Typography>
                                      </Grid>
-                                      {/* lessonType, note, week, module, gradeNumber details */}
-                                      <Grid item xs={12} sm={6}> 
-                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                                             <strong>Loại bài học:</strong> {lessonDetails.lessonType}
+                                             </Grid>
+                                         </Box>
+                                     )}
+
+                                     {/* Hình thành kiến thức */}
+                                     {lessonDetails.knowLedge && (
+                                         <Box sx={{ mt: 2, p: 3, bgcolor: theme.palette.background.paper, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                 <Typography variant="h6" sx={{ 
+                                                     color: '#1976d2',
+                                                     fontWeight: 600,
+                                                     mr: 2
+                                                 }}>
+                                                     📚 Hoạt động Hình thành kiến thức
+                                                 </Typography>
+                                                 <Chip 
+                                                     label={`${lessonDetails.knowLedge.duration} phút`}
+                                                     size="small"
+                                                     sx={{ bgcolor: 'rgba(25, 118, 210, 0.1)', color: '#1976d2' }}
+                                                 />
+                                             </Box>
+                                             
+                                             <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                 Mục tiêu:
+                                             </Typography>
+                                             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2, lineHeight: 1.6 }}>
+                                                 {lessonDetails.knowLedge.goal}
+                                             </Typography>
+
+                                             <Grid container spacing={2}>
+                                                 <Grid item xs={12} md={6}>
+                                                     <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                         Hoạt động của giáo viên:
+                                                     </Typography>
+                                                     <Typography variant="body2" sx={{ 
+                                                         color: theme.palette.text.secondary, 
+                                                         lineHeight: 1.6,
+                                                         whiteSpace: 'pre-line'
+                                                     }}>
+                                                         {lessonDetails.knowLedge.teacherActivities}
                                          </Typography>
                                      </Grid>
-                                      <Grid item xs={12} sm={6}> 
-                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                                             <strong>Ghi chú:</strong> {lessonDetails.note}
+                                                 <Grid item xs={12} md={6}>
+                                                     <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                         Hoạt động của học sinh:
+                                                     </Typography>
+                                                     <Typography variant="body2" sx={{ 
+                                                         color: theme.palette.text.secondary, 
+                                                         lineHeight: 1.6,
+                                                         whiteSpace: 'pre-line'
+                                                     }}>
+                                                         {lessonDetails.knowLedge.studentActivities}
                                          </Typography>
                                      </Grid>
-                                      <Grid item xs={12} sm={6}> 
-                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                                             <strong>Chủ đề:</strong> {lessonDetails.module}
+                                             </Grid>
+                                         </Box>
+                                     )}
+
+                                     {/* Luyện tập */}
+                                     {lessonDetails.practice && (
+                                         <Box sx={{ mt: 2, p: 3, bgcolor: theme.palette.background.paper, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                 <Typography variant="h6" sx={{ 
+                                                     color: '#9c27b0',
+                                                     fontWeight: 600,
+                                                     mr: 2
+                                                 }}>
+                                                     💪 Hoạt động Luyện tập
+                                                 </Typography>
+                                                 <Chip 
+                                                     label={`${lessonDetails.practice.duration} phút`}
+                                                     size="small"
+                                                     sx={{ bgcolor: 'rgba(156, 39, 176, 0.1)', color: '#9c27b0' }}
+                                                 />
+                                             </Box>
+                                             
+                                             <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                 Mục tiêu:
+                                             </Typography>
+                                             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2, lineHeight: 1.6 }}>
+                                                 {lessonDetails.practice.goal}
+                                             </Typography>
+
+                                             <Grid container spacing={2}>
+                                                 <Grid item xs={12} md={6}>
+                                                     <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                         Hoạt động của giáo viên:
+                                                     </Typography>
+                                                     <Typography variant="body2" sx={{ 
+                                                         color: theme.palette.text.secondary, 
+                                                         lineHeight: 1.6,
+                                                         whiteSpace: 'pre-line'
+                                                     }}>
+                                                         {lessonDetails.practice.teacherActivities}
                                          </Typography>
                                      </Grid>
-                                      <Grid item xs={12} sm={6}> 
-                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                                             <strong>Khối:</strong> {lessonDetails.gradeNumber}
+                                                 <Grid item xs={12} md={6}>
+                                                     <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                         Hoạt động của học sinh:
+                                                     </Typography>
+                                                     <Typography variant="body2" sx={{ 
+                                                         color: theme.palette.text.secondary, 
+                                                         lineHeight: 1.6,
+                                                         whiteSpace: 'pre-line'
+                                                     }}>
+                                                         {lessonDetails.practice.studentActivities}
                                          </Typography>
                                      </Grid>
                                  </Grid>
                              </Box>
+                                     )}
+
+                                     {/* Vận dụng */}
+                                     {lessonDetails.apply && (
+                                         <Box sx={{ mt: 2, p: 3, bgcolor: theme.palette.background.paper, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                 <Typography variant="h6" sx={{ 
+                                                     color: '#2e7d32',
+                                                     fontWeight: 600,
+                                                     mr: 2
+                                                 }}>
+                                                     🎯 Hoạt động Vận dụng
+                                                 </Typography>
+                                                 <Chip 
+                                                     label={`${lessonDetails.apply.duration} phút`}
+                                                     size="small"
+                                                     sx={{ bgcolor: 'rgba(46, 125, 50, 0.1)', color: '#2e7d32' }}
+                                                 />
+                                             </Box>
+                                             
+                                             <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                 Mục tiêu:
+                                             </Typography>
+                                             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2, lineHeight: 1.6 }}>
+                                                 {lessonDetails.apply.goal}
+                                             </Typography>
+
+                                             <Grid container spacing={2}>
+                                                 <Grid item xs={12} md={6}>
+                                                     <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                         Hoạt động của giáo viên:
+                                                     </Typography>
+                                                     <Typography variant="body2" sx={{ 
+                                                         color: theme.palette.text.secondary, 
+                                                         lineHeight: 1.6,
+                                                         whiteSpace: 'pre-line'
+                                                     }}>
+                                                         {lessonDetails.apply.teacherActivities}
+                                                     </Typography>
+                                                 </Grid>
+                                                 <Grid item xs={12} md={6}>
+                                                     <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 1 }}>
+                                                         Hoạt động của học sinh:
+                                                     </Typography>
+                                                     <Typography variant="body2" sx={{ 
+                                                         color: theme.palette.text.secondary, 
+                                                         lineHeight: 1.6,
+                                                         whiteSpace: 'pre-line'
+                                                     }}>
+                                                         {lessonDetails.apply.studentActivities}
+                                                     </Typography>
+                                                 </Grid>
+                                             </Grid>
+                                         </Box>
+                                     )}
+                                 </>
+                             )}
                          </Box>
                      )}
                  </DialogContent>

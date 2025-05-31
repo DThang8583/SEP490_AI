@@ -42,7 +42,7 @@ import LessonDetailView from './LessonDetailView';
 // API URL
 const TEACHER_LESSONS_API_URL = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans';
 
-// Palette colors
+// Color palette for consistency
 const COLORS = {
     primary: '#06A9AE',
     secondary: '#1976d2',
@@ -68,6 +68,10 @@ const COLORS = {
             text: '#FF4842',
         },
     },
+    hover: {
+        primary: 'rgba(6, 169, 174, 0.08)',
+        secondary: 'rgba(25, 118, 210, 0.08)',
+    }
 };
 
 // Styled components
@@ -78,12 +82,12 @@ const DashboardCard = styled(Card)(({ theme, isDarkMode }) => ({
         : '0 8px 24px rgba(0, 0, 0, 0.08)',
     transition: 'all 0.3s ease',
     height: '100%',
-    background: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+    background: isDarkMode ? '#1E1E1E' : COLORS.background.paper,
 }));
 
 const CardHeader = styled(Box)(({ theme, bgcolor, isDarkMode }) => ({
     padding: '16px',
-    background: isDarkMode ? '#2D3436' : (bgcolor || '#06A9AE'),
+    background: isDarkMode ? '#2D3436' : (bgcolor || COLORS.primary),
     color: '#fff',
     display: 'flex',
     alignItems: 'center',
@@ -93,7 +97,7 @@ const CardHeader = styled(Box)(({ theme, bgcolor, isDarkMode }) => ({
 }));
 
 const StyledListItem = styled(ListItem)(({ isapproved, isDarkMode }) => ({
-    backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+    backgroundColor: isDarkMode ? '#1E1E1E' : COLORS.background.paper,
     borderRadius: 8,
     marginBottom: 16,
     padding: 16,
@@ -116,7 +120,7 @@ const StyledListItem = styled(ListItem)(({ isapproved, isDarkMode }) => ({
         top: 0,
         width: '4px',
         height: '100%',
-        backgroundColor: isapproved === 'true' ? '#00AB55' : '#FF4842',
+        backgroundColor: isapproved === 'true' ? COLORS.success : COLORS.error,
         opacity: 0.7,
         borderTopLeftRadius: 8,
         borderBottomLeftRadius: 8,
@@ -128,7 +132,7 @@ const FilterButton = styled(Button)(({ active, isReject, isDarkMode }) => ({
     padding: '12px 24px',
     textTransform: 'none',
     backgroundColor: active 
-        ? (isReject ? '#FF4842' : '#06A9AE') 
+        ? (isReject ? COLORS.error : COLORS.primary) 
         : isDarkMode 
             ? 'rgba(255, 255, 255, 0.05)' 
             : 'rgba(255, 255, 255, 0.8)',
@@ -137,14 +141,14 @@ const FilterButton = styled(Button)(({ active, isReject, isDarkMode }) => ({
         : isDarkMode 
             ? '#fff' 
             : isReject 
-                ? '#FF4842' 
-                : '#212B36',
+                ? COLORS.error 
+                : COLORS.text.primary,
     fontWeight: 600,
     fontSize: '1.1rem',
     boxShadow: active ? '0 4px 12px rgba(0, 0, 0, 0.15)' : 'none',
     '&:hover': {
         backgroundColor: active 
-            ? (isReject ? '#FF4842' : '#06A9AE') 
+            ? (isReject ? COLORS.error : COLORS.primary) 
             : isDarkMode 
                 ? 'rgba(255, 255, 255, 0.1)' 
                 : (isReject ? 'rgba(255, 72, 66, 0.1)' : 'rgba(255, 255, 255, 0.9)'),
@@ -162,15 +166,15 @@ const StatusBadge = styled(Chip)(({ status }) => ({
     }
 }));
 
-const InfoChip = styled(Chip)({
+const InfoChip = styled(Chip)(({ theme }) => ({
     margin: '4px 4px 4px 0',
     borderRadius: 12,
-    backgroundColor: 'rgba(25, 118, 210, 0.08)',
-    color: COLORS.secondary,
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.2)' : 'rgba(25, 118, 210, 0.08)',
+    color: theme.palette.mode === 'dark' ? COLORS.background.paper : COLORS.secondary,
     '.MuiChip-icon': {
         color: COLORS.secondary,
     }
-});
+}));
 
 const SearchTextField = styled(TextField)(({ isDarkMode }) => ({
     marginBottom: 16,
@@ -195,11 +199,11 @@ const SearchTextField = styled(TextField)(({ isDarkMode }) => ({
             borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
         },
         '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: isDarkMode ? '#06A9AE' : '#06A9AE',
+            borderColor: isDarkMode ? COLORS.primary : COLORS.primary,
         },
     },
     '& .MuiInputBase-input': {
-        color: isDarkMode ? '#fff' : '#212B36',
+        color: isDarkMode ? '#fff' : COLORS.text.primary,
     },
 }));
 
@@ -211,7 +215,7 @@ const DetailSection = styled(Box)(({ isDarkMode }) => ({
     boxShadow: isDarkMode 
         ? '0 2px 8px rgba(0, 0, 0, 0.2)' 
         : '0 2px 8px rgba(0, 0, 0, 0.04)',
-    borderLeft: `4px solid #06A9AE`,
+    borderLeft: `4px solid ${COLORS.primary}`,
     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
     '&:hover': {
         transform: 'translateY(-3px)',
@@ -265,7 +269,9 @@ const LessonItem = ({ lesson, handleViewDetail, isDarkMode }) => {
         >
             <Grid container spacing={2} alignItems="center">
                 <Grid item xs={12} md={9}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>{lesson.title}</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                        {lesson.title}
+                    </Typography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                         <InfoChip
                             size="small"
@@ -463,8 +469,8 @@ const LessonReview = () => {
                 }}
             >
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                    <CircularProgress size={50} sx={{ color: '#06A9AE' }} />
-                    <Typography variant="body1" sx={{ color: isDarkMode ? '#fff' : '#212B36' }}>
+                    <CircularProgress size={50} sx={{ color: COLORS.primary }} />
+                    <Typography variant="body1" sx={{ color: isDarkMode ? '#fff' : COLORS.text.primary }}>
                         Đang tải thông tin...
                     </Typography>
                 </Box>
@@ -473,23 +479,21 @@ const LessonReview = () => {
     }
 
     return (
-        <Box
-            sx={{
-                width: '100%',
-                minHeight: '100vh',
-                background: isDarkMode 
-                    ? 'linear-gradient(135deg, #1E1E1E 0%, #2D3436 100%)'
-                    : 'linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%)',
-                padding: 3,
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 1100,
-                overflow: 'auto'
-            }}
-        >
+        <Container maxWidth="lg" sx={{
+            minHeight: '100vh',
+            background: isDarkMode 
+                ? 'linear-gradient(135deg, #1E1E1E 0%, #2D3436 100%)'
+                : 'linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%)',
+            py: 6,
+            px: { xs: 3, md: 5 },
+            overflowY: 'auto',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1100,
+        }}>
             {/* Nếu đang xem chi tiết thì hiển thị component chi tiết */}
             {selectedLessonId ? (
                 <LessonDetailView
@@ -500,198 +504,197 @@ const LessonReview = () => {
             ) : (
                 /* Ngược lại hiển thị danh sách giáo án */
                 <Box sx={{ py: 4, px: 3 }}>
-                    <Container maxWidth="lg">
-                        <Fade in timeout={500}>
-                            <Box>
-                                <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
-                                    <AssignmentIcon sx={{ 
-                                        fontSize: 36, 
-                                        color: '#06A9AE', 
-                                        mr: 2 
-                                    }} />
-                                    <Box>
-                                        <Typography 
-                                            variant="h4" 
-                                            sx={{ 
-                                                fontWeight: 700, 
-                                                color: isDarkMode ? '#fff' : '#212B36' 
-                                            }}
-                                        >
-                                            Giáo án đã xem xét
-                                        </Typography>
-                                        <Typography 
-                                            variant="subtitle1" 
-                                            sx={{ 
-                                                color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381', 
-                                                mt: 0.5 
-                                            }}
-                                        >
-                                            Quản lý giáo án khối {userGradeNumber || '?'}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                {error && (
-                                    <Alert
-                                        severity="error"
-                                        sx={{
-                                            mb: 4,
-                                            borderLeft: '4px solid #FF4842',
-                                            borderRadius: 2,
-                                            bgcolor: isDarkMode ? 'rgba(255, 72, 66, 0.15)' : 'rgba(255, 72, 66, 0.08)',
+                    <Fade in timeout={500}>
+                        <Box>
+                            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+                                <AssignmentIcon sx={{ 
+                                    fontSize: 36, 
+                                    color: COLORS.primary, 
+                                    mr: 2 
+                                }} />
+                                <Box>
+                                    <Typography 
+                                        variant="h4" 
+                                        sx={{ 
+                                            fontWeight: 700, 
+                                            color: isDarkMode ? '#fff' : COLORS.text.primary,
+                                            lineHeight: 1.2,
                                         }}
                                     >
-                                        {error}
-                                    </Alert>
-                                )}
+                                        Giáo án đã xem xét
+                                    </Typography>
+                                    <Typography 
+                                        variant="subtitle1" 
+                                        sx={{ 
+                                            color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary, 
+                                            mt: 0.5 
+                                        }}
+                                    >
+                                        Quản lý giáo án khối {userGradeNumber || '?'}
+                                    </Typography>
+                                </Box>
+                            </Box>
 
-                                <DashboardCard isDarkMode={isDarkMode}>
-                                    <CardHeader isDarkMode={isDarkMode}>
-                                        <Box display="flex" alignItems="center">
-                                            <FilterListIcon sx={{ mr: 1 }} />
-                                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                                Danh sách giáo án - Khối {userGradeNumber}
-                                            </Typography>
-                                        </Box>
-                                    </CardHeader>
-                                    <CardContent sx={{ p: 3 }}>
-                                        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-                                            <FilterButton
-                                                active={filterStatus === 'Approved'}
-                                                onClick={() => setFilterStatus('Approved')}
-                                                startIcon={<CheckIcon />}
-                                                isReject={false}
-                                                isDarkMode={isDarkMode}
-                                            >
-                                                Đã duyệt
-                                            </FilterButton>
-                                            <FilterButton
-                                                active={filterStatus === 'Rejected'}
-                                                onClick={() => setFilterStatus('Rejected')}
-                                                startIcon={<CloseIcon />}
-                                                isReject={true}
-                                                isDarkMode={isDarkMode}
-                                            >
-                                                Đã từ chối
-                                            </FilterButton>
-                                        </Box>
+                            {error && (
+                                <Alert
+                                    severity="error"
+                                    sx={{
+                                        mb: 4,
+                                        borderLeft: `4px solid ${COLORS.error}`,
+                                        borderRadius: 2,
+                                        bgcolor: isDarkMode ? 'rgba(255, 72, 66, 0.15)' : 'rgba(255, 72, 66, 0.08)',
+                                    }}
+                                >
+                                    {error}
+                                </Alert>
+                            )}
 
-                                        <SearchTextField
-                                            fullWidth
-                                            placeholder="Tìm kiếm theo tên giáo án..."
-                                            value={searchTerm}
-                                            onChange={handleSearchChange}
+                            <DashboardCard isDarkMode={isDarkMode}>
+                                <CardHeader isDarkMode={isDarkMode}>
+                                    <Box display="flex" alignItems="center">
+                                        <FilterListIcon sx={{ mr: 1 }} />
+                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                            Danh sách giáo án - Khối {userGradeNumber}
+                                        </Typography>
+                                    </Box>
+                                </CardHeader>
+                                <CardContent sx={{ p: 3 }}>
+                                    <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                                        <FilterButton
+                                            active={filterStatus === 'Approved'}
+                                            onClick={() => setFilterStatus('Approved')}
+                                            startIcon={<CheckIcon />}
+                                            isReject={false}
                                             isDarkMode={isDarkMode}
-                                            InputProps={{
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <SearchIcon sx={{ 
-                                                            color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381' 
-                                                        }} />
-                                                    </InputAdornment>
-                                                ),
-                                                endAdornment: searchTerm && (
-                                                    <InputAdornment position="end">
-                                                        <IconButton
-                                                            aria-label="clear search"
-                                                            onClick={handleClearSearch}
-                                                            edge="end"
-                                                            size="small"
-                                                            sx={{
-                                                                color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381',
-                                                                '&:hover': {
-                                                                    color: isDarkMode ? '#fff' : '#212B36',
-                                                                }
-                                                            }}
-                                                        >
-                                                            <ClearIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </InputAdornment>
-                                                ),
+                                        >
+                                            Đã duyệt
+                                        </FilterButton>
+                                        <FilterButton
+                                            active={filterStatus === 'Rejected'}
+                                            onClick={() => setFilterStatus('Rejected')}
+                                            startIcon={<CloseIcon />}
+                                            isReject={true}
+                                            isDarkMode={isDarkMode}
+                                        >
+                                            Đã từ chối
+                                        </FilterButton>
+                                    </Box>
+
+                                    <SearchTextField
+                                        fullWidth
+                                        placeholder="Tìm kiếm theo tên giáo án..."
+                                        value={searchTerm}
+                                        onChange={handleSearchChange}
+                                        isDarkMode={isDarkMode}
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <SearchIcon sx={{ 
+                                                        color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary 
+                                                    }} />
+                                                </InputAdornment>
+                                            ),
+                                            endAdornment: searchTerm && (
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        aria-label="clear search"
+                                                        onClick={handleClearSearch}
+                                                        edge="end"
+                                                        size="small"
+                                                        sx={{
+                                                            color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary,
+                                                            '&:hover': {
+                                                                color: isDarkMode ? '#fff' : COLORS.text.primary,
+                                                            }
+                                                        }}
+                                                    >
+                                                        <ClearIcon fontSize="small" />
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
+
+                                    <Divider sx={{ 
+                                        mb: 3,
+                                        bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' 
+                                    }} />
+
+                                    {lessons.length === 0 ? (
+                                        <Box
+                                            sx={{
+                                                p: 4,
+                                                textAlign: 'center',
+                                                backgroundColor: isDarkMode 
+                                                    ? 'rgba(255, 255, 255, 0.05)' 
+                                                    : 'rgba(255, 255, 255, 0.5)',
+                                                borderRadius: 2,
+                                                borderStyle: 'dashed',
+                                                borderWidth: 1,
+                                                borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#ddd'
                                             }}
-                                        />
-
-                                        <Divider sx={{ 
-                                            mb: 3,
-                                            bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' 
-                                        }} />
-
-                                        {lessons.length === 0 ? (
-                                            <Box
-                                                sx={{
-                                                    p: 4,
-                                                    textAlign: 'center',
-                                                    backgroundColor: isDarkMode 
-                                                        ? 'rgba(255, 255, 255, 0.05)' 
-                                                        : 'rgba(255, 255, 255, 0.5)',
-                                                    borderRadius: 2,
-                                                    borderStyle: 'dashed',
-                                                    borderWidth: 1,
-                                                    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#ddd'
+                                        >
+                                            <Typography 
+                                                variant="body1" 
+                                                sx={{ 
+                                                    color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary 
                                                 }}
                                             >
-                                                <Typography 
-                                                    variant="body1" 
-                                                    sx={{ 
-                                                        color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381' 
-                                                    }}
-                                                >
-                                                    {searchTerm
-                                                        ? `Không tìm thấy giáo án nào với từ khóa "${searchTerm}"`
-                                                        : `Không có giáo án nào ${filterStatus === 'Approved' ? 'đã duyệt' : 'đã từ chối'} cho khối ${userGradeNumber}.`}
-                                                </Typography>
-                                            </Box>
-                                        ) : (
-                                            <>
-                                                <List sx={{ p: 0 }}>
-                                                    {lessons.map((lesson) => (
-                                                        <LessonItem
-                                                            key={lesson.id}
-                                                            lesson={lesson}
-                                                            handleViewDetail={() => handleLessonSelect(lesson.id)}
-                                                            isDarkMode={isDarkMode}
-                                                        />
-                                                    ))}
-                                                </List>
+                                                {searchTerm
+                                                    ? `Không tìm thấy giáo án nào với từ khóa "${searchTerm}"`
+                                                    : `Không có giáo án nào ${filterStatus === 'Approved' ? 'đã duyệt' : 'đã từ chối'} cho khối ${userGradeNumber}.`}
+                                            </Typography>
+                                        </Box>
+                                    ) : (
+                                        <>
+                                            <List sx={{ p: 0 }}>
+                                                {lessons.map((lesson) => (
+                                                    <LessonItem
+                                                        key={lesson.id}
+                                                        lesson={lesson}
+                                                        handleViewDetail={() => handleLessonSelect(lesson.id)}
+                                                        isDarkMode={isDarkMode}
+                                                    />
+                                                ))}
+                                            </List>
 
-                                                {lessons.length > 0 && (
-                                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                                                        <Pagination
-                                                            count={totalPages}
-                                                            page={page}
-                                                            onChange={handlePageChange}
-                                                            shape="rounded"
-                                                            sx={{
-                                                                '& .MuiPaginationItem-root': {
-                                                                    fontWeight: 600,
-                                                                    color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#637381',
+                                            {lessons.length > 0 && (
+                                                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                                                    <Pagination
+                                                        count={totalPages}
+                                                        page={page}
+                                                        onChange={handlePageChange}
+                                                        shape="rounded"
+                                                        sx={{
+                                                            '& .MuiPaginationItem-root': {
+                                                                fontWeight: 600,
+                                                                color: isDarkMode ? 'rgba(255,255,255,0.7)' : COLORS.text.secondary,
+                                                            },
+                                                            '& .Mui-selected': {
+                                                                backgroundColor: `${isDarkMode ? COLORS.primary : COLORS.primary} !important`,
+                                                                color: '#fff !important',
+                                                                '&:hover': {
+                                                                    backgroundColor: `${isDarkMode ? COLORS.primary : COLORS.primary} !important`,
                                                                 },
-                                                                '& .Mui-selected': {
-                                                                    backgroundColor: `${isDarkMode ? '#06A9AE' : '#06A9AE'} !important`,
-                                                                    color: '#fff !important',
-                                                                    '&:hover': {
-                                                                        backgroundColor: `${isDarkMode ? '#06A9AE' : '#06A9AE'} !important`,
-                                                                    },
-                                                                },
-                                                                '& .MuiPaginationItem-page:hover': {
-                                                                    backgroundColor: isDarkMode 
-                                                                        ? 'rgba(6, 169, 174, 0.2)' 
-                                                                        : 'rgba(6, 169, 174, 0.1)',
-                                                                },
-                                                            }}
-                                                        />
-                                                    </Box>
-                                                )}
-                                            </>
-                                        )}
-                                    </CardContent>
-                                </DashboardCard>
-                            </Box>
-                        </Fade>
-                    </Container>
+                                                            },
+                                                            '& .MuiPaginationItem-page:hover': {
+                                                                backgroundColor: isDarkMode 
+                                                                    ? COLORS.hover.primary 
+                                                                    : COLORS.hover.primary,
+                                                            },
+                                                        }}
+                                                    />
+                                                </Box>
+                                            )}
+                                        </>
+                                    )}
+                                </CardContent>
+                            </DashboardCard>
+                        </Box>
+                    </Fade>
                 </Box>
             )}
-        </Box>
+        </Container>
     );
 };
 

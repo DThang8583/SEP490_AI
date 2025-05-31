@@ -25,7 +25,6 @@ import CurriculumFramework from './Components/SubjectSpecialistManager/Curriculu
 import CurriculumDetail from './Components/SubjectSpecialistManager/Curriculum/CurriculumDetail';
 import LessonExport from './Components/SubjectSpecialistManager/Lesson/LessonExport';
 import Profile from './Components/SubjectSpecialistManager/Profile';
-import EditProfile from './Components/SubjectSpecialistManager/EditProfile';
 import ChangePassword from './Components/SubjectSpecialistManager/ChangePassword';
 import ForgotPassword from './page/ForgotPassword';
 import TeacherProfile from './Components/Teacher/TeacherProfile';
@@ -93,7 +92,6 @@ const ManagerRoutes = ({ sidebarOpen, toggleSidebar }) => {
         <Route path="/curriculum-detail/:id" element={<CurriculumDetail sidebarOpen={sidebarOpen} />} />
         <Route path="/lesson-export" element={<LessonExport sidebarOpen={sidebarOpen} />} />
         <Route path="/profile" element={<Profile sidebarOpen={sidebarOpen} />} />
-        <Route path="/edit-profile" element={<EditProfile sidebarOpen={sidebarOpen} />} />
         <Route path="/change-password" element={<ChangePassword sidebarOpen={sidebarOpen} />} />
         <Route path="/forgot-password" element={<ForgotPassword sidebarOpen={sidebarOpen} />} />
         <Route
