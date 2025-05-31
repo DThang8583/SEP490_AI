@@ -83,7 +83,7 @@ const menuItems = [
   { text: "Các Giáo án", path: "/các-Giáo-án", icon: <Calculate />, requiresLogin: true },
   { text: "Bài học", path: "/lessons", requiresLogin: true },
   { text: "Bài tập", path: "/bai-tap", requiresLogin: true },
-  { text: "Khung chương trình", path: "/khung-chuong-trinh", requiresLogin: true },
+  { text: "Khung chương trình cho giáo viên", path: "/khung-chuong-trinh", requiresLogin: true },
 ];
 
 const settings = [
