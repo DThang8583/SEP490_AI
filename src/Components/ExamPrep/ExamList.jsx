@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -18,7 +18,8 @@ import {
   useMediaQuery,
   Pagination,
   TextField,
-  Button
+  Button,
+  IconButton,
 } from '@mui/material';
 import {
   Quiz as QuizIcon,
@@ -26,7 +27,8 @@ import {
   Timer as TimerIcon,
   Assignment as AssignmentIcon,
   Search as SearchIcon,
-  AddCircleOutline as AddCircleOutlineIcon
+  AddCircleOutline as AddCircleOutlineIcon,
+  DeleteOutline as DeleteOutlineIcon,
 } from '@mui/icons-material';
 import { useTheme as useCustomTheme } from '../../context/ThemeContext';
 import CreateExerciseModal from '../CreateExerciseModal';
@@ -45,46 +47,86 @@ const ExamList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-
+  
   // State for modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // State for delete loading (optional, for individual item loading)
+  const [deletingId, setDeletingId] = useState(null);
 
   // Handlers for modal
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
   // Lấy danh sách bài quiz
-  useEffect(() => {
-    const fetchQuizzes = async () => {
+  // Wrap fetchQuizzes in useCallback
+  const fetchQuizzes = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/quizzes`, {
+        params: {
+          Page: page,
+          PageSize: pageSize,
+          SearchTerm: searchTerm
+        },
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}` // Include auth token
+        }
+      });
+      console.log("API Quizzes response:", response.data);
+      
+      if (response.data && response.data.code === 0 && response.data.data) {
+        setQuizzes(response.data.data.items || []);
+        setTotalPages(response.data.data.totalPages || 1);
+        setTotalRecords(response.data.data.totalRecords || 0);
+        console.log("Danh sách bài quiz:", response.data.data.items);
+      } else {
+        setError(response.data.message || 'Không thể tải danh sách bài quiz');
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách bài quiz:', err);
+      setError(err.message || 'Lỗi khi tải danh sách bài quiz');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, searchTerm]); // Dependencies for useCallback
+
+  // Add handleDeleteQuiz function
+  const handleDeleteQuiz = async (quizId, quizName) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa bài tập "${quizName}" không?`)) {
+      setDeletingId(quizId);
       try {
-        setLoading(true);
-        const response = await axios.get(`https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/quizzes`, {
-          params: {
-            Page: page,
-            PageSize: pageSize,
-            SearchTerm: searchTerm
-          }
-        });
-        console.log("API Quizzes response:", response.data);
-        
-        if (response.data && response.data.code === 0 && response.data.data) {
-          setQuizzes(response.data.data.items || []);
-          setTotalPages(response.data.data.totalPages || 1);
-          setTotalRecords(response.data.data.totalRecords || 0);
-          console.log("Danh sách bài quiz:", response.data.data.items);
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          setError("Authentication token not found. Please log in.");
+          setDeletingId(null);
+          return;
+        }
+
+        const response = await axios.delete(
+          `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/quizzes/${quizId}`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        console.log(response.data.code)
+        if (response.data.code === 0 || response.data.code === 31) {
+          alert(`Đã xóa bài tập "${quizName}" thành công.`);
+          // Refresh the list after successful deletion
+          fetchQuizzes();
         } else {
-          setError('Không thể tải danh sách bài quiz');
+          setError(response.data.message || `Lỗi khi xóa bài tập "${quizName}".`);
         }
       } catch (err) {
-        console.error('Lỗi khi tải danh sách bài quiz:', err);
-        setError('Lỗi khi tải danh sách bài quiz');
+        console.error('Error deleting quiz:', err);
+        setError(err.message || `Lỗi khi xóa bài tập "${quizName}".`);
       } finally {
-        setLoading(false);
+        setDeletingId(null);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchQuizzes();
-  }, [page, pageSize, searchTerm]);
+  }, [fetchQuizzes]); // Depend on fetchQuizzes (useCallback)
 
   const handleQuizClick = (quizId) => {
     navigate(`/bai-tap/${quizId}`);
@@ -220,6 +262,7 @@ const ExamList = () => {
                       }
                     }}
                   >
+                    {/* CardActionArea wraps the clickable part */}
                     <CardActionArea onClick={() => handleQuizClick(quiz.quizId)}>
                       <CardContent sx={{ p: 3 }}>
                         <Stack direction="row" alignItems="center" spacing={1} mb={2}>
@@ -234,6 +277,7 @@ const ExamList = () => {
                         <Stack spacing={2}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <SchoolIcon fontSize="small" color="action" />
+                            {/* Use optional chaining for safety */}
                             <Typography variant="body2" color="text.secondary">
                               {JSON.parse(localStorage.getItem('userInfo'))?.fullName || 'Unknown User'}
                             </Typography>
@@ -246,24 +290,60 @@ const ExamList = () => {
                             </Typography>
                           </Box>
                         </Stack>
-                        
-                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                          <Chip 
+                      </CardContent>
+                    </CardActionArea>
+
+                    {/* Action bar at the bottom of the card */}
+                    <Box sx={{ 
+                        px: 3, // padding horizontal
+                        pb: 2, // padding bottom
+                        display: 'flex', 
+                        justifyContent: 'space-between', // Align items to start and end
+                        alignItems: 'center', // Vertically center items
+                        mt: -1 // Negative margin to pull it closer to the content above if needed
+                    }}>
+                        {/* Chip for View Details */}
+                        <Chip 
                             label="Xem chi tiết" 
                             color="primary" 
                             size="small"
                             sx={{ 
                               backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                              color: '#FF6B6B',
+                              color: '#FF6B6B', // Primary color or a distinct color
                               fontWeight: 600,
+                              cursor: 'pointer', // Indicate it's clickable
                               '&:hover': {
                                 backgroundColor: 'rgba(255, 107, 107, 0.2)',
                               }
                             }}
-                          />
-                        </Box>
-                      </CardContent>
-                    </CardActionArea>
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent card click from triggering
+                                handleQuizClick(quiz.quizId);
+                            }}
+                        />
+
+                        {/* Delete Button */}
+                        <IconButton 
+                            aria-label="delete quiz" 
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent card click from triggering
+                                handleDeleteQuiz(quiz.quizId, quiz.quizName);
+                            }}
+                            disabled={deletingId === quiz.quizId || loading} // Disable while deleting or main loading
+                            sx={{
+                                color: theme.palette.error.main, // Use error color for delete
+                                '&:hover': {
+                                    backgroundColor: isDarkMode ? 'rgba(255, 0, 0, 0.1)' : 'rgba(255, 0, 0, 0.05)',
+                                },
+                                '&.Mui-disabled': {
+                                   color: theme.palette.action.disabled, // Style for disabled state
+                                }
+                            }}
+                        >
+                            {deletingId === quiz.quizId ? <CircularProgress size={20} color="inherit" /> : <DeleteOutlineIcon />}
+                        </IconButton>
+                    </Box>
                   </Card>
                 </Grid>
               ))}
@@ -282,11 +362,11 @@ const ExamList = () => {
                     color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
                   },
                   '& .Mui-selected': {
-                    backgroundColor: 'rgba(255, 107, 107, 0.2) !important',
-                    color: '#FF6B6B !important',
+                    backgroundColor: 'rgba(255, 107, 107, 0.2) !important', // Use rgba for transparency
+                    color: '#FF6B6B !important', // Use hex code for precise color
                     fontWeight: 600,
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 107, 107, 0.3) !important',
+                      backgroundColor: 'rgba(255, 107, 107, 0.3) !important', // Darker on hover
                     }
                   }
                 }}
@@ -300,6 +380,8 @@ const ExamList = () => {
       <CreateExerciseModal 
         open={isModalOpen}
         handleClose={handleCloseModal}
+        // Add a prop to trigger list refresh after creating a quiz
+        onQuizCreated={fetchQuizzes}
       />
     </Box>
   );

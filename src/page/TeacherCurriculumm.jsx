@@ -22,6 +22,11 @@ import {
   LinearProgress,
   Button,
   TableSortLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
 } from '@mui/material';
 import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
@@ -32,10 +37,16 @@ import {
   MenuBook as MenuBookIcon,
   Subject as SubjectIcon,
   Assignment as AssignmentIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const TeacherCurriculumm = () => {
+  const { userInfo } = useAuth();
+  console.log('userInfo:', userInfo);
+  console.log('gradeId from userInfo:', userInfo?.gradeId);
+  
   const [modules, setModules] = useState([]);
   const [filteredModules, setFilteredModules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,16 +58,13 @@ const TeacherCurriculumm = () => {
   const [semester, setSemester] = useState('1');
   const [sortColumn, setSortColumn] = useState(null); // State for sorting column
   const [sortDir, setSortDir] = useState(null); // State for sorting direction (0: asc, 1: desc)
+  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [lessonDetails, setLessonDetails] = useState(null);
+  const [loadingLessonDetails, setLoadingLessonDetails] = useState(false);
+  const [lessonDetailsError, setLessonDetailsError] = useState(null);
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const navigate = useNavigate(); // Get the navigate function
-
-  // Function to convert grade text to number
-  const convertGradeToNumber = (gradeText) => {
-    if (!gradeText) return null;
-    const match = gradeText.match(/Lớp\s*(\d+)/);
-    return match ? parseInt(match[1]) : null;
-  };
 
   const fetchLessons = async (moduleId) => {
     if (lessons[moduleId] || lessonLoading[moduleId]) return; // Don't fetch if already loaded or loading
@@ -99,41 +107,72 @@ const TeacherCurriculumm = () => {
 
   // Handle sort click
   const handleSortClick = (column) => {
-    if (sortColumn === column) {
-      // Cycle through sort directions: asc -> desc -> no sort
-      setSortDir(prevDir => {
-        if (prevDir === null) return 0;
-        if (prevDir === 0) return 1;
-        return null; // Reset to no sort
-      });
-    } else {
-      // New column, default to ascending sort
-      setSortColumn(column);
-      setSortDir(0);
-    }
+    setSortColumn(prevColumn => {
+      let newDir = null;
+      if (prevColumn === column) {
+        // Cycle through sort directions: asc -> desc -> no sort
+        setSortDir(prevDir => {
+          newDir = (prevDir === null) ? 0 : (prevDir === 0 ? 1 : null);
+          // Save sort state to localStorage
+          if (newDir !== null) {
+            localStorage.setItem('teacherCurriculummSortColumn', column);
+            localStorage.setItem('teacherCurriculummSortDir', newDir.toString());
+          } else {
+            localStorage.removeItem('teacherCurriculummSortColumn');
+            localStorage.removeItem('teacherCurriculummSortDir');
+          }
+          return newDir;
+        });
+        return prevColumn; // Column remains the same for cycling direction
+      } else {
+        // New column, default to ascending sort (0)
+        newDir = 0;
+        // Save sort state to localStorage
+        localStorage.setItem('teacherCurriculummSortColumn', column);
+        localStorage.setItem('teacherCurriculummSortDir', newDir.toString());
+        setSortDir(0);
+        return column;
+      }
+    });
   };
 
   // Function for viewing requirements
   const handleViewRequirements = () => {
-    const grade = localStorage.getItem('Grade');
-    // Navigate to the TeacherRequirements page, passing the grade if necessary
-    navigate('/yeu-cau-can-dat', { state: { grade } });
+    navigate('/yeu-cau-can-dat', { state: { gradeId: userInfo?.gradeId } });
+  };
+
+  const handleViewLesson = async (lessonId) => {
+    setSelectedLesson(lessonId);
+    setLoadingLessonDetails(true);
+    setLessonDetailsError(null);
+    try {
+      const response = await axios.get(
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}/info`
+      );
+      if (response.data.code === 0) {
+        setLessonDetails(response.data.data);
+      } else {
+        setLessonDetailsError('Failed to fetch lesson details');
+      }
+    } catch (err) {
+      setLessonDetailsError('Error fetching lesson details: ' + err.message);
+    } finally {
+      setLoadingLessonDetails(false);
+    }
+  };
+
+  const handleCloseLessonDetails = () => {
+    setSelectedLesson(null);
+    setLessonDetails(null);
+    setLessonDetailsError(null);
   };
 
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        setLoading(true); // Set loading to true when fetching modules
-        const gradeText = localStorage.getItem('Grade');
-        if (!gradeText) {
-          setError('Grade not found in localStorage');
-          setLoading(false);
-          return;
-        }
-
-        const gradeNumber = convertGradeToNumber(gradeText);
-        if (!gradeNumber) {
-          setError('Invalid grade format');
+        setLoading(true);
+        if (!userInfo?.gradeId) {
+          setError('Grade ID not found in user info');
           setLoading(false);
           return;
         }
@@ -143,24 +182,17 @@ const TeacherCurriculumm = () => {
           PageSize: 999,
         };
 
-        if (sortColumn) {
-          params.SortColumn = sortColumn;
-          // API expects 0 for ascending, 1 for descending
-          if (sortDir !== null) {
-              params.SortDir = sortDir;
-          }
-           // If sortDir is null, don't send SortDir parameter, rely on API default or leave unsorted
-        }
-
         const response = await axios.get(
           'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules',
           { params }
         );
 
         if (response.data.code === 0) {
+          console.log('API Response Data:', response.data.data.items);
           const filteredModules = response.data.data.items.filter(
-            module => module.gradeNumber === gradeNumber
+            module => module.gradeNumber === parseInt(userInfo.gradeId, 10)
           );
+          console.log('Modules filtered by gradeId:', filteredModules);
           setModules(filteredModules);
         } else {
           setError('Failed to fetch modules');
@@ -173,12 +205,44 @@ const TeacherCurriculumm = () => {
     };
 
     fetchModules();
-  }, [sortColumn, sortDir]); // Depend on sortColumn and sortDir
+  }, [userInfo?.gradeId]);
 
   useEffect(() => {
-    const filtered = modules.filter(module => module.semester === parseInt(semester));
+    // Create a mutable copy for sorting
+    const sortedModules = [...modules];
+
+    // Apply client-side sorting
+    if (sortColumn !== null && sortDir !== null) {
+      sortedModules.sort((a, b) => {
+        const aValue = a[sortColumn];
+        const bValue = b[sortColumn];
+
+        if (aValue < bValue) return sortDir === 0 ? -1 : 1; // 0: asc, 1: desc
+        if (aValue > bValue) return sortDir === 0 ? 1 : -1;
+        return 0;
+      });
+    }
+
+    // Apply filtering by semester on the sorted list
+    const filtered = sortedModules.filter(module => module.semester === parseInt(semester));
+    console.log('Modules filtered and sorted:', filtered);
     setFilteredModules(filtered);
-  }, [semester, modules]);
+  }, [semester, modules, sortColumn, sortDir]);
+
+  // Load sort state from localStorage on component mount
+  useEffect(() => {
+    const savedColumn = localStorage.getItem('teacherCurriculummSortColumn');
+    const savedDir = localStorage.getItem('teacherCurriculummSortDir');
+
+    if (savedColumn !== null) {
+      setSortColumn(savedColumn);
+      setSortDir(parseInt(savedDir, 10));
+    } else {
+      // Set default sort to moduleId ascending if no saved state
+      setSortColumn('moduleId');
+      setSortDir(0);
+    }
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   if (loading) {
     return (
@@ -254,7 +318,7 @@ const TeacherCurriculumm = () => {
               textShadow: isDarkMode ? 'none' : '1px 1px 2px rgba(0,0,0,0.1)',
             }}
           >
-            Sách Giáo Khoa Toán {localStorage.getItem('Grade')}
+            Sách Giáo Khoa Toán Lớp {userInfo?.gradeId}
           </Typography>
           <Typography 
             variant="h6" 
@@ -306,7 +370,7 @@ const TeacherCurriculumm = () => {
             }}>
               <MenuBookIcon sx={{ color: theme.palette.primary.main }} />
               <Typography sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
-                Chương trình: {commonInfo.curriculum} {commonInfo.gradeNumber}
+                Chương trình: {commonInfo.curriculum}
               </Typography>
             </Box>
             <Box sx={{ 
@@ -487,6 +551,18 @@ const TeacherCurriculumm = () => {
                                       <TableCell sx={{ color: theme.palette.text.primary, borderBottom: 'none' }}>
                                         Tổng số tiết: <Box component="span" sx={{ color: '#ff5252', fontWeight: 'normal' }}>{lesson.totalPeriods}</Box>
                                       </TableCell>
+                                      <TableCell sx={{ borderBottom: 'none' }}>
+                                        <IconButton 
+                                          size="small" 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleViewLesson(lesson.lessonId);
+                                          }}
+                                          sx={{ color: theme.palette.primary.main }}
+                                        >
+                                          <VisibilityIcon />
+                                        </IconButton>
+                                      </TableCell>
                                     </TableRow>
                                   ))}
                                 </TableBody>
@@ -532,6 +608,73 @@ const TeacherCurriculumm = () => {
             </Typography>
           </Paper>
         )}
+
+        <Dialog 
+          open={selectedLesson !== null} 
+          onClose={handleCloseLessonDetails}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle sx={{ 
+            bgcolor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
+            fontWeight: 'bold'
+          }}>
+            Chi tiết bài học
+          </DialogTitle>
+          <DialogContent sx={{ mt: 2 }}>
+            {loadingLessonDetails ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress />
+              </Box>
+            ) : lessonDetailsError ? (
+              <Alert severity="error" sx={{ mt: 2 }}>{lessonDetailsError}</Alert>
+            ) : lessonDetails ? (
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12}>
+                  <Typography variant="h6" sx={{ color: theme.palette.primary.main, mb: 2 }}>
+                    {lessonDetails.name}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
+                    <Typography variant="subtitle2" color="text.secondary">Mô tả</Typography>
+                    <Typography>{lessonDetails.description}</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
+                    <Typography variant="subtitle2" color="text.secondary">Loại bài học</Typography>
+                    <Typography>{lessonDetails.lessonType}</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
+                    <Typography variant="subtitle2" color="text.secondary">Tổng số tiết</Typography>
+                    <Typography>{lessonDetails.totalPeriods}</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
+                    <Typography variant="subtitle2" color="text.secondary">Chủ đề</Typography>
+                    <Typography>{lessonDetails.module}</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12}>
+                  <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
+                    <Typography variant="subtitle2" color="text.secondary">Ghi chú</Typography>
+                    <Typography>{lessonDetails.note}</Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+            ) : null}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseLessonDetails} color="primary">
+              Đóng
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </Box>
   );

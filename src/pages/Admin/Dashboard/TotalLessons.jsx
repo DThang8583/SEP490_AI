@@ -29,6 +29,7 @@ const TotalLessons = () => {
   const [page, setPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const theme = useTheme();
 
@@ -54,39 +55,32 @@ const TotalLessons = () => {
       );
 
       let nonDraftTotal = 0;
+      let allItems = [];
       if (totalCountResponse.data?.code === 0 && totalCountResponse.data?.data?.items) {
-        nonDraftTotal = totalCountResponse.data.data.items.filter(plan => plan.status !== 'Draft').length;
+        allItems = totalCountResponse.data.data.items;
+        nonDraftTotal = allItems.filter(plan => plan.status !== 'Draft').length;
       }
       setTotalCount(nonDraftTotal);
 
-      // Fetch lesson plans for the current page
-      const paginatedResponse = await axios.get(
-        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            Page: page,
-            PageSize: itemsPerPage,
-            SearchTerm: searchTerm,
-          },
-        }
-      );
+      // Filter drafts from all items
+      const nonDraftItems = allItems.filter(plan => plan.status !== 'Draft');
 
-      if (paginatedResponse.data?.code === 0 && paginatedResponse.data?.data?.items) {
-         // Filter drafts from the current page's items before setting the state
-        const filteredLessonPlans = paginatedResponse.data.data.items.filter(plan => plan.status !== 'Draft');
-        setLessonPlans(filteredLessonPlans);
-      } else {
-        setLessonPlans([]);
-      }
+      // Calculate the number of pages based on non-draft items
+      const calculatedTotalPages = Math.ceil(nonDraftTotal / itemsPerPage);
+      setTotalPages(calculatedTotalPages);
+
+      // Get the items for the current page
+      const startIndex = (page - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedItems = nonDraftItems.slice(startIndex, endIndex);
+      setLessonPlans(paginatedItems);
 
     } catch (err) {
       console.error('Error fetching lesson plans:', err);
       setError('Không thể tải danh sách giáo án. Vui lòng thử lại sau.');
       setLessonPlans([]);
       setTotalCount(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }

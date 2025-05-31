@@ -55,25 +55,25 @@ const float = keyframes`
 const lessonCategories = [
   { 
     text: "Giáo án đang chờ duyệt", 
-    path: "/pending-lessons",
+    path: "/giao-an-cho-duyet",
     icon: <HourglassTop />, 
     requiresTeacher: true 
   },
   { 
     text: "Giáo án đã chấp nhận", 
-    path: "/approved-lessons",
+    path: "/giao-an-da-duyet",
     icon: <CheckCircleOutline />, 
     requiresTeacher: true 
   },
   { 
     text: "Giáo án bị từ chối", 
-    path: "/rejected-lessons",
+    path: "/giao-an-bi-tu-choi",
     icon: <Cancel />,
     requiresTeacher: true 
   },
   { 
     text: "Giáo án nháp", 
-    path: "/draft-lessons",
+    path: "/giao-an-nhap",
     icon: <EditNote />, 
     requiresTeacher: true 
   }
@@ -89,7 +89,6 @@ const menuItems = [
 const settings = [
   { name: "Hồ sơ", icon: <Person />, path: "/teacher/profile" },
   { name: "Quản lý câu lệnh", icon: <Settings />, path: "/command-management" },
-  { name: "Tạo AI", icon: <AutoAwesome />, path: "/create-ai" },
   { name: "Đăng xuất", icon: <Logout />, path: "/logout" },
 ];
 
@@ -281,11 +280,11 @@ const Navbar = () => {
                   />
                 )
               ))}
-              {/* {isLoggedIn && isTeacher && (
+              {isLoggedIn && isTeacher && (
                 <Button
                   variant="contained"
                   startIcon={<AutoAwesome />}
-                  onClick={() => handleNavigation('/CreateLesson')}
+                  onClick={() => handleNavigation('/tao-giao-an')}
                   sx={{
                     ml: 2,
                     backgroundColor: '#FF6B6B',
@@ -296,7 +295,7 @@ const Navbar = () => {
                 >
                   Tạo Giáo án bằng AI
                 </Button>
-              )} */}
+              )}
             </Box>
           )}
 

@@ -66,7 +66,7 @@ const AdminDashboard = () => {
       description: 'Quản lý nội dung Giáo án'
     },
     { 
-      text: 'Quản lý đề thi', 
+      text: 'Quản lý bài tập tạo', 
       icon: <QuizIcon />, 
       path: '/admin/quan-ly-bai-tap',
       description: 'Quản lý ngân hàng đề thi'

@@ -121,7 +121,7 @@ const AllLessons = () => {
   };
 
   const handleViewLesson = (blogId) => {
-    navigate(`/blog-lesson/${blogId}`);
+    navigate(`/chi-tiet-bai-dang/${blogId}`);
   };
 
   if (loading) {
@@ -154,7 +154,7 @@ const AllLessons = () => {
         <Stack direction="row" alignItems="center" spacing={2} mb={4}>
           <SchoolIcon sx={{ fontSize: 32, color: 'primary.main' }} />
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Danh sách bài viết
+            Danh sách bài đăng
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <TextField
@@ -224,9 +224,14 @@ const AllLessons = () => {
                     </Typography>
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {blog.publicationDate}
-                      </Typography>
+                      <Stack spacing={0.5}>
+                        <Typography variant="caption" color="text.secondary">
+                          {blog.publicationDate}
+                        </Typography>
+                        <Typography variant="caption" color="primary" sx={{ fontWeight: 500 }}>
+                          {blog.name || 'Ẩn danh'}
+                        </Typography>
+                      </Stack>
                       <Button
                         variant="outlined"
                         size="small"

@@ -3,59 +3,52 @@ import { Box, Container, Typography, Paper, CircularProgress, Alert, useTheme, T
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const TeacherRequirements = () => {
+  const { userInfo } = useAuth();
   const [curriculum, setCurriculum] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const theme = useTheme();
   const navigate = useNavigate();
 
-  // Function to convert grade text to curriculum name format
-  const convertGradeToCurriculumName = (gradeText) => {
-    if (!gradeText) return null;
-    const match = gradeText.match(/Lớp\s*(\d+)/);
-    return match ? `Toán lớp ${match[1]}` : null;
-  };
-
   useEffect(() => {
     const fetchCurriculumDetail = async () => {
       try {
         setLoading(true);
-        const gradeText = localStorage.getItem('Grade');
-        if (!gradeText) {
-          setError('Grade not found in localStorage');
+        if (!userInfo?.gradeId) {
+          setError('Grade ID not found in user info');
           setLoading(false);
           return;
         }
-        const curriculumName = convertGradeToCurriculumName(gradeText);
-        if (!curriculumName) {
-          setError('Invalid grade format');
-          setLoading(false);
-          return;
-        }
-        // Step 1: Get curriculumId by name
+        // Step 1: Get curriculum by gradeNumber directly if API supports
+        // Assuming API /api/v1/curriculums supports filtering by gradeNumber
+        // If not, the previous logic iterating through the list is necessary.
+        // Based on previous tasks, it seems filtering by gradeNumber is possible
+
+        // Updated logic to find curriculum matching user's gradeId by gradeNumber
         const response = await axios.get(
           'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums',
           {
             params: {
               PageNumber: 1,
-              PageSize: 999,
-              SortDir: 0
+              PageSize: 10, // Reduced page size, assuming there aren't too many curriculums per grade
+              GradeNumber: parseInt(userInfo.gradeId, 10) // Filter directly by gradeNumber
             }
           }
         );
-        if (response.data.code !== 0) {
-          setError('Failed to fetch curriculum list');
+        
+        if (response.data.code !== 0 || !response.data.data || !response.data.data.items || response.data.data.items.length === 0) {
+          setError('Không tìm thấy chương trình giảng dạy cho khối lớp ' + userInfo.gradeId);
           setLoading(false);
           return;
         }
-        const found = response.data.data.items.find(item => item.name === curriculumName);
-        if (!found) {
-          setError('Không tìm thấy chương trình giảng dạy cho ' + gradeText);
-          setLoading(false);
-          return;
-        }
+
+        // Assuming there is only one curriculum per grade in the filtered result
+        const found = response.data.data.items[0];
+        console.log('Found curriculumId:', found.curriculumId);
+        
         // Step 2: Get curriculum detail by id
         const detailRes = await axios.get(
           `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/curriculums/${found.curriculumId}`
@@ -66,6 +59,7 @@ const TeacherRequirements = () => {
           return;
         }
         setCurriculum(detailRes.data.data);
+        console.log('Fetched curriculum detail:', detailRes.data.data);
       } catch (err) {
         setError('Error fetching curriculum data: ' + err.message);
       } finally {
@@ -73,7 +67,7 @@ const TeacherRequirements = () => {
       }
     };
     fetchCurriculumDetail();
-  }, []);
+  }, [userInfo?.gradeId]); // Dependency array remains the same
 
   const handleBack = () => {
     navigate(-1); // Quay lại trang trước đó

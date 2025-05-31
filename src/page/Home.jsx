@@ -253,7 +253,7 @@ const Home = () => {
             <Grid item xs={12} md={6}>
               <Paper
                 elevation={0}
-                onClick={() => navigate("/CreateLesson")}
+                onClick={() => navigate("/tao-giao-an")}
                 sx={{
                   p: 4,
                   height: "100%",
@@ -302,7 +302,7 @@ const Home = () => {
             <Grid item xs={12} md={6}>
               <Paper
                 elevation={0}
-                onClick={() => navigate("/CreateLessonByChat")}
+                onClick={() => navigate("/tao-giao-anByChat")}
                 sx={{
                   p: 4,
                   height: "100%",

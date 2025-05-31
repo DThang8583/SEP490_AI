@@ -8,112 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshToken = async () => {
-    try {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) return false;
-
-      const response = await axios.post(
-        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/auth/refresh-token',
-        { refreshToken }
-      );
-
-      if (response.data && response.data.data) {
-        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error refreshing token:', error);
-      return false;
-    }
-  };
-
-  // Hàm fetch thông tin user đầy đủ từ API và cập nhật state
-  const fetchAndSetUserInfo = async (userId, accessToken) => {
-    if (!userId || !accessToken) return;
-    try {
-      const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/${userId}/update`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        }
-      );
-      if (response.data && response.data.code === 0 && response.data.data) {
-        setUserInfo(prevInfo => ({ ...prevInfo, ...response.data.data }));
-        // Cập nhật localStorage với thông tin user đầy đủ
-        const storedUserInfo = localStorage.getItem('userInfo');
-        if (storedUserInfo) {
-          try {
-            const parsedUserInfo = JSON.parse(storedUserInfo);
-            localStorage.setItem('userInfo', JSON.stringify({ ...parsedUserInfo, ...response.data.data }));
-          } catch (error) {
-            console.error('Error updating full user info in localStorage:', error);
-          }
-        } else {
-             localStorage.setItem('userInfo', JSON.stringify(response.data.data));
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching full user info:', error);
-    }
-  };
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const accessToken = localStorage.getItem('accessToken');
-      const storedUserInfo = localStorage.getItem('userInfo');
-      let userId = null;
-      
-      if (accessToken && storedUserInfo) {
-        try {
-          const parsedUserInfo = JSON.parse(storedUserInfo);
-          if (parsedUserInfo && parsedUserInfo.id) {
-            setIsLoggedIn(true);
-            setUserInfo(parsedUserInfo); // Set tạm thời thông tin từ localStorage
-            userId = parsedUserInfo.id;
-            // Fetch thông tin user đầy đủ sau khi có accessToken và userId
-            fetchAndSetUserInfo(userId, accessToken);
-          } else {
-            handleLogout();
-          }
-        } catch (error) {
-          console.error('Error parsing user info from localStorage:', error);
-          handleLogout();
-        }
-      } else {
-        // Nếu không có accessToken, thử refresh
-        const success = await refreshToken();
-        if (success) {
-             const updatedAccessToken = localStorage.getItem('accessToken');
-             const updatedUserInfoStr = localStorage.getItem('userInfo');
-             if(updatedAccessToken && updatedUserInfoStr){
-                  const updatedUserInfo = JSON.parse(updatedUserInfoStr);
-                   if(updatedUserInfo && updatedUserInfo.id){
-                        setIsLoggedIn(true);
-                        setUserInfo(updatedUserInfo);
-                        userId = updatedUserInfo.id;
-                         // Fetch thông tin user đầy đủ sau khi refresh thành công
-                        fetchAndSetUserInfo(userId, updatedAccessToken);
-                   } else {
-                         handleLogout();
-                   }
-             } else {
-                  handleLogout();
-             }
-        } else {
-          handleLogout();
-        }
-      }
-      setLoading(false);
-    };
-
-    checkAuth();
-  }, []); // Dependency array trống để chỉ chạy 1 lần khi mount
+  const API_BASE = 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1';
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
@@ -123,43 +18,124 @@ export const AuthProvider = ({ children }) => {
     setUserInfo(null);
   };
 
+  const refreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) return false;
+
+      const response = await axios.post(`${API_BASE}/auth/refresh-token`, { refreshToken });
+
+      if (response.data?.data) {
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('❌ Error refreshing token:', error);
+      return false;
+    }
+  };
+
+  const fetchAndSetUserInfo = async (userId, accessToken) => {
+    if (!userId || !accessToken) return;
+    try {
+      const response = await axios.get(`${API_BASE}/users/${userId}/update`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.data?.code === 0 && response.data.data) {
+        const updatedUserInfo = {
+          id: userId, // Đảm bảo luôn có ID
+          ...response.data.data,
+          gradeId: userInfo?.gradeId || response.data.data.gradeId,
+        };
+
+        setUserInfo(updatedUserInfo);
+        localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+      }
+    } catch (error) {
+      console.error('❌ Error fetching user info:', error);
+    }
+  };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const accessToken = localStorage.getItem('accessToken');
+      const storedUserInfo = localStorage.getItem('userInfo');
+  
+      if (accessToken && storedUserInfo) {
+        try {
+          const parsedUser = JSON.parse(storedUserInfo);
+          if (parsedUser?.id) {
+            setIsLoggedIn(true);
+            setUserInfo(parsedUser);
+            // Ở đây không gọi fetchAndSetUserInfo để cập nhật user từ API
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error('❌ Error parsing user info from localStorage:', err);
+        }
+      }
+  
+      // Nếu accessToken không hợp lệ hoặc thiếu userInfo
+      const refreshed = await refreshToken();
+      if (refreshed) {
+        const newAccessToken = localStorage.getItem('accessToken');
+        const storedUserInfoAfterRefresh = localStorage.getItem('userInfo');
+  
+        try {
+          // Không gọi fetchAndSetUserInfo ở đây nữa
+          // Chỉ set lại từ userInfo đã lưu trong localStorage
+          const parsedUser = JSON.parse(storedUserInfoAfterRefresh || '{}');
+          if (parsedUser?.id) {
+            setIsLoggedIn(true);
+            setUserInfo(parsedUser);
+          } else {
+            handleLogout();
+          }
+        } catch (error) {
+          handleLogout();
+        }
+      } else {
+        handleLogout();
+      }
+  
+      setLoading(false);
+    };
+  
+    checkAuth();
+  }, []);
+  
+
   const login = (token, user) => {
     try {
-      if (!token || !user) {
-        throw new Error('Invalid login data');
-      }
+      if (!token || !user) throw new Error('Invalid login data');
       localStorage.setItem('accessToken', token);
       localStorage.setItem('userInfo', JSON.stringify(user));
       setIsLoggedIn(true);
       setUserInfo(user);
     } catch (error) {
-      console.error('Error during login:', error);
+      console.error('❌ Error during login:', error);
       handleLogout();
-      throw error;
     }
   };
 
-  const logout = () => {
-    handleLogout();
-  };
+  const logout = () => handleLogout();
 
   const updateUserInfo = (newData) => {
-    setUserInfo(prevInfo => ({ ...prevInfo, ...newData }));
-    // Optionally update localStorage as well to persist changes across reloads
-    const storedUserInfo = localStorage.getItem('userInfo');
-    if (storedUserInfo) {
-      try {
-        const parsedUserInfo = JSON.parse(storedUserInfo);
-        localStorage.setItem('userInfo', JSON.stringify({ ...parsedUserInfo, ...newData }));
-      } catch (error) {
-        console.error('Error updating user info in localStorage:', error);
-      }
-    }
+    setUserInfo((prev) => {
+      const updated = { ...prev, ...newData };
+      localStorage.setItem('userInfo', JSON.stringify(updated));
+      return updated;
+    });
   };
 
-  if (loading) {
-    return null;
-  }
+  if (loading) return null;
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, userInfo, login, logout, updateUserInfo }}>
@@ -170,8 +146,6 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
-}; 
+};

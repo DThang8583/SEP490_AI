@@ -68,17 +68,7 @@ const TotalExams = () => {
   };
 
   useEffect(() => {
-    if (page !== 1) {
-      setPage(1);
-    } else {
-      fetchExams();
-    }
-  }, [page, pageSize, searchTerm]);
-
-  useEffect(() => {
-    if (page === 1) {
-      fetchExams();
-    }
+    fetchExams();
   }, [page, pageSize, searchTerm]);
 
   const handlePageChange = (event, value) => {
@@ -87,6 +77,7 @@ const TotalExams = () => {
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
+    setPage(1); // Reset to first page when searching
   };
 
   const getStatusChip = (status) => {
@@ -227,6 +218,9 @@ const TotalExams = () => {
                 <TableCell>ID</TableCell>
                 <TableCell>Tên đề thi</TableCell>
                 <TableCell>Tên bài học</TableCell>
+                <TableCell>Khối</TableCell>
+                <TableCell>Chủ đề</TableCell>
+                <TableCell>Giáo viên</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -250,6 +244,9 @@ const TotalExams = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>{exam.lessonName}</TableCell>
+                  <TableCell>Khối {exam.grade}</TableCell>
+                  <TableCell>{exam.moduleName}</TableCell>
+                  <TableCell>{exam.name}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

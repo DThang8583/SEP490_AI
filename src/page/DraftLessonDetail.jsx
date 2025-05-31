@@ -240,7 +240,7 @@ const DraftLessonDetail = () => {
         throw new Error("Authentication token not found.");
       }
 
-      const response = await axios.put(
+      const response = await axios.post(
         `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}/pending`,
         {},
         {
@@ -262,7 +262,7 @@ const DraftLessonDetail = () => {
         
         // Navigate back to pending lessons page after a short delay
         setTimeout(() => {
-          navigate('/pending-lessons');
+          navigate('/giao-an-cho-duyet');
         }, 1500);
       } else {
         throw new Error(response.data.message || "Failed to send lesson to pending status.");
@@ -280,7 +280,7 @@ const DraftLessonDetail = () => {
         
         // Navigate back to pending lessons page after a short delay
         setTimeout(() => {
-          navigate('/pending-lessons');
+          navigate('/giao-an-cho-duyet');
         }, 1500);
       } else {
         setSnackbar({ 

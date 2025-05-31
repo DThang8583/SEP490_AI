@@ -157,6 +157,7 @@ const GeneratedQuiz = () => {
             quizName: exerciseName || 'Bài tập mới',
             lessonId: parseInt(lessonId) || 1,
             quizQuestions: parseQuizContent(generatedContent),
+            userId: JSON.parse(localStorage.getItem('userInfo'))?.id || null
         };
 
         if (!quizData.lessonId || isNaN(quizData.lessonId)) {
@@ -187,6 +188,12 @@ const GeneratedQuiz = () => {
             return;
         }
 
+        if (!quizData.userId) {
+            setSaveError('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
+            setGeneratingSave(false);
+            return;
+        }
+
         try {
             const response = await axios.post(
                 'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/quizzes',
@@ -196,11 +203,26 @@ const GeneratedQuiz = () => {
 
             if (response.data.code === 0 || response.data.code === 21) {
                 setSaveSuccess('Bài tập đã được lưu thành công!');
+                setTimeout(() => {
+                    navigate(-1);
+                }, 1000); // Đợi 1.5 giây để người dùng đọc thông báo thành công
             } else {
                 setSaveError(response.data.message || 'Đã xảy ra lỗi khi lưu bài tập.');
             }
         } catch (error) {
             console.error('Lỗi API:', error.response?.data || error.message);
+            console.error('Chi tiết lỗi:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                headers: error.response?.headers,
+                config: {
+                    url: error.config?.url,
+                    method: error.config?.method,
+                    headers: error.config?.headers,
+                    data: error.config?.data
+                }
+            });
             setSaveError(error.response?.data?.message || 'Đã xảy ra lỗi kết nối hoặc máy chủ.');
         } finally {
             setGeneratingSave(false);

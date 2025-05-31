@@ -120,7 +120,19 @@ const LessonUpload = () => {
         throw new Error('Không tìm thấy token xác thực');
       }
       
+      const userId = JSON.parse(localStorage.getItem('userInfo'))?.id;
+      if (!userId) {
+        throw new Error('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
+      }
+      
       console.log("Đang gửi bài viết với lessonPlanId:", lessonData.lessonPlanId);
+      console.log("API Request Body:", {
+        title,
+        body,
+        categoryId: parseInt(selectedCategory),
+        teacherLessonId: lessonData.lessonPlanId,
+        userId: userId
+      });
       
       const response = await axios.post(
         'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs',
@@ -128,7 +140,8 @@ const LessonUpload = () => {
           title,
           body,
           categoryId: parseInt(selectedCategory),
-          teacherLessonId: lessonData.lessonPlanId
+          teacherLessonId: lessonData.lessonPlanId,
+          userId: userId
         },
         {
           headers: {
