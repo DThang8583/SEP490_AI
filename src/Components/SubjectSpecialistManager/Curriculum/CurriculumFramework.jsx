@@ -32,6 +32,9 @@ import {
     ListItem,
     ListItemText,
     Link,
+    FormControl,
+    InputLabel,
+    Select,
 } from '@mui/material';
 import {
     Edit as EditIcon,
@@ -91,7 +94,7 @@ const DashboardCard = styled(Card)({
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     fontWeight: 'bold',
     backgroundColor: COLORS.background.secondary,
-    border: `1px solid ${theme.palette.grey[300]}`,
+    border: 'none',
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
@@ -99,7 +102,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
         backgroundColor: theme.palette.action.hover,
         cursor: 'pointer',
     },
-    border: `1px solid ${theme.palette.grey[300]}`,
+    border: 'none',
 }));
 
 const StyledButton = styled(Button)({
@@ -187,7 +190,27 @@ const CurriculumFramework = () => {
     const [openDeleteConfirmDialog, setOpenDeleteConfirmDialog] = useState(false);
     const [moduleToDelete, setModuleToDelete] = useState(null);
 
-    // Filter modules by selected semester
+    // State for controlling the add lesson dialog
+    const [openAddLessonDialog, setOpenAddLessonDialog] = useState(false);
+    const [newLessonData, setNewLessonData] = useState(null);
+    const [openDeleteLessonConfirmDialog, setOpenDeleteLessonConfirmDialog] = useState(false);
+    const [lessonToDelete, setLessonToDelete] = useState(null);
+
+    // State for controlling edit lesson dialog (kept in LessonDetails for now)
+
+    // State for fetched data
+    const [notes, setNotes] = useState([]);
+    const [lessonTypes, setLessonTypes] = useState([]);
+    const [notesLoading, setNotesLoading] = useState(true);
+    const [lessonTypesLoading, setLessonTypesLoading] = useState(true);
+    const [notesError, setNotesError] = useState(null);
+    const [lessonTypesError, setLessonTypesError] = useState(null);
+
+    useEffect(() => {
+        // Close all module dropdowns when the component mounts or re-mounts
+        setExpandedModuleId(null);
+    }, []); // Empty dependency array ensures this runs only on mount
+
     const modulesBySemester = useMemo(() => {
         return modules.filter(module => module.semester === selectedSemester);
     }, [modules, selectedSemester]);
@@ -210,10 +233,13 @@ const CurriculumFramework = () => {
 
     // Function to fetch lessons for a module
     const fetchLessons = useCallback(async (moduleId) => {
+        console.log(`Fetching lessons for module ID: ${moduleId}`); // Log module ID
         try {
             const response = await axios.get(
                 `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${moduleId}/lessons`
             );
+
+            console.log(`Response from lessons API for module ${moduleId}:`, response); // Log full response
 
             if (response.data.code === 0 && response.data.data.lessons) {
                 console.log(`Lessons for module ${moduleId}:`, response.data.data.lessons);
@@ -225,8 +251,18 @@ const CurriculumFramework = () => {
                             : module
                     )
                 );
+                
             } else if (response.data.code !== 0) {
+                console.error(`API returned error code ${response.data.code} fetching lessons for module ${moduleId}:`, response.data.message); // More specific error log
                 console.error(`Error fetching lessons for module ${moduleId}:`, response.data.message);
+            } else if (!response.data.data || !response.data.data.lessons) { // Handle case where data or data.lessons is missing
+                console.error(`Unexpected data structure fetching lessons for module ${moduleId}:`, response.data.data);
+                // Optionally, you might want to set lessons to an empty array here
+                // setModules(prevModules =>
+                //     prevModules.map(module =>
+                //         module.moduleId === moduleId ? { ...module, lessons: [] } : module
+                //     )
+                // );
             }
         } catch (error) {
             console.error(`Error fetching lessons for module ${moduleId}:`, error);
@@ -262,10 +298,8 @@ const CurriculumFramework = () => {
             setExpandedModuleId(null); // Collapse the currently expanded row
         } else {
             setExpandedModuleId(module.moduleId); // Expand this row
-            // Fetch lessons if not already fetched for this module
-            if (!module.lessons) {
-                fetchLessons(module.moduleId);
-            }
+            // Lessons are now pre-fetched when the page loads, no need to fetch here
+            // fetchLessons(module.moduleId);
         }
         // Removed fetching details here, as it's now handled by icon click
         // fetchModuleDetails(module.moduleId);
@@ -361,33 +395,54 @@ const CurriculumFramework = () => {
             if (response.data.code === 0 && response.data.data.modules) {
                 const fetchedModuleList = response.data.data.items || response.data.data.modules || []; // Ensure we get the list correctly
 
-                // Fetch details for each module to get semester information
-                const modulesWithDetails = await Promise.all(fetchedModuleList.map(async (module) => {
+                // Fetch details and lessons for each module concurrently
+                const modulesWithAllData = await Promise.all(fetchedModuleList.map(async (module) => {
                     try {
+                        // Fetch module details
                         const detailResponse = await axios.get(
                             `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${module.moduleId}`
                         );
-                        if (detailResponse.data.code === 0) {
-                            return detailResponse.data.data;
+                        
+                        // Fetch module lessons
+                        const lessonsResponse = await axios.get(
+                            `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${module.moduleId}/lessons`
+                        );
+
+                        if (detailResponse.data.code === 0 && lessonsResponse.data.code === 0 && lessonsResponse.data.data.lessons) {
+                            // Combine all data
+                            return {
+                                ...detailResponse.data.data,
+                                isActive: module.isActive, // Preserve isActive from the original data
+                                lessons: lessonsResponse.data.data.lessons // Add lessons data
+                            };
                         } else {
-                            console.error(`Failed to fetch details for module ${module.moduleId}:`, detailResponse.data.message);
-                            return null; // Return null for modules that failed to fetch details
+                            console.error(`Failed to fetch details or lessons for module ${module.moduleId}:`,
+                                detailResponse.data.message || lessonsResponse.data.message);
+                            return { // Return module with basic info even if fetching details/lessons failed
+                                ...module,
+                                lessons: [] // Ensure lessons is an empty array on failure
+                             };
                         }
-                    } catch (detailError) {
-                        console.error(`Error fetching details for module ${module.moduleId}:`, detailError);
-                        return null; // Return null for modules that caused an error
+                    } catch (error) {
+                        console.error(`Error fetching details or lessons for module ${module.moduleId}:`, error);
+                        return { // Return module with basic info on error
+                            ...module,
+                            lessons: [] // Ensure lessons is an empty array on error
+                         };
                     }
                 }));
 
-                // Filter out null entries and sort by moduleId
-                const validModules = modulesWithDetails.filter(module => module !== null);
+                // Filter out null entries (shouldn't happen with error handling above, but good practice) and sort by moduleId
+                const validModules = modulesWithAllData.filter(module => module !== null);
                 const sortedModules = validModules.sort((a, b) => a.moduleId - b.moduleId);
 
-                console.log('Modules sorted by moduleId and including semester:', sortedModules.map(module => ({
+                console.log('Modules sorted by moduleId and including details and lessons:', sortedModules.map(module => ({
                     moduleId: module.moduleId,
                     name: module.name,
                     semester: module.semester,
-                    totalPeriods: module.totalPeriods
+                    totalPeriods: module.totalPeriods,
+                    isActive: module.isActive,
+                    lessonsCount: module.lessons?.length || 0 // Log count of lessons
                 })));
 
                 setModules(sortedModules);
@@ -502,7 +557,6 @@ const CurriculumFramework = () => {
             name: '',
             desciption: '',
             semester: selectedSemester, // Default to currently selected semester
-            totalPeriods: 0,
             curriculumId: curricula.length > 0 ? curricula[0].curriculumId : 0, // Default to first curriculum or 0
             gradeId: userGradeNumber || 0, // Default to user's grade or 0
             bookId: 1 // Default bookId
@@ -528,8 +582,8 @@ const CurriculumFramework = () => {
 
                 if (response.data.code === 0 || response.data.code === 21) {
                     console.log(`Module created successfully:`, response.data.data);
-                    // Update the modules state
-                    setModules(prevModules => [...prevModules, response.data.data]);
+                    // Refetch all curricula and modules to ensure data consistency
+                    fetchCurricula();
                     // Close dialog
                     setOpenAddModuleDialog(false);
                     // Reset new module data
@@ -548,7 +602,42 @@ const CurriculumFramework = () => {
         }
     };
 
-    // Handler for opening delete confirmation dialog
+    // Handler for toggling module status
+    const handleToggleModuleStatus = async (module) => {
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+            const response = await axios.delete(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${module.moduleId}`,
+                { headers: { Authorization: `Bearer ${accessToken}` } }
+            );
+
+            console.log('Toggle Status API Response Code:', response.data.code);
+
+            if (response.data.code === 0 || response.data.code === 31) {
+                console.log(`Module ${module.moduleId} status toggled successfully.`);
+                // Update the module's status in the local state
+                setModules(prevModules =>
+                    prevModules.map(m =>
+                        m.moduleId === module.moduleId
+                            ? { ...m, isActive: !m.isActive }
+                            : m
+                    )
+                );
+                // Refresh curriculum data
+                await fetchCurricula();
+                // Refresh lessons for the toggled module
+                await fetchLessons(module.moduleId);
+            } else {
+                console.error(`Error toggling module ${module.moduleId} status:`, response.data.message);
+                alert(`Thay đổi trạng thái module thất bại: ${response.data.message}`);
+            }
+        } catch (error) {
+            console.error(`Error toggling module ${module.moduleId} status:`, error);
+            alert(`Đã xảy ra lỗi khi thay đổi trạng thái module.`);
+        }
+    };
+
+    // Update the delete confirmation dialog to show status toggle confirmation
     const handleOpenDeleteConfirmDialog = (module) => {
         setModuleToDelete(module);
         setOpenDeleteConfirmDialog(true);
@@ -560,44 +649,100 @@ const CurriculumFramework = () => {
         setOpenDeleteConfirmDialog(false);
     };
 
-    // Handler for deleting a module
-    const handleDeleteModule = async (moduleId) => {
+    const handleOpenAddLessonDialog = (moduleId) => {
+        setOpenAddLessonDialog(true);
+        setNewLessonData({
+            name: '',
+            description: '',
+            totalPeriods: 1,
+            lessonTypeId: lessonTypes.length > 0 ? lessonTypes[0].lessonTypeId : '',
+            noteId: 1,
+            weekId: 1,
+            moduleId: moduleId
+        });
+    };
+
+    // Handler for closing add lesson dialog (moved from LessonDetails)
+    const handleCloseAddLessonDialog = () => {
+        setOpenAddLessonDialog(false); // Use the state in CurriculumFramework
+        setNewLessonData(null); // Clear form data
+    };
+
+    // Handler for saving new lesson (moved from LessonDetails)
+    const handleSaveNewLesson = async () => {
+        if (newLessonData && newLessonData.moduleId) { // Use newLessonData state in CurriculumFramework
         try {
             const accessToken = localStorage.getItem('accessToken');
-            const response = await axios.delete(
-                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/modules/${moduleId}`,
+                const response = await axios.post(
+                    'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons', newLessonData,
                 { headers: { Authorization: `Bearer ${accessToken}` } }
             );
 
-            console.log('Delete API Response Code:', response.data.code);
+                console.log('Create Lesson API Response Code:', response.data.code);
 
-            if (response.data.code === 0 || response.data.code === 31) {
-                console.log(`Module ${moduleId} deleted successfully.`);
-                // Update the modules state by removing the deleted module
-                setModules(prevModules => prevModules.filter(module => module.moduleId !== moduleId));
-                // Close the delete confirmation dialog
-                handleCloseDeleteConfirmDialog();
+                if (response.data.code === 0 || response.data.code === 21) { // Assuming 21 might also indicate success for creation
+                    console.log(`Lesson created successfully for module ${newLessonData.moduleId}:`, response.data.data); // Use newLessonData state
+                    // Refetch lessons for the current module to update the list
+                    // Pass the moduleId from the newLessonData
+                    fetchLessons(newLessonData.moduleId); // Use fetchLessons from CurriculumFramework
+                    // Close dialog
+                    handleCloseAddLessonDialog(); // Use the handler in CurriculumFramework
             } else {
-                console.error(`Error deleting module ${moduleId}:`, response.data.message);
-                alert(`Xóa module thất bại: ${response.data.message}`);
+                    console.error(`Error creating lesson for module ${newLessonData.moduleId}:`, response.data.message);
+                    alert(`Tạo mới bài học thất bại: ${response.data.message}`);
             }
         } catch (error) {
-            console.error(`Error deleting module ${moduleId}:`, error);
-            alert(`Đã xảy ra lỗi khi xóa module.`);
+                console.error(`Error creating lesson for module ${newLessonData.moduleId}:`, error);
+                alert(`Đã xảy ra lỗi khi tạo mới bài học.`);
+            }
+        } else {
+            console.error('No lesson data or module ID to save.');
+            alert('Không có dữ liệu bài học hoặc ID chủ đề để lưu.');
         }
     };
+
+    // Fetch notes and lesson types on component mount
+    useEffect(() => {
+        const fetchNotesAndLessonTypes = async () => {
+            // Fetch Notes
+            try {
+                setNotesLoading(true);
+                const notesResponse = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/notes');
+                if (notesResponse.data.code === 0 && notesResponse.data.data) {
+                    setNotes(notesResponse.data.data);
+                } else {
+                    setNotesError(notesResponse.data.message || 'Lỗi khi tải danh sách ghi chú');
+                }
+            } catch (error) {
+                console.error('Error fetching notes:', error);
+                setNotesError('Không thể tải danh sách ghi chú.');
+            } finally {
+                setNotesLoading(false);
+            }
+
+            // Fetch Lesson Types
+            try {
+                setLessonTypesLoading(true);
+                const lessonTypesResponse = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-types');
+                if (lessonTypesResponse.data.code === 0 && lessonTypesResponse.data.data) {
+                    setLessonTypes(lessonTypesResponse.data.data);
+                } else {
+                    setLessonTypesError(lessonTypesResponse.data.message || 'Lỗi khi tải danh sách loại bài học');
+                }
+            } catch (error) {
+                console.error('Error fetching lesson types:', error);
+                setLessonTypesError('Không thể tải danh sách loại bài học.');
+            } finally {
+                setLessonTypesLoading(false);
+            }
+        };
+
+        fetchNotesAndLessonTypes();
+    }, []); // Empty dependency array means this runs once on mount
 
     if (loading) {
         return (
             <Box sx={{
-                minHeight: '100vh',
-                background: COLORS.background.default,
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 1100,
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center'
@@ -613,22 +758,13 @@ const CurriculumFramework = () => {
     }
 
     return (
-        <Box sx={{
+        <Container maxWidth="lg" sx={{
             minHeight: '100vh',
-            bgcolor: 'background.default',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 1100,
+            bgcolor: theme.palette.background.default,
+            py: 6,
+            px: { xs: 3, md: 5 },
             overflowY: 'auto'
         }}>
-            <Box sx={{
-                py: 6,
-                px: { xs: 3, md: 5 }
-            }}>
-                <Container maxWidth="lg">
                     <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <ImportContactsIcon sx={{ fontSize: 36, color: COLORS.primary, mr: 2 }} />
@@ -936,22 +1072,27 @@ const CurriculumFramework = () => {
                                                 <StyledTableCell sx={{
                                                     width: '80px',
                                                     color: theme.palette.text.secondary,
-                                                    borderBottomColor: theme.palette.divider
+                                            borderBottom: 'none'
                                                 }}>STT</StyledTableCell>
                                                 <StyledTableCell sx={{
                                                     color: theme.palette.text.secondary,
-                                                    borderBottomColor: theme.palette.divider
+                                            borderBottom: 'none'
                                                 }}>Tên chủ đề</StyledTableCell>
                                                 <StyledTableCell sx={{
                                                     width: '120px',
                                                     color: theme.palette.text.secondary,
-                                                    borderBottomColor: theme.palette.divider,
+                                            borderBottom: 'none',
                                                     textAlign: 'center'
                                                 }}>Thao tác</StyledTableCell>
                                                 <StyledTableCell align="right" sx={{
                                                     color: theme.palette.text.secondary,
-                                                    borderBottomColor: theme.palette.divider
+                                            borderBottom: 'none'
                                                 }}>Số tiết</StyledTableCell>
+                                                <StyledTableCell sx={{
+                                                    color: theme.palette.text.secondary,
+                                                    borderBottom: 'none',
+                                                    textAlign: 'center'
+                                                }}>Trạng thái</StyledTableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -1012,13 +1153,13 @@ const CurriculumFramework = () => {
                                                                         handleOpenDeleteConfirmDialog(module);
                                                                     }}
                                                                     sx={{
-                                                                        color: COLORS.error,
+                                                                        color: module.isActive ? COLORS.error : COLORS.success,
                                                                         '&:hover': {
-                                                                            bgcolor: 'rgba(255, 72, 66, 0.08)'
+                                                                            bgcolor: module.isActive ? 'rgba(255, 72, 66, 0.08)' : 'rgba(0, 171, 85, 0.08)'
                                                                         }
                                                                     }}
                                                                 >
-                                                                    <DeleteIcon fontSize="small" />
+                                                                    {module.isActive ? <DeleteIcon fontSize="small" /> : <CheckIcon fontSize="small" />}
                                                                 </IconButton>
                                                             </Box>
                                                         </TableCell>
@@ -1036,21 +1177,46 @@ const CurriculumFramework = () => {
                                                                 }}
                                                             />
                                                         </TableCell>
+                                                        <TableCell align="center" sx={{
+                                                            color: theme.palette.text.primary,
+                                                            border: 'none'
+                                                        }}>
+                                                            <Chip
+                                                                label={module.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
+                                                                color={module.isActive ? 'success' : 'error'}
+                                                                size="small"
+                                                            />
+                                                        </TableCell>
                                                     </StyledTableRow>
                                                     <TableRow>
                                                         <TableCell sx={{ paddingBottom: 0, paddingTop: 0, border: 'none' }} colSpan={3}>
                                                             <Collapse in={expandedModuleId === module.moduleId} timeout="auto" unmountOnExit>
-                                                                <Box sx={{ margin: 1, p: 2, bgcolor: theme.palette.background.secondary, borderRadius: 1 }}>
-                                                                    <Typography variant="h6" gutterBottom component="div" sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
+                                                                <Box sx={{ margin: 1, ml: 8 , p: 2, bgcolor: theme.palette.background.secondary, borderRadius: 1 }}>
+                                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                                                        <Box sx={{ border: `1px solid ${COLORS.primary}`, borderRadius: 1, p: 0.5, display: 'inline-block' }}>
+                                                                            <Typography variant="h6" gutterBottom component="div" sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 0, px: 1 }}>
                                                                         Bài học:
                                                                     </Typography>
+                                                                        </Box>
+                                                                        <StyledButton
+                                                                            variant="contained"
+                                                                            onClick={() => handleOpenAddLessonDialog(module.moduleId)}
+                                                                            startIcon={<AddIcon />}
+                                                                            colors={COLORS}
+                                                                            size="small"
+                                                                        >
+                                                                            Thêm Bài học
+                                                                        </StyledButton>
+                                                                    </Box>
                                                                     {module.lessons ? (
                                                                         <LessonDetails
                                                                             lessons={module.lessons}
                                                                             theme={theme}
-                                                                            colors={COLORS} // Pass COLORS instead of colors
-                                                                            moduleId={module.moduleId} // Pass module ID
-                                                                            fetchLessons={fetchLessons} // Pass fetchLessons handler
+                                                                    colors={COLORS}
+                                                                    moduleId={module.moduleId}
+                                                                    fetchLessons={fetchLessons}
+                                                                    gradeNumber={userGradeNumber}
+                                                                    onCurriculumRefresh={fetchCurricula}
                                                                         />
                                                                     ) : (
                                                                         <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
@@ -1124,23 +1290,6 @@ const CurriculumFramework = () => {
                                                     onChange={(e) => setEditableModuleData({ ...editableModuleData, semester: e.target.value })}
                                                     variant="outlined"
                                                     inputProps={{ min: 1, max: 2 }}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={12} sm={6}>
-                                                <TextField
-                                                    fullWidth
-                                                    label="Tổng số tiết"
-                                                    type="number"
-                                                    value={editableModuleData?.totalPeriods || ''}
-                                                    onChange={(e) => {
-                                                        const value = e.target.value;
-                                                        const intValue = parseInt(value, 10);
-                                                        if (value === '' || (intValue === 1 || intValue === 2)) {
-                                                            setEditableModuleData({ ...editableModuleData, totalPeriods: value === '' ? '' : intValue });
-                                                        }
-                                                    }}
-                                                    variant="outlined"
-                                                    inputProps={{ min: 0 }}
                                                 />
                                             </Grid>
                                         </Grid>
@@ -1349,23 +1498,6 @@ const CurriculumFramework = () => {
                                             inputProps={{ min: 1, max: 2 }}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="Tổng số tiết"
-                                            type="number"
-                                            value={newModuleData?.totalPeriods || ''}
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                const intValue = parseInt(value, 10);
-                                                if (value === '' || (intValue === 1 || intValue === 2)) {
-                                                    setNewModuleData({ ...newModuleData, totalPeriods: value === '' ? '' : intValue });
-                                                }
-                                            }}
-                                            variant="outlined"
-                                            inputProps={{ min: 0 }}
-                                        />
-                                    </Grid>
                                 </Grid>
                             </Box>
                         </DialogContent>
@@ -1379,7 +1511,7 @@ const CurriculumFramework = () => {
                         </DialogActions>
                     </Dialog>
 
-                    {/* Delete Confirmation Dialog for Module */}
+                    {/* Update the Delete Confirmation Dialog */}
                     <Dialog
                         open={openDeleteConfirmDialog}
                         onClose={handleCloseDeleteConfirmDialog}
@@ -1388,12 +1520,12 @@ const CurriculumFramework = () => {
                     >
                         <DialogTitle>
                             <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
-                                Xác nhận Xóa Chủ đề
+                                Xác nhận Thay đổi Trạng thái
                             </Typography>
                         </DialogTitle>
                         <DialogContent dividers>
                             <Typography sx={{ color: theme.palette.text.secondary }}>
-                                Bạn có chắc chắn muốn xóa chủ đề "{moduleToDelete?.name}" không? Hành động này không thể hoàn tác.
+                                Bạn có chắc chắn muốn {moduleToDelete?.isActive ? 'tắt' : 'bật'} trạng thái hoạt động của chủ đề "{moduleToDelete?.name}" không?
                             </Typography>
                         </DialogContent>
                         <DialogActions>
@@ -1403,19 +1535,137 @@ const CurriculumFramework = () => {
                             <Button
                                 onClick={async () => {
                                     if (moduleToDelete) {
-                                        await handleDeleteModule(moduleToDelete.moduleId);
+                                        await handleToggleModuleStatus(moduleToDelete);
+                                        handleCloseDeleteConfirmDialog();
                                     }
                                 }}
                                 variant="contained"
-                                sx={{ bgcolor: COLORS.error, color: '#fff' }}
+                                sx={{ 
+                                    bgcolor: moduleToDelete?.isActive ? COLORS.error : COLORS.success,
+                                    color: '#fff',
+                                    '&:hover': {
+                                        bgcolor: moduleToDelete?.isActive ? '#d32f2f' : '#2e7d32'
+                                    }
+                                }}
                             >
-                                Xóa
+                                {moduleToDelete?.isActive ? 'Tắt hoạt động' : 'Bật hoạt động'}
                             </Button>
                         </DialogActions>
                     </Dialog>
-                </Container>
+
+            {/* Add Lesson Dialog (moved from LessonDetails)*/}
+            <Dialog
+                open={openAddLessonDialog}
+                onClose={handleCloseAddLessonDialog}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+                        Thêm Bài học Mới
+                    </Typography>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Box sx={{ mt: 2 }}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Tên bài học"
+                                    value={newLessonData?.name || ''}
+                                    onChange={(e) => setNewLessonData({ ...newLessonData, name: e.target.value })}
+                                    variant="outlined"
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Mô tả"
+                                    value={newLessonData?.description || ''}
+                                    onChange={(e) => setNewLessonData({ ...newLessonData, description: e.target.value })}
+                                    variant="outlined"
+                                    multiline
+                                    rows={3}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <FormControl fullWidth variant="outlined">
+                                    <InputLabel>Tổng số tiết</InputLabel>
+                                    <Select
+                                        fullWidth
+                                        value={newLessonData?.totalPeriods || ''}
+                                        onChange={(e) => {
+                                            const selectedPeriods = parseInt(e.target.value, 10);
+                                            setNewLessonData({
+                                                ...newLessonData,
+                                                totalPeriods: selectedPeriods,
+                                                noteId: selectedPeriods === 1 ? 1 : selectedPeriods === 2 ? 2 : '', // Set noteId based on totalPeriods
+                                            });
+                                        }}
+                                        label="Tổng số tiết"
+                                    >
+                                        <MenuItem value={1}>1 tiết</MenuItem>
+                                        <MenuItem value={2}>2 tiết</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <FormControl fullWidth variant="outlined" disabled={lessonTypesLoading || !!lessonTypesError}>
+                                    <InputLabel>Loại bài học</InputLabel>
+                                    <Select
+                                        value={newLessonData?.lessonTypeId || ''}
+                                        onChange={(e) => setNewLessonData({ ...newLessonData, lessonTypeId: e.target.value })}
+                                        label="Loại bài học"
+                                    >
+                                        {lessonTypesError ? (
+                                            <MenuItem value="" disabled>{lessonTypesError}</MenuItem>
+                                        ) : lessonTypesLoading ? (
+                                            <MenuItem value="" disabled>Đang tải...</MenuItem>
+                                        ) : (
+                                            lessonTypes.map((type) => (
+                                                <MenuItem key={type.lessonTypeId} value={type.lessonTypeId}>
+                                                    {type.lessonTypeName}
+                                                </MenuItem>
+                                            ))
+                                        )}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <FormControl fullWidth variant="outlined" disabled={true}> {/* Disable the Note select */}
+                                    <InputLabel>Ghi chú</InputLabel>
+                                    <Select
+                                        value={newLessonData?.noteId || ''} // Value is controlled by totalPeriods now
+                                        onChange={(e) => setNewLessonData({ ...newLessonData, noteId: e.target.value })}
+                                        label="Ghi chú"
+                                    >
+                                        {notesError ? (
+                                            <MenuItem value="" disabled>{notesError}</MenuItem>
+                                        ) : notesLoading ? (
+                                            <MenuItem value="" disabled>Đang tải...</MenuItem>
+                                        ) : (
+                                            notes.map((note) => (
+                                                <MenuItem key={note.noteId} value={note.noteId}>
+                                                    {note.description}
+                                                </MenuItem>
+                                            ))
+                                        )}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                        </Grid>
             </Box>
-        </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseAddLessonDialog} sx={{ color: theme.palette.text.secondary }}>
+                        Hủy
+                    </Button>
+                    <Button onClick={handleSaveNewLesson} variant="contained" sx={{ bgcolor: COLORS.primary, color: '#fff' }}>
+                        Lưu bài học
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Container>
     );
 };
 

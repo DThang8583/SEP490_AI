@@ -16,7 +16,17 @@ import {
     Button,
     Grid,
     IconButton,
-    
+    TableContainer,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    Paper,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from '@mui/material';
 import {
     AccessTime as AccessTimeIcon,
@@ -29,6 +39,7 @@ import {
     DateRange as DateRangeIcon,
     Class as ClassIcon,
     ImportContacts as ImportContactsIcon,
+    Check as CheckIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
@@ -74,13 +85,9 @@ const StyledButton = styled(Button)(({ theme, colors }) => ({
     }
 }));
 
-const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
-    // Sort lessons by lessonId in ascending order
+const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons, onModulesRefresh, gradeNumber, onCurriculumRefresh }) => {
+    console.log(`LessonDetails component rendered for module ${moduleId}.`); // Simple render log
     const sortedLessons = lessons ? [...lessons].sort((a, b) => a.lessonId - b.lessonId) : [];
-
-    // State for controlling the add lesson dialog
-    const [openAddLessonDialog, setOpenAddLessonDialog] = useState(false);
-    const [newLessonData, setNewLessonData] = useState(null);
 
     // State for controlling view lesson details dialog
     const [openLessonDetailsDialog, setOpenLessonDetailsDialog] = useState(false);
@@ -94,38 +101,67 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
     const [openEditLessonDialog, setOpenEditLessonDialog] = useState(false);
     const [editedLessonData, setEditedLessonData] = useState(null);
 
-    // Handler for opening add lesson dialog
-    const handleOpenAddLessonDialog = () => {
-        setOpenAddLessonDialog(true);
-        // Initialize new lesson data
-        setNewLessonData({
-            name: '',
-            description: '',
-            totalPeriods: 1, // Default to 1 tiết
-            lessonTypeId: 1, // Default or get from list
-            noteId: 1, // Default or get from list
-            weekId: 1, // Default or get from list
-            moduleId: moduleId // Use moduleId prop
-        });
-    };
+    // State for fetched data
+    const [notes, setNotes] = useState([]);
+    const [lessonTypes, setLessonTypes] = useState([]);
+    const [notesLoading, setNotesLoading] = useState(true);
+    const [lessonTypesLoading, setLessonTypesLoading] = useState(true);
+    const [notesError, setNotesError] = useState(null);
+    const [lessonTypesError, setLessonTypesError] = useState(null);
 
-    // Handler for closing add lesson dialog
-    const handleCloseAddLessonDialog = () => {
-        setOpenAddLessonDialog(false);
-        setNewLessonData(null); // Clear form data
-    };
+    // Fetch notes and lesson types on component mount
+    React.useEffect(() => {
+        const fetchNotesAndLessonTypes = async () => {
+            // Fetch Notes
+            try {
+                setNotesLoading(true);
+                const notesResponse = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/notes');
+                if (notesResponse.data.code === 0 && notesResponse.data.data) {
+                    setNotes(notesResponse.data.data);
+                } else {
+                    setNotesError(notesResponse.data.message || 'Lỗi khi tải danh sách ghi chú');
+                }
+            } catch (error) {
+                console.error('Error fetching notes:', error);
+                setNotesError('Không thể tải danh sách ghi chú.');
+            } finally {
+                setNotesLoading(false);
+            }
+
+            // Fetch Lesson Types
+            try {
+                setLessonTypesLoading(true);
+                const lessonTypesResponse = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-types');
+                if (lessonTypesResponse.data.code === 0 && lessonTypesResponse.data.data) {
+                    setLessonTypes(lessonTypesResponse.data.data);
+                } else {
+                    setLessonTypesError(lessonTypesResponse.data.message || 'Lỗi khi tải danh sách loại bài học');
+                }
+            } catch (error) {
+                console.error('Error fetching lesson types:', error);
+                setLessonTypesError('Không thể tải danh sách loại bài học.');
+            } finally {
+                setLessonTypesLoading(false);
+            }
+        };
+
+        fetchNotesAndLessonTypes();
+    }, []);
 
     // Handler for opening edit lesson dialog
     const handleOpenEditLessonDialog = async (lessonId) => {
         try {
             const response = await axios.get(
-                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}/info`
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}`
             );
 
             if (response.data.code === 0 && response.data.data) {
                 console.log('Fetched Lesson Details for Editing:', response.data.data);
                 // Populate state with fetched data
-                setEditedLessonData({ ...response.data.data });
+                const fetchedLesson = response.data.data;
+                // Determine initial noteId based on totalPeriods
+                const initialNoteId = fetchedLesson.totalPeriods === 1 ? 1 : fetchedLesson.totalPeriods === 2 ? 2 : ''; // Apply the same logic as onChange
+                setEditedLessonData({ ...fetchedLesson, noteId: initialNoteId });
                 setOpenEditLessonDialog(true);
             } else {
                 console.error(`Error fetching lesson details for editing ${lessonId}:`, response.data.message);
@@ -141,38 +177,6 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
     const handleCloseEditLessonDialog = () => {
         setOpenEditLessonDialog(false);
         setEditedLessonData(null); // Clear form data
-    };
-
-    // Handler for saving new lesson
-    const handleSaveNewLesson = async () => {
-        if (newLessonData && moduleId) { // Use moduleId prop
-            try {
-                const accessToken = localStorage.getItem('accessToken');
-                const response = await axios.post(
-                    'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons', newLessonData,
-                    { headers: { Authorization: `Bearer ${accessToken}` } }
-                );
-
-                console.log('Create Lesson API Response Code:', response.data.code);
-
-                if (response.data.code === 0 || response.data.code === 21) { // Assuming 21 might also indicate success for creation
-                    console.log(`Lesson created successfully for module ${moduleId}:`, response.data.data); // Use moduleId prop
-                    // Refetch lessons for the current module to update the list
-                    fetchLessons(moduleId); // Use fetchLessons prop
-                    // Close dialog
-                    handleCloseAddLessonDialog();
-                } else {
-                    console.error(`Error creating lesson for module ${moduleId}:`, response.data.message);
-                    alert(`Tạo mới bài học thất bại: ${response.data.message}`);
-                }
-            } catch (error) {
-                console.error(`Error creating lesson for module ${moduleId}:`, error);
-                alert(`Đã xảy ra lỗi khi tạo mới bài học.`);
-            }
-        } else {
-            console.error('No lesson data or module ID to save.');
-            alert('Không có dữ liệu bài học hoặc ID chủ đề để lưu.');
-        }
     };
 
     // Handler for viewing lesson details
@@ -202,49 +206,47 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
         setOpenLessonDetailsDialog(false);
     };
 
-    // Handler for opening delete lesson confirmation dialog
-    const handleOpenDeleteLessonConfirmDialog = (lesson) => {
+    // Handler for toggling lesson status
+    const handleToggleLessonStatus = async (lesson) => {
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+            const response = await axios.delete(
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lesson.lessonId}`,
+                { headers: { Authorization: `Bearer ${accessToken}` } }
+            );
+
+            console.log('Toggle Lesson Status API Response Code:', response.data.code);
+
+            if (response.data.code === 0 || response.data.code === 31) {
+                console.log(`Lesson ${lesson.lessonId} status toggled successfully.`);
+                // Refresh lessons for the current module
+                await fetchLessons(moduleId);
+                
+                // Refresh all curriculum and modules data using the provided prop
+                if (onCurriculumRefresh) {
+                    await onCurriculumRefresh();
+                    console.log('Curriculum and Modules data refresh triggered from LessonDetails');
+                }
+            } else {
+                console.error(`Error toggling lesson ${lesson.lessonId} status:`, response.data.message);
+                alert(`Thay đổi trạng thái bài học thất bại: ${response.data.message}`);
+            }
+        } catch (error) {
+            console.error(`Error toggling lesson ${lesson.lessonId} status:`, error);
+            alert(`Đã xảy ra lỗi khi thay đổi trạng thái bài học.`);
+        }
+    };
+
+    // Handler for opening lesson status toggle confirmation dialog
+    const handleOpenToggleStatusDialog = (lesson) => {
         setLessonToDelete(lesson);
-        setOpenDeleteLessonConfirmDialog(prev => true);
+        setOpenDeleteLessonConfirmDialog(true);
     };
 
     // Handler for closing delete lesson confirmation dialog
     const handleCloseDeleteLessonConfirmDialog = () => {
         setLessonToDelete(null);
         setOpenDeleteLessonConfirmDialog(false);
-    };
-
-    // Handler for deleting a lesson
-    const handleDeleteLesson = async (lessonId) => {
-        console.log('Attempting to delete lesson with ID:', lessonId);
-        if (!moduleId) { // Ensure moduleId is available
-             console.error('Module ID not available for deleting lesson.');
-             alert('Không có ID chủ đề để xóa bài học.');
-             return;
-        }
-        try {
-            const accessToken = localStorage.getItem('accessToken');
-            const response = await axios.delete(
-                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}`,
-                { headers: { Authorization: `Bearer ${accessToken}` } }
-            );
-
-            console.log('Delete Lesson API Response Code:', response.data.code);
-
-            if (response.data.code === 0 || response.data.code === 31) { // Assuming 31 might indicate success for deletion
-                console.log(`Lesson ${lessonId} deleted successfully.`);
-                // Refetch lessons for the current module to update the list
-                fetchLessons(moduleId); // Use fetchLessons prop
-                // Close the delete confirmation dialog
-                handleCloseDeleteLessonConfirmDialog();
-            } else {
-                console.error(`Error deleting lesson ${lessonId}:`, response.data.message);
-                alert(`Xóa bài học thất bại: ${response.data.message}`);
-            }
-        } catch (error) {
-            console.error(`Error deleting lesson ${lessonId}:`, error);
-            alert(`Đã xảy ra lỗi khi xóa bài học.`);
-        }
     };
 
     // Handler for saving edited lesson
@@ -281,78 +283,48 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
     };
 
     return (
-        <Box sx={{ margin: 1, p: 2, bgcolor: theme.palette.background.secondary, borderRadius: 1 }}>
-            {sortedLessons.length > 0 && (
                 <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontWeight: 'bold',
-                    py: 1,
-                    borderBottom: `1px solid ${theme.palette.divider}`,
-                    color: theme.palette.text.primary,
-                    fontSize: '0.875rem', // Match List Item font size if needed
-                }}>
-                    {/* STT and Tên bài học */}
-                    <Box sx={{
-                        flexGrow: 1,
-                        marginRight: 1,
-                        // Adjust width based on ListItemText properties if necessary
-                    }}>
-                        STT Tên bài học
-                    </Box>
-                    {/* Số tiết - match InfoChip layout */}
-                    <Box sx={{
-                        // Use flex property to control size and shrinking
-                        flex: '0 0 auto', // Prevent growing, allow shrinking, base size auto
-                        marginRight: 1,
-                        textAlign: 'center', // Center text
-                    }}>
-                        Số tiết
-                     </Box>
-                     {/* Thao tác - match Action Icons Box layout */}
-                      <Box sx={{
-                          flexShrink: 0,
-                          // Use flex property to control size and shrinking
-                          flex: '0 0 auto', // Prevent growing, allow shrinking, base size auto
-                          textAlign: 'center', // Center text
-                      }}>
-                          Thao tác
-                      </Box>
-                 </Box>
-             )}
+            margin: 1,
+            p: 2,
+            bgcolor: theme.palette.background.secondary,
+            borderRadius: 1,
+            ml: 4,
+        }}>
             {sortedLessons.length > 0 ? (
-                <List dense={true}>
+                <TableContainer component={Paper} sx={{ boxShadow: 'none', border: `1px solid ${theme.palette.grey[400]}`, minWidth: 800 }}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, borderRight: `1px solid ${theme.palette.grey[400]}` }}>STT</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, borderRight: `1px solid ${theme.palette.grey[400]}` }}>Tên bài học</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, borderRight: `1px solid ${theme.palette.grey[400]}` }}>Loại bài học</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, borderRight: `1px solid ${theme.palette.grey[400]}`, textAlign: 'center' }}>Số tiết</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, textAlign: 'center' }}>Trạng thái</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', borderBottom: `1px solid ${theme.palette.grey[400]}`, textAlign: 'center' }}>Thao tác</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
                     {sortedLessons.map((lesson, index) => (
-                        <ListItem 
-                            key={lesson.lessonId} 
-                            sx={{ 
-                                py: 0.5, 
-                                display: 'flex',
-                                 alignItems: 'center',
-                            }}
-                        >
-                            <ListItemText 
-                                primary={`${index + 1}. ${lesson.name}`} 
-                                 primaryTypographyProps={{
-                                     color: theme.palette.text.primary,
-                                     fontWeight: 500,
-                                     overflow: 'hidden',
-                                     textOverflow: 'ellipsis',
-                                     whiteSpace: 'nowrap',
-                                     flexGrow: 1,
-                                     marginRight: 1
-                                 }} 
-                            />
+                                <TableRow key={lesson.lessonId} sx={{ '&:last-child td': { borderBottom: 0 } }}>
+                                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.grey[400]}` }}>{index + 1}</TableCell>
+                                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.grey[400]}` }}>{lesson.name}</TableCell>
+                                    <TableCell sx={{ borderRight: `1px solid ${theme.palette.grey[400]}` }}>{lesson.lessonType}</TableCell>
+                                    <TableCell align="center" sx={{ borderRight: `1px solid ${theme.palette.grey[400]}` }}>
                             <InfoChip
                                 icon={<AccessTimeIcon fontSize="small" sx={{ color: colors.primary }} />} 
                                 label={`${lesson.totalPeriods} tiết`} 
                                 colors={colors}
-                                 sx={{
-                                     marginRight: 1,
-                                     flexShrink: 0
-                                 }}
-                             />
-                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                                        />
+                                    </TableCell>
+                                    <TableCell align="center" sx={{ borderRight: `1px solid ${theme.palette.grey[400]}` }}>
+                                        <Chip
+                                            label={lesson.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
+                                            color={lesson.isActive ? 'success' : 'error'}
+                                            size="small"
+                                        />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                                  <IconButton
                                      size="small"
                                      onClick={() => handleViewLessonDetails(lesson.lessonId)}
@@ -365,184 +337,30 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
                                  >
                                      <VisibilityIcon fontSize="small" />
                                  </IconButton>
-                                 {/* Edit Icon Button */}
                                  <IconButton
                                      size="small"
-                                     onClick={() => handleOpenEditLessonDialog(lesson.lessonId)}
+                                                onClick={() => handleOpenToggleStatusDialog(lesson)}
                                      sx={{
-                                         color: colors.primary, // Use colors prop
+                                                    color: lesson.isActive ? colors.error : colors.success,
                                          '&:hover': {
-                                             bgcolor: colors.hover.primary // Use colors prop
+                                                        bgcolor: lesson.isActive ? 'rgba(255, 72, 66, 0.08)' : 'rgba(0, 171, 85, 0.08)'
                                          }
                                      }}
                                  >
-                                     <EditIcon fontSize="small" />
-                                 </IconButton>
-                                 <IconButton
-                                     size="small"
-                                     onClick={() => handleOpenDeleteLessonConfirmDialog(lesson)}
-                                     sx={{
-                                         color: colors.error,
-                                         '&:hover': {
-                                             bgcolor: colors.hover.error
-                                         }
-                                     }}
-                                 >
-                                     <DeleteIcon fontSize="small" />
+                                                {lesson.isActive ? <DeleteIcon fontSize="small" /> : <CheckIcon fontSize="small" />}
                                  </IconButton>
                              </Box>
-                        </ListItem>
-                    ))}
-                </List>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
             ) : (
-                 <Typography sx={{ color: theme.palette.text.secondary, mb: 2 }}>Không có bài học nào cho chủ đề này.</Typography>
-            )}
-             {/* Add Lesson Button for this module */}
-             <Box sx={{ textAlign: 'right', mt: 2 }}>
-                 <StyledButton
-                     variant="outlined"
-                     onClick={handleOpenAddLessonDialog} // No need to pass moduleId here, it's in state
-                     startIcon={<AddIcon />}
-                     size="small"
-                     colors={colors}
-                 >
-                     Thêm bài học
-                 </StyledButton>
-             </Box>
-
-             {/* Add Lesson Dialog */}
-             <Dialog
-                 open={openAddLessonDialog}
-                 onClose={handleCloseAddLessonDialog}
-                 maxWidth="sm"
-                 fullWidth
-             >
-                 <DialogTitle>
-                     <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
-                         Thêm Bài học Mới
+                <Typography sx={{ textAlign: 'center', color: theme.palette.text.secondary, mt: 2 }}>
+                    Không có bài học nào trong chủ đề này.
                      </Typography>
-                 </DialogTitle>
-                 <DialogContent dividers>
-                     <Box sx={{ mt: 2 }}>
-                         <Grid container spacing={2}>
-                             <Grid item xs={12}>
-                                 <TextField
-                                     fullWidth
-                                     label="Tên bài học"
-                                     value={newLessonData?.name || ''}
-                                     onChange={(e) => setNewLessonData({ ...newLessonData, name: e.target.value })}
-                                     variant="outlined"
-                                 />
-                             </Grid>
-                             <Grid item xs={12}>
-                                 <TextField
-                                     fullWidth
-                                     label="Mô tả"
-                                     value={newLessonData?.description || ''}
-                                     onChange={(e) => setNewLessonData({ ...newLessonData, description: e.target.value })}
-                                     variant="outlined"
-                                     multiline
-                                     rows={3}
-                                 />
-                             </Grid>
-                             <Grid item xs={12} sm={6}>
-                                 <TextField
-                                     fullWidth
-                                     label="Tổng số tiết"
-                                     type="number"
-                                     value={newLessonData?.totalPeriods || ''}
-                                     onChange={(e) => {
-                                         const value = e.target.value;
-                                         const intValue = parseInt(value, 10);
-                                         if (value === '' || (intValue === 1 || intValue === 2)) {
-                                             setNewLessonData({ ...newLessonData, totalPeriods: value === '' ? '' : intValue });
-                                         }
-                                     }}
-                                     variant="outlined"
-                                     inputProps={{ min: 1 }}
-                                 />
-                             </Grid>
-                             {/* lessonTypeId, noteId, weekId are set as default in handleOpenAddLessonDialog */}
-                         </Grid>
-                     </Box>
-                 </DialogContent>
-                 <DialogActions>
-                     <Button onClick={handleCloseAddLessonDialog} sx={{ color: theme.palette.text.secondary }}>
-                         Hủy
-                     </Button>
-                     <Button onClick={handleSaveNewLesson} variant="contained" sx={{ bgcolor: colors.primary, color: '#fff' }}>
-                         Lưu bài học
-                     </Button>
-                 </DialogActions>
-             </Dialog>
-
-             {/* Edit Lesson Dialog */}
-             <Dialog
-                 open={openEditLessonDialog}
-                 onClose={handleCloseEditLessonDialog}
-                 maxWidth="sm"
-                 fullWidth
-             >
-                 <DialogTitle>
-                     <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
-                         Chỉnh sửa Bài học
-                     </Typography>
-                 </DialogTitle>
-                 <DialogContent dividers>
-                     {editedLessonData && (
-                         <Box sx={{ mt: 2 }}>
-                             <Grid container spacing={2}>
-                                 <Grid item xs={12}>
-                                     <TextField
-                                         fullWidth
-                                         label="Tên bài học"
-                                         value={editedLessonData.name || ''}
-                                         onChange={(e) => setEditedLessonData({ ...editedLessonData, name: e.target.value })}
-                                         variant="outlined"
-                                     />
-                                 </Grid>
-                                 <Grid item xs={12}>
-                                     <TextField
-                                         fullWidth
-                                         label="Mô tả"
-                                         value={editedLessonData.description || ''}
-                                         onChange={(e) => setEditedLessonData({ ...editedLessonData, description: e.target.value })}
-                                         variant="outlined"
-                                         multiline
-                                         rows={3}
-                                     />
-                                 </Grid>
-                                 <Grid item xs={12} sm={6}>
-                                     <TextField
-                                         fullWidth
-                                         label="Tổng số tiết"
-                                         type="number"
-                                         value={editedLessonData.totalPeriods || ''}
-                                         onChange={(e) => {
-                                             const value = e.target.value;
-                                             const intValue = parseInt(value, 10);
-                                             if (value === '' || (intValue === 1 || intValue === 2)) {
-                                                 setEditedLessonData({ ...editedLessonData, totalPeriods: value === '' ? '' : intValue });
-                                             }
-                                         }}
-                                         variant="outlined"
-                                         inputProps={{ min: 0 }}
-                                     />
-                                 </Grid>
-                                 {/* Add other fields like lesson type, note, week, module here if needed */}
-                             </Grid>
-                         </Box>
                      )}
-                 </DialogContent>
-                 <DialogActions>
-                     <Button onClick={handleCloseEditLessonDialog} sx={{ color: theme.palette.text.secondary }}>
-                         Hủy
-                     </Button>
-                     <Button onClick={handleSaveEditedLesson} variant="contained" sx={{ bgcolor: colors.primary, color: '#fff' }}>
-                         Lưu thay đổi
-                     </Button>
-                 </DialogActions>
-             </Dialog>
 
              {/* View Lesson Details Dialog */}
              <Dialog
@@ -587,13 +405,6 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
                                              <InfoChip
                                                  icon={<MenuBookIcon />} 
                                                  label={`Loại bài học: ${lessonDetails.lessonType}`}
-                                                 colors={colors}
-                                             />
-                                         )}
-                                         {lessonDetails.week && (
-                                             <InfoChip
-                                                 icon={<DateRangeIcon />} 
-                                                 label={`Tuần: ${lessonDetails.week}`}
                                                  colors={colors}
                                              />
                                          )}
@@ -648,11 +459,6 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
                                              <strong>Ghi chú:</strong> {lessonDetails.note}
                                          </Typography>
                                      </Grid>
-                                     <Grid item xs={12} sm={6}> 
-                                         <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
-                                             <strong>Tuần:</strong> {lessonDetails.week}
-                                         </Typography>
-                                     </Grid>
                                       <Grid item xs={12} sm={6}> 
                                          <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                                              <strong>Chủ đề:</strong> {lessonDetails.module}
@@ -684,12 +490,12 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
              >
                  <DialogTitle>
                      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
-                         Xác nhận Xóa Bài học
+                        Xác nhận Thay đổi Trạng thái
                      </Typography>
                  </DialogTitle>
                  <DialogContent dividers>
                      <Typography sx={{ color: theme.palette.text.secondary }}>
-                         Bạn có chắc chắn muốn xóa bài học "{lessonToDelete?.name}" không? Hành động này không thể hoàn tác.
+                        Bạn có chắc chắn muốn {lessonToDelete?.isActive ? 'tắt' : 'bật'} trạng thái hoạt động của bài học "{lessonToDelete?.name}" không?
                      </Typography>
                  </DialogContent>
                  <DialogActions>
@@ -698,15 +504,134 @@ const LessonDetails = ({ lessons, theme, colors, moduleId, fetchLessons }) => {
                      </Button>
                      <Button
                          onClick={async () => {
-                             console.log('Delete button clicked in dialog.');
-                             if (lessonToDelete) { // Check only lessonToDelete
-                                 await handleDeleteLesson(lessonToDelete.lessonId);
+                            if (lessonToDelete) {
+                                await handleToggleLessonStatus(lessonToDelete);
+                                handleCloseDeleteLessonConfirmDialog();
                              }
                          }}
                          variant="contained"
-                         sx={{ bgcolor: colors.error, color: '#fff' }}
-                     >
-                         Xóa
+                        sx={{ 
+                            bgcolor: lessonToDelete?.isActive ? colors.error : colors.success,
+                            color: '#fff',
+                            '&:hover': {
+                                bgcolor: lessonToDelete?.isActive ? '#d32f2f' : '#2e7d32'
+                            }
+                        }}
+                    >
+                        {lessonToDelete?.isActive ? 'Tắt hoạt động' : 'Bật hoạt động'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Edit Lesson Dialog */}
+            <Dialog
+                open={openEditLessonDialog}
+                onClose={handleCloseEditLessonDialog}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+                        Chỉnh sửa Bài học
+                    </Typography>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Box sx={{ mt: 2 }}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Tên bài học"
+                                    value={editedLessonData?.name || ''}
+                                    onChange={(e) => setEditedLessonData({ ...editedLessonData, name: e.target.value })}
+                                    variant="outlined"
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Mô tả"
+                                    value={editedLessonData?.description || ''}
+                                    onChange={(e) => setEditedLessonData({ ...editedLessonData, description: e.target.value })}
+                                    variant="outlined"
+                                    multiline
+                                    rows={3}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <FormControl fullWidth variant="outlined">
+                                    <InputLabel>Tổng số tiết</InputLabel>
+                                    <Select
+                                        fullWidth
+                                        value={editedLessonData?.totalPeriods || ''}
+                                        onChange={(e) => {
+                                            const selectedPeriods = parseInt(e.target.value, 10);
+                                            setEditedLessonData({
+                                                ...editedLessonData,
+                                                totalPeriods: selectedPeriods,
+                                                noteId: selectedPeriods === 1 ? 1 : selectedPeriods === 2 ? 2 : '',
+                                            });
+                                        }}
+                                        label="Tổng số tiết"
+                                    >
+                                        <MenuItem value={1}>1 tiết</MenuItem>
+                                        <MenuItem value={2}>2 tiết</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <FormControl fullWidth variant="outlined" disabled={lessonTypesLoading || !!lessonTypesError}>
+                                    <InputLabel>Loại bài học</InputLabel>
+                                    <Select
+                                        value={editedLessonData?.lessonTypeId || ''}
+                                        onChange={(e) => setEditedLessonData({ ...editedLessonData, lessonTypeId: e.target.value })}
+                                        label="Loại bài học"
+                                    >
+                                        {lessonTypesError ? (
+                                            <MenuItem value="" disabled>{lessonTypesError}</MenuItem>
+                                        ) : lessonTypesLoading ? (
+                                            <MenuItem value="" disabled>Đang tải...</MenuItem>
+                                        ) : (
+                                            lessonTypes.map((type) => (
+                                                <MenuItem key={type.lessonTypeId} value={type.lessonTypeId}>
+                                                    {type.lessonTypeName}
+                                                </MenuItem>
+                                            ))
+                                        )}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <FormControl fullWidth variant="outlined" disabled={true}>
+                                    <InputLabel>Ghi chú</InputLabel>
+                                    <Select
+                                        value={editedLessonData?.noteId || ''}
+                                        onChange={(e) => setEditedLessonData({ ...editedLessonData, noteId: e.target.value })}
+                                        label="Ghi chú"
+                                    >
+                                        {notesError ? (
+                                            <MenuItem value="" disabled>{notesError}</MenuItem>
+                                        ) : notesLoading ? (
+                                            <MenuItem value="" disabled>Đang tải...</MenuItem>
+                                        ) : (
+                                            notes.map((note) => (
+                                                <MenuItem key={note.noteId} value={note.noteId}>
+                                                    {note.description}
+                                                </MenuItem>
+                                            ))
+                                        )}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseEditLessonDialog} sx={{ color: theme.palette.text.secondary }}>
+                        Hủy
+                    </Button>
+                    <Button onClick={handleSaveEditedLesson} variant="contained" sx={{ bgcolor: colors.primary, color: '#fff' }}>
+                        Lưu bài học
                      </Button>
                  </DialogActions>
              </Dialog>

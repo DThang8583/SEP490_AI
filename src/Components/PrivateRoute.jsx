@@ -25,7 +25,7 @@ const PrivateRoute = ({ children }) => {
         break;
       case "Administrator":
         if (!location.pathname.startsWith('/admin')) {
-          return <Navigate to="/admin/dashboard" replace />;
+          return <Navigate to="/admin" replace />;
         }
         break;
       case "Teacher":

@@ -52,6 +52,8 @@ const Profile = ({ sidebarOpen }) => {
                     }
                 );
 
+                console.log('User Profile API Response Body:', response.data);
+
                 const userData = response.data.data;
                 setProfile(userData);
 
