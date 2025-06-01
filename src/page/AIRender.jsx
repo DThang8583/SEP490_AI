@@ -97,6 +97,8 @@ const parseContent = (generatedText) => {
       .replace(/^Mục tiêu:?/gim, '')
       .replace(/^HOẠT ĐỘNG CỦA GIÁO VIÊN:?/gim, '')
       .replace(/^HOẠT ĐỘNG CỦA HỌC SINH:?/gim, '')
+      .replace(/^:\s*/gm, '') // Remove leading colon and spaces
+      .replace(/^\s*[:\-\*]+\s*/gm, '') // Remove leading colons, dashes, asterisks and spaces
       .trim();
   };
 
