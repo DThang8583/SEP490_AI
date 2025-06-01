@@ -368,13 +368,10 @@ const DifficultyChip = styled(Chip)(({ theme, selected }) => ({
 
 const CreateExerciseModal = ({ open, handleClose, onQuizCreated }) => {
   const navigate = useNavigate();
-  const [gradeId, setGradeId] = useState('');
   const [moduleId, setModuleId] = useState('');
   const [lessonId, setLessonId] = useState('');
-  const [grades, setGrades] = useState([]);
   const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState([]);
-  const [loadingGrades, setLoadingGrades] = useState(true);
   const [loadingModules, setLoadingModules] = useState(false);
   const [loadingLessons, setLoadingLessons] = useState(false);
   const [error, setError] = useState('');
@@ -386,52 +383,15 @@ const CreateExerciseModal = ({ open, handleClose, onQuizCreated }) => {
   const [exerciseName, setExerciseName] = useState('');
   const [questionCount, setQuestionCount] = useState('5');
 
-  // Fetch Grades on modal open
-  useEffect(() => {
-    if (open) {
-      const fetchGrades = async () => {
-        setLoadingGrades(true);
-        setError('');
-        try {
-          const token = localStorage.getItem('accessToken');
-          if (!token) {
-            throw new Error("Authentication token not found.");
-          }
-          const response = await axios.get(
-            `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades`,
-            { headers: { 'Authorization': `Bearer ${token}` } }
-          );
-          if (response.data.code === 0) {
-            setGrades(response.data.data || []);
-            
-            // Get grade from localStorage and set corresponding gradeId
-            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-            if (userInfo?.grade) {
-              const gradeNumber = userInfo.grade.replace('Lớp ', '');
-              const matchingGrade = response.data.data.find(g => g.gradeNumber === parseInt(gradeNumber));
-              if (matchingGrade) {
-                setGradeId(matchingGrade.gradeId);
-              }
-            }
-          } else {
-            setError(response.data.message || 'Failed to fetch grades.');
-            setGrades([]);
-          }
-        } catch (err) {
-          console.error("Error fetching grades:", err);
-          setError(err.message || 'An error occurred while fetching grades.');
-          setGrades([]);
-        } finally {
-          setLoadingGrades(false);
-        }
-      };
-      fetchGrades();
-    }
-  }, [open]);
+  // Get gradeId from localStorage
+  const gradeId = (() => {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    return userInfo?.gradeId || '';
+  })();
 
-  // Fetch Modules when grade changes
+  // Fetch Modules when modal opens
   useEffect(() => {
-    if (gradeId) {
+    if (open && gradeId) {
       const fetchModules = async () => {
         setLoadingModules(true);
         setError('');
@@ -465,13 +425,10 @@ const CreateExerciseModal = ({ open, handleClose, onQuizCreated }) => {
         }
       };
       fetchModules();
-    } else {
-      setModules([]);
-      setLessonId('');
-      setLessons([]);
-      setExerciseName('');
+    } else if (open && !gradeId) {
+      setError('Không tìm thấy thông tin lớp học.');
     }
-  }, [gradeId]);
+  }, [open, gradeId]);
 
   // Fetch Lessons when module changes
   useEffect(() => {
@@ -512,12 +469,6 @@ const CreateExerciseModal = ({ open, handleClose, onQuizCreated }) => {
       setExerciseName('');
     }
   }, [moduleId]);
-
-  const handleGradeChange = (event) => {
-    setGradeId(event.target.value);
-    setModuleId('');
-    setLessonId('');
-  };
 
   const handleModuleChange = (event) => {
     setModuleId(event.target.value);
@@ -632,21 +583,25 @@ const CreateExerciseModal = ({ open, handleClose, onQuizCreated }) => {
                 }}
             />
 
-              <StyledFormControl fullWidth size="small" disabled={loadingGrades || generating}>
-                <InputLabel>Chọn Lớp</InputLabel>
-            <Select
-              value={gradeId}
-              onChange={handleGradeChange}
-                  label="Chọn Lớp"
-                  startAdornment={<SchoolIcon sx={{ mr: 1, color: '#FF6B6B' }} />}
-            >
-              {grades.map((grade) => (
-                    <MenuItem key={grade.gradeId} value={grade.gradeId}>
-                      {`Lớp ${grade.gradeNumber}`}
-                    </MenuItem>
-              ))}
-            </Select>
-              </StyledFormControl>
+              {gradeId && (
+                <Box sx={{
+                  p: 2,
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 142, 83, 0.1) 100%)',
+                  border: '1px solid rgba(255, 107, 107, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2
+                }}>
+                  <SchoolIcon sx={{ color: '#FF6B6B' }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#FF6B6B' }}>
+                    Lớp {gradeId}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                    (Đã được chọn tự động)
+                  </Typography>
+                </Box>
+              )}
 
               <StyledFormControl fullWidth size="small" disabled={!gradeId || loadingModules || generating}>
                 <InputLabel>Chọn Chủ đề</InputLabel>
