@@ -18,9 +18,23 @@ import {
   InputAdornment,
   useTheme,
   Fade,
-  Zoom
+  Zoom,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Snackbar,
+  Tooltip,
 } from '@mui/material';
-import { School as SchoolIcon, Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
+import { 
+  School as SchoolIcon, 
+  Add as AddIcon, 
+  Search as SearchIcon,
+  Delete as DeleteIcon,
+  Warning as WarningIcon,
+} from '@mui/icons-material';
 import { styled, keyframes } from '@mui/material/styles';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -288,6 +302,89 @@ const StyledPagination = styled(Pagination)(({ theme, isDarkMode }) => ({
   },
 }));
 
+const DeleteButton = styled(IconButton)(({ theme, isDarkMode }) => ({
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.05) 100%)',
+  border: '1px solid rgba(33, 150, 243, 0.2)',
+  borderRadius: '12px',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    background: 'linear-gradient(135deg, rgba(33, 150, 243, 0.2) 0%, rgba(33, 150, 243, 0.1) 100%)',
+    transform: 'scale(1.05)',
+    boxShadow: '0 8px 25px rgba(33, 150, 243, 0.3)',
+  },
+  '& .MuiSvgIcon-root': {
+    color: '#2196F3',
+    fontSize: '1.2rem',
+  },
+}));
+
+const StyledDialog = styled(Dialog)(({ theme, isDarkMode }) => ({
+  '& .MuiDialog-paper': {
+    background: isDarkMode
+      ? 'linear-gradient(135deg, rgba(30, 30, 30, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%)'
+      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '20px',
+    border: isDarkMode
+      ? '1px solid rgba(255, 255, 255, 0.1)'
+      : '1px solid rgba(33, 150, 243, 0.2)',
+    boxShadow: isDarkMode
+      ? '0 20px 40px rgba(0, 0, 0, 0.5)'
+      : '0 20px 40px rgba(0, 0, 0, 0.15)',
+  },
+  '& .MuiDialogTitle-root': {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    fontWeight: 700,
+    color: isDarkMode ? '#fff' : '#2C3E50',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 2,
+  },
+  '& .MuiDialogContent-root': {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(44, 62, 80, 0.8)',
+  },
+}));
+
+const DeleteConfirmButton = styled(Button)(({ theme }) => ({
+  background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  color: '#fff',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 700,
+  borderRadius: '12px',
+  padding: '10px 24px',
+  boxShadow: '0 8px 25px rgba(33, 150, 243, 0.3)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    background: 'linear-gradient(135deg, #1976D2 0%, #2196F3 100%)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 35px rgba(33, 150, 243, 0.4)',
+  },
+  '&:disabled': {
+    opacity: 0.7,
+    transform: 'none',
+  },
+}));
+
+const CancelButton = styled(Button)(({ theme, isDarkMode }) => ({
+  color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(44, 62, 80, 0.7)',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 600,
+  borderRadius: '12px',
+  padding: '10px 24px',
+  border: isDarkMode 
+    ? '1px solid rgba(255, 255, 255, 0.1)' 
+    : '1px solid rgba(33, 150, 243, 0.2)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    backgroundColor: isDarkMode 
+      ? 'rgba(255, 255, 255, 0.1)' 
+      : 'rgba(33, 150, 243, 0.05)',
+  },
+}));
+
 const AllLessons = () => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
@@ -308,6 +405,13 @@ const AllLessons = () => {
   const [currentSearchTerm, setCurrentSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const searchInputRef = React.useRef(null);
+
+  // Delete states
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [blogToDelete, setBlogToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   // Auto focus search input on mount
   useEffect(() => {
@@ -415,6 +519,79 @@ const AllLessons = () => {
     navigate('/tao-bai-dang');
   };
 
+  // Handle delete blog
+  const handleDeleteBlog = async (blogId) => {
+    setDeleting(true);
+    setDeleteError('');
+    
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication token not found.');
+      }
+
+      const response = await axios.delete(
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 15000,
+        }
+      );
+
+      if (response.data && (response.data.code === 0 || response.status === 200)) {
+        setDeleteSuccess(true);
+        // Remove the deleted blog from the list
+        setBlogs(prevBlogs => prevBlogs.filter(blog => blog.blogId !== blogId));
+        // Update total records
+        setPagination(prev => ({
+          ...prev,
+          totalRecords: prev.totalRecords - 1
+        }));
+        
+        // If current page becomes empty and it's not the first page, go to previous page
+        if (blogs.length === 1 && pagination.currentPage > 1) {
+          setPagination(prev => ({
+            ...prev,
+            currentPage: prev.currentPage - 1
+          }));
+        }
+        
+        setDeleteDialogOpen(false);
+        setBlogToDelete(null);
+      } else {
+        throw new Error(response.data?.message || 'Failed to delete blog.');
+      }
+    } catch (err) {
+      console.error('Error deleting blog:', err);
+      setDeleteError(err.message || 'An error occurred while deleting the blog.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Handle opening delete confirmation dialog
+  const handleOpenDeleteDialog = (blog, event) => {
+    event.stopPropagation(); // Prevent card click navigation
+    setBlogToDelete(blog);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle closing delete confirmation dialog
+  const handleCloseDeleteDialog = () => {
+    if (!deleting) {
+      setDeleteDialogOpen(false);
+      setBlogToDelete(null);
+      setDeleteError('');
+    }
+  };
+
+  // Handle closing success snackbar
+  const handleCloseSuccessSnackbar = () => {
+    setDeleteSuccess(false);
+  };
+
   if (loading) {
     return (
       <MainContainer isDarkMode={isDarkMode}>
@@ -469,7 +646,7 @@ const AllLessons = () => {
               <Stack direction="row" alignItems="center" spacing={2} flexGrow={1}>
                 <SchoolIcon sx={{ fontSize: 40, color: '#2196F3' }} />
                 <MainTitle variant="h4" component="h1" isDarkMode={isDarkMode}>
-                  Danh sách bài đăng
+            Danh sách bài đăng
                 </MainTitle>
               </Stack>
               
@@ -479,32 +656,32 @@ const AllLessons = () => {
                 sx={{ width: { xs: '100%', sm: 'auto' } }}
               >
                 <SearchField
-                  inputRef={searchInputRef}
-                  label="Tìm kiếm bài đăng"
-                  variant="outlined"
-                  size="small"
-                  value={currentSearchTerm}
-                  onChange={handleSearch}
+              inputRef={searchInputRef}
+              label="Tìm kiếm bài đăng"
+              variant="outlined"
+              size="small"
+              value={currentSearchTerm}
+              onChange={handleSearch}
                   isDarkMode={isDarkMode}
                   sx={{ minWidth: { xs: '100%', sm: '280px' } }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
                         <SearchIcon sx={{ color: '#2196F3' }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
+                  </InputAdornment>
+                ),
+              }}
+            />
                 <CreateButton
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleCreateBlog}
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreateBlog}
                   isDarkMode={isDarkMode}
-                >
-                  Đăng bài
+            >
+              Đăng bài
                 </CreateButton>
               </Stack>
-            </Stack>
+        </Stack>
           </HeaderSection>
         </Fade>
 
@@ -513,51 +690,51 @@ const AllLessons = () => {
             <Grid item xs={12} sm={6} md={4} key={blog.blogId}>
               <Zoom in timeout={1000 + index * 100}>
                 <LessonCard
-                  elevation={0}
+                elevation={0}
                   isDarkMode={isDarkMode}
-                  onClick={() => handleViewLesson(blog.blogId)}
-                >
+                onClick={() => handleViewLesson(blog.blogId)}
+              >
                   <CardContent sx={{ p: 3 }}>
                     <Stack spacing={2.5}>
-                      <Typography 
-                        variant="h6" 
-                        component="h2" 
-                        sx={{ 
+                    <Typography 
+                      variant="h6" 
+                      component="h2" 
+                      sx={{ 
                           fontWeight: 700,
                           fontSize: '1.2rem',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
                           lineHeight: 1.4,
                           color: isDarkMode ? '#fff' : '#2196F3',
                           fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
                           minHeight: '2.8em',
-                        }}
-                      >
-                        {blog.title}
-                      </Typography>
-                      
-                      <Typography 
-                        variant="body2"
-                        sx={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical',
-                          minHeight: '4.5em',
+                      }}
+                    >
+                      {blog.title}
+                    </Typography>
+                    
+                    <Typography 
+                      variant="body2" 
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        minHeight: '4.5em',
                           color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)',
                           fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
                           lineHeight: 1.5,
-                        }}
-                      >
-                        {blog.body}
-                      </Typography>
+                      }}
+                    >
+                      {blog.body}
+                    </Typography>
 
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                        <Stack spacing={0.5}>
+                      <Stack spacing={0.5}>
                           <Typography 
                             variant="caption" 
                             sx={{ 
@@ -566,8 +743,8 @@ const AllLessons = () => {
                               fontSize: '0.75rem',
                             }}
                           >
-                            {blog.publicationDate}
-                          </Typography>
+                          {blog.publicationDate}
+                        </Typography>
                           <Chip
                             label={blog.name || 'Ẩn danh'}
                             size="small"
@@ -580,7 +757,17 @@ const AllLessons = () => {
                               height: '24px',
                             }}
                           />
-                        </Stack>
+                      </Stack>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Tooltip title="Xóa bài viết" arrow>
+                          <DeleteButton
+                            isDarkMode={isDarkMode}
+                            onClick={(e) => handleOpenDeleteDialog(blog, e)}
+                            size="small"
+                          >
+                            <DeleteIcon />
+                          </DeleteButton>
+                        </Tooltip>
                         <Button
                           variant="outlined"
                           size="small"
@@ -592,27 +779,28 @@ const AllLessons = () => {
                             borderRadius: '8px',
                             textTransform: 'none',
                             minWidth: '100px',
-                            fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
-                            fontWeight: 600,
-                            borderColor: '#2196F3',
-                            color: '#2196F3',
-                            backgroundColor: isDarkMode 
-                              ? 'rgba(33, 150, 243, 0.1)' 
-                              : 'rgba(33, 150, 243, 0.05)',
-                            '&:hover': {
-                              borderColor: '#1976D2',
+                              fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                              fontWeight: 600,
+                              borderColor: '#2196F3',
+                              color: '#2196F3',
                               backgroundColor: isDarkMode 
-                                ? 'rgba(33, 150, 243, 0.2)' 
-                                : 'rgba(33, 150, 243, 0.1)',
-                              transform: 'translateY(-2px)',
+                                ? 'rgba(33, 150, 243, 0.1)' 
+                                : 'rgba(33, 150, 243, 0.05)',
+                            '&:hover': {
+                                borderColor: '#1976D2',
+                                backgroundColor: isDarkMode 
+                                  ? 'rgba(33, 150, 243, 0.2)' 
+                                  : 'rgba(33, 150, 243, 0.1)',
+                                transform: 'translateY(-2px)',
                             }
                           }}
                         >
                           Xem chi tiết
                         </Button>
                       </Box>
-                    </Stack>
-                  </CardContent>
+                    </Box>
+                  </Stack>
+                </CardContent>
                 </LessonCard>
               </Zoom>
             </Grid>
@@ -628,16 +816,16 @@ const AllLessons = () => {
               mb: 2,
             }}>
               <StyledPagination
-                count={pagination.totalPages}
-                page={pagination.currentPage}
-                onChange={handlePageChange}
-                color="primary"
-                size="large"
-                showFirstButton
-                showLastButton
+              count={pagination.totalPages}
+              page={pagination.currentPage}
+              onChange={handlePageChange}
+              color="primary"
+              size="large"
+              showFirstButton
+              showLastButton
                 isDarkMode={isDarkMode}
-              />
-            </Box>
+            />
+          </Box>
           </Fade>
         )}
 
@@ -663,11 +851,73 @@ const AllLessons = () => {
                 fontWeight: 600,
               }}
             >
-              Tổng số bài viết: {pagination.totalRecords} | Trang {pagination.currentPage} / {pagination.totalPages}
-            </Typography>
-          </Box>
+            Tổng số bài viết: {pagination.totalRecords} | Trang {pagination.currentPage} / {pagination.totalPages}
+          </Typography>
+        </Box>
         </Fade>
       </StyledContainer>
+
+      {/* Delete Confirmation Dialog */}
+      <StyledDialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        maxWidth="sm"
+        fullWidth
+        isDarkMode={isDarkMode}
+      >
+        <DialogTitle>
+          <WarningIcon sx={{ color: '#2196F3' }} />
+          Xác nhận xóa Bài viết
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Bạn có chắc chắn muốn xóa bài viết "{blogToDelete?.title}" không? 
+            Hành động này không thể hoàn tác.
+          </DialogContentText>
+          {deleteError && (
+            <Alert severity="error" sx={{ mt: 2, borderRadius: '12px' }}>
+              {deleteError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <CancelButton 
+            onClick={handleCloseDeleteDialog} 
+            disabled={deleting}
+            isDarkMode={isDarkMode}
+          >
+            Hủy
+          </CancelButton>
+          <DeleteConfirmButton
+            onClick={() => handleDeleteBlog(blogToDelete?.blogId)}
+            disabled={deleting}
+            startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
+          >
+            {deleting ? 'Đang xóa...' : 'Xóa'}
+          </DeleteConfirmButton>
+        </DialogActions>
+      </StyledDialog>
+
+      {/* Success Snackbar */}
+      <Snackbar
+        open={deleteSuccess}
+        autoHideDuration={6000}
+        onClose={handleCloseSuccessSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSuccessSnackbar} 
+          severity="success" 
+          sx={{ 
+            width: '100%',
+            borderRadius: '12px',
+            fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+            fontWeight: 600,
+          }}
+        >
+          Xóa bài viết thành công!
+        </Alert>
+      </Snackbar>
     </MainContainer>
   );
 };

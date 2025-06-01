@@ -789,7 +789,7 @@ const PendingLessons = () => {
                                     fontWeight: 500,
                                   }}
                                 >
-                                  {formatDate(lesson.createdAt)}
+                                  {lesson.createdAt}
                                 </Typography>
                               </Box>
                             </Stack>

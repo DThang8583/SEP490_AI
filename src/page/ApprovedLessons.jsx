@@ -27,6 +27,16 @@ import {
   CardContent,
   Fade,
   Zoom,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  CircularProgress,
+  Snackbar,
+  Tooltip,
 } from '@mui/material';
 import { 
   CheckCircleOutline, 
@@ -36,6 +46,8 @@ import {
   AccessTime as AccessTimeIcon,
   School as SchoolIcon,
   Verified as VerifiedIcon,
+  Delete as DeleteIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -417,6 +429,89 @@ const FloatingBubble = styled(Box)(({ theme, size, top, left, delay, isDarkMode 
   pointerEvents: 'none',
 }));
 
+const DeleteButton = styled(IconButton)(({ theme, isDarkMode }) => ({
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%)',
+  border: '1px solid rgba(76, 175, 80, 0.2)',
+  borderRadius: '12px',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    background: 'linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.1) 100%)',
+    transform: 'scale(1.05)',
+    boxShadow: '0 8px 25px rgba(76, 175, 80, 0.3)',
+  },
+  '& .MuiSvgIcon-root': {
+    color: '#4CAF50',
+    fontSize: '1.2rem',
+  },
+}));
+
+const StyledDialog = styled(Dialog)(({ theme, isDarkMode }) => ({
+  '& .MuiDialog-paper': {
+    background: isDarkMode
+      ? 'linear-gradient(135deg, rgba(30, 30, 30, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%)'
+      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '20px',
+    border: isDarkMode
+      ? '1px solid rgba(255, 255, 255, 0.1)'
+      : '1px solid rgba(76, 175, 80, 0.2)',
+    boxShadow: isDarkMode
+      ? '0 20px 40px rgba(0, 0, 0, 0.5)'
+      : '0 20px 40px rgba(0, 0, 0, 0.15)',
+  },
+  '& .MuiDialogTitle-root': {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    fontWeight: 700,
+    color: isDarkMode ? '#fff' : '#2C3E50',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 2,
+  },
+  '& .MuiDialogContent-root': {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(44, 62, 80, 0.8)',
+  },
+}));
+
+const DeleteConfirmButton = styled(Button)(({ theme }) => ({
+  background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
+  color: '#fff',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 700,
+  borderRadius: '12px',
+  padding: '10px 24px',
+  boxShadow: '0 8px 25px rgba(76, 175, 80, 0.3)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    background: 'linear-gradient(135deg, #388E3C 0%, #4CAF50 100%)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 35px rgba(76, 175, 80, 0.4)',
+  },
+  '&:disabled': {
+    opacity: 0.7,
+    transform: 'none',
+  },
+}));
+
+const CancelButton = styled(Button)(({ theme, isDarkMode }) => ({
+  color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(44, 62, 80, 0.7)',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 600,
+  borderRadius: '12px',
+  padding: '10px 24px',
+  border: isDarkMode 
+    ? '1px solid rgba(255, 255, 255, 0.1)' 
+    : '1px solid rgba(76, 175, 80, 0.2)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    backgroundColor: isDarkMode 
+      ? 'rgba(255, 255, 255, 0.1)' 
+      : 'rgba(76, 175, 80, 0.05)',
+  },
+}));
+
 // Function to format date
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -446,6 +541,13 @@ const ApprovedLessons = () => {
   // Filter options
   const [modules, setModules] = useState([]);
   const [loadingFilterOptions, setLoadingFilterOptions] = useState(true);
+
+  // Delete states
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [lessonToDelete, setLessonToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   // Use useCallback for the fetch lessons function
   const fetchApprovedLessons = useCallback(async (page = 1) => {
@@ -578,6 +680,73 @@ const ApprovedLessons = () => {
     } else {
       console.warn('Cannot navigate: Lesson ID is missing.');
     }
+  };
+
+  // Handle delete lesson
+  const handleDeleteLesson = async (lessonPlanId) => {
+    setDeleting(true);
+    setDeleteError('');
+    
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication token not found.');
+      }
+
+      const response = await axios.delete(
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonPlanId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 15000,
+        }
+      );
+
+      if (response.data && (response.data.code === 0 || response.status === 200)) {
+        setDeleteSuccess(true);
+        // Remove the deleted lesson from the list
+        setLessons(prevLessons => prevLessons.filter(lesson => lesson.lessonPlanId !== lessonPlanId));
+        // Update total records
+        setTotalRecords(prev => prev - 1);
+        
+        // If current page becomes empty and it's not the first page, go to previous page
+        if (lessons.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+        
+        setDeleteDialogOpen(false);
+        setLessonToDelete(null);
+      } else {
+        throw new Error(response.data?.message || 'Failed to delete lesson.');
+      }
+    } catch (err) {
+      console.error('Error deleting lesson:', err);
+      setDeleteError(err.message || 'An error occurred while deleting the lesson.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Handle opening delete confirmation dialog
+  const handleOpenDeleteDialog = (lesson, event) => {
+    event.stopPropagation(); // Prevent card click navigation
+    setLessonToDelete(lesson);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle closing delete confirmation dialog
+  const handleCloseDeleteDialog = () => {
+    if (!deleting) {
+      setDeleteDialogOpen(false);
+      setLessonToDelete(null);
+      setDeleteError('');
+    }
+  };
+
+  // Handle closing success snackbar
+  const handleCloseSuccessSnackbar = () => {
+    setDeleteSuccess(false);
   };
 
   const renderSkeletons = () => (
@@ -777,20 +946,31 @@ const ApprovedLessons = () => {
                                     fontWeight: 500,
                                   }}
                                 >
-                                  {formatDate(lesson.createdAt)}
+                                  {lesson.createdAt}
                                 </Typography>
                               </Box>
                             </Stack>
                           </Box>
-                          <Chip
-                            label="Đã chấp nhận"
-                            sx={{
-                              background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
-                              color: '#fff',
-                              fontWeight: 600,
-                              fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
-                            }}
-                          />
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Tooltip title="Xóa giáo án" arrow>
+                              <DeleteButton
+                                isDarkMode={isDarkMode}
+                                onClick={(e) => handleOpenDeleteDialog(lesson, e)}
+                                size="small"
+                              >
+                                <DeleteIcon />
+                              </DeleteButton>
+                            </Tooltip>
+                            <Chip
+                              label="Đã chấp nhận"
+                              sx={{
+                                background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
+                                color: '#fff',
+                                fontWeight: 600,
+                                fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                              }}
+                            />
+                          </Box>
                         </Box>
                       </CardContent>
                     </LessonCard>
@@ -826,6 +1006,68 @@ const ApprovedLessons = () => {
           ) : null}
         </Paper>
       </StyledContainer>
+
+      {/* Delete Confirmation Dialog */}
+      <StyledDialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        maxWidth="sm"
+        fullWidth
+        isDarkMode={isDarkMode}
+      >
+        <DialogTitle>
+          <WarningIcon sx={{ color: '#4CAF50' }} />
+          Xác nhận xóa Giáo án
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Bạn có chắc chắn muốn xóa giáo án "{lessonToDelete?.lesson}" không? 
+            Hành động này không thể hoàn tác.
+          </DialogContentText>
+          {deleteError && (
+            <Alert severity="error" sx={{ mt: 2, borderRadius: '12px' }}>
+              {deleteError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <CancelButton 
+            onClick={handleCloseDeleteDialog} 
+            disabled={deleting}
+            isDarkMode={isDarkMode}
+          >
+            Hủy
+          </CancelButton>
+          <DeleteConfirmButton
+            onClick={() => handleDeleteLesson(lessonToDelete?.lessonPlanId)}
+            disabled={deleting}
+            startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
+          >
+            {deleting ? 'Đang xóa...' : 'Xóa'}
+          </DeleteConfirmButton>
+        </DialogActions>
+      </StyledDialog>
+
+      {/* Success Snackbar */}
+      <Snackbar
+        open={deleteSuccess}
+        autoHideDuration={6000}
+        onClose={handleCloseSuccessSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSuccessSnackbar} 
+          severity="success" 
+          sx={{ 
+            width: '100%',
+            borderRadius: '12px',
+            fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+            fontWeight: 600,
+          }}
+        >
+          Xóa giáo án thành công!
+        </Alert>
+      </Snackbar>
     </MainContainer>
   );
 };
