@@ -455,12 +455,64 @@ const CreatLesson = () => {
   const [grades, setGrades] = useState([]);
   const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState([]);
+  const [existingLessonPlans, setExistingLessonPlans] = useState([]);
+  const [availableLessons, setAvailableLessons] = useState([]);
   const [selectedGrade, setSelectedGrade] = useState('');
   const [selectedModule, setSelectedModule] = useState('');
   const [selectedLesson, setSelectedLesson] = useState('');
 
   const [loadingPrompt, setLoadingPrompt] = useState(false);
   const [promptData, setPromptData] = useState(null);
+
+  // Fetch existing lesson plans for current user
+  useEffect(() => {
+    const fetchExistingLessonPlans = async () => {
+      if (userInfo?.id && userInfo?.gradeId) {
+        try {
+          const token = localStorage.getItem('accessToken');
+          if (!token) return;
+
+          const response = await axios.get(
+            `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans?Page=1&PageSize=999&userId=${userInfo.id}&GradeId=${userInfo.gradeId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+
+          if (response.data && response.data.code === 0) {
+            const lessonPlans = response.data.data.items || [];
+            setExistingLessonPlans(lessonPlans);
+            console.log('Existing lesson plans:', lessonPlans);
+          }
+        } catch (err) {
+          console.error('Error fetching existing lesson plans:', err);
+        }
+      }
+    };
+
+    fetchExistingLessonPlans();
+  }, [userInfo?.id, userInfo?.gradeId]);
+
+  // Filter available lessons based on existing lesson plans
+  useEffect(() => {
+    if (lessons.length > 0 && existingLessonPlans.length >= 0) {
+      const existingLessonNames = existingLessonPlans.map(plan => plan.lesson);
+      const filtered = lessons.filter(lesson => !existingLessonNames.includes(lesson.name));
+      setAvailableLessons(filtered);
+      console.log('Available lessons after filtering:', filtered);
+      console.log('Existing lesson names:', existingLessonNames);
+      
+      // Reset selected lesson if it's no longer available
+      if (selectedLesson && !filtered.find(lesson => lesson.lessonId === selectedLesson)) {
+        setSelectedLesson('');
+        setPromptData(null);
+      }
+    } else {
+      setAvailableLessons(lessons);
+    }
+  }, [lessons, existingLessonPlans, selectedLesson]);
 
   // Fetch danh sách chủ đề khi chọn lớp
   useEffect(() => {
@@ -668,16 +720,25 @@ const CreatLesson = () => {
                       onChange={handleLessonChange}
                       label="Bài học"
                       required
-                      disabled={!selectedModule}
+                      disabled={!selectedModule || availableLessons.length === 0}
                     >
-                      {lessons.map((lesson) => (
-                        <MenuItem key={lesson.lessonId} value={lesson.lessonId || ''}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <AssignmentIcon sx={{ fontSize: '1.2rem', color: '#3498DB' }} />
-                            {lesson.name}
+                      {availableLessons.length === 0 && selectedModule ? (
+                        <MenuItem value="" disabled>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, fontStyle: 'italic', color: 'text.secondary' }}>
+                            <AssignmentIcon sx={{ fontSize: '1.2rem', color: '#999' }} />
+                            Tất cả bài học đã có giáo án
                           </Box>
                         </MenuItem>
-                      ))}
+                      ) : (
+                        availableLessons.map((lesson) => (
+                          <MenuItem key={lesson.lessonId} value={lesson.lessonId || ''}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <AssignmentIcon sx={{ fontSize: '1.2rem', color: '#3498DB' }} />
+                              {lesson.name}
+                            </Box>
+                          </MenuItem>
+                        ))
+                      )}
                     </Select>
                   </StyledFormControl>
                 </Grid>
@@ -697,10 +758,15 @@ const CreatLesson = () => {
                   <CreateButton
                     type="submit"
                     fullWidth
-                    disabled={loading || !userInfo?.gradeId || !selectedModule || !selectedLesson || !promptData || loadingPrompt}
+                    disabled={loading || !userInfo?.gradeId || !selectedModule || !selectedLesson || !promptData || loadingPrompt || availableLessons.length === 0}
                     startIcon={loading ? <LoadingSpinner size={20} /> : <CreateIcon />}
                   >
-                    {loading ? "Đang tạo giáo án..." : "Tạo giáo án với AI"}
+                    {availableLessons.length === 0 && selectedModule 
+                      ? "Tất cả bài học đã có giáo án" 
+                      : loading 
+                        ? "Đang tạo giáo án..." 
+                        : "Tạo giáo án với AI"
+                    }
                   </CreateButton>
                 </Grid>
               </Grid>
