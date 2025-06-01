@@ -429,7 +429,7 @@ const AllLessons = () => {
       }
 
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs?Page=${page}&PageSize=${pageSize}${currentSearchTerm ? `&searchTerm=${encodeURIComponent(currentSearchTerm)}` : ''}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs?Page=${page}&PageSize=${pageSize}&isActive=1${currentSearchTerm ? `&searchTerm=${encodeURIComponent(currentSearchTerm)}` : ''}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
