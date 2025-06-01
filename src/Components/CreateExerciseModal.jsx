@@ -574,7 +574,7 @@ const CreateExerciseModal = ({ open, handleClose, onQuizCreated }) => {
     } finally {
         setGenerating(false);
     }
-  };
+};
 
   const difficultyOptions = [
     { value: 'dễ', label: 'Dễ', icon: <SpeedIcon /> },
@@ -619,65 +619,65 @@ const CreateExerciseModal = ({ open, handleClose, onQuizCreated }) => {
             {error && <StyledAlert severity="error" sx={{ mb: 3 }}>{error}</StyledAlert>}
             {generationError && <StyledAlert severity="error" sx={{ mb: 3 }}>{generationError}</StyledAlert>}
 
-            <Stack spacing={3}>
+        <Stack spacing={3}>
               <StyledTextField
-                label="Tên bài tập"
-                value={exerciseName}
-                onChange={(e) => setExerciseName(e.target.value)}
-                fullWidth
-                size="small"
-                disabled={generating}
+              label="Tên bài tập"
+              value={exerciseName}
+              onChange={(e) => setExerciseName(e.target.value)}
+              fullWidth
+              size="small"
+              disabled={generating}
                 InputProps={{
                   startAdornment: <QuizIcon sx={{ mr: 1, color: '#FF6B6B' }} />,
                 }}
-              />
+            />
 
               <StyledFormControl fullWidth size="small" disabled={loadingGrades || generating}>
                 <InputLabel>Chọn Lớp</InputLabel>
-                <Select
-                  value={gradeId}
-                  onChange={handleGradeChange}
+            <Select
+              value={gradeId}
+              onChange={handleGradeChange}
                   label="Chọn Lớp"
                   startAdornment={<SchoolIcon sx={{ mr: 1, color: '#FF6B6B' }} />}
-                >
-                  {grades.map((grade) => (
+            >
+              {grades.map((grade) => (
                     <MenuItem key={grade.gradeId} value={grade.gradeId}>
                       {`Lớp ${grade.gradeNumber}`}
                     </MenuItem>
-                  ))}
-                </Select>
+              ))}
+            </Select>
               </StyledFormControl>
 
               <StyledFormControl fullWidth size="small" disabled={!gradeId || loadingModules || generating}>
                 <InputLabel>Chọn Chủ đề</InputLabel>
-                <Select
-                  value={moduleId}
-                  onChange={handleModuleChange}
+            <Select
+              value={moduleId}
+              onChange={handleModuleChange}
                   label="Chọn Chủ đề"
                   startAdornment={<MenuBookIcon sx={{ mr: 1, color: '#FF6B6B' }} />}
-                >
-                  {modules.map((module) => (
+            >
+              {modules.map((module) => (
                     <MenuItem key={module.moduleId} value={module.moduleId}>
                       {module.name}
                     </MenuItem>
-                  ))}
-                </Select>
+              ))}
+            </Select>
               </StyledFormControl>
 
               <StyledFormControl fullWidth size="small" disabled={!moduleId || loadingLessons || generating}>
                 <InputLabel>Chọn Bài học</InputLabel>
-                <Select
-                  value={lessonId}
-                  onChange={handleLessonChange}
+            <Select
+              value={lessonId}
+              onChange={handleLessonChange}
                   label="Chọn Bài học"
                   startAdornment={<AssignmentIcon sx={{ mr: 1, color: '#FF6B6B' }} />}
-                >
-                  {lessons.map((lesson) => (
+            >
+              {lessons.map((lesson) => (
                     <MenuItem key={lesson.lessonId} value={lesson.lessonId}>
                       {lesson.name}
                     </MenuItem>
-                  ))}
-                </Select>
+              ))}
+            </Select>
               </StyledFormControl>
 
               <Box>
@@ -716,13 +716,13 @@ const CreateExerciseModal = ({ open, handleClose, onQuizCreated }) => {
 
               <CreateButton
                 fullWidth
-                onClick={handleCreateExercise}
-                disabled={!lessonId || !difficulty || generating}
+            onClick={handleCreateExercise}
+            disabled={!lessonId || !difficulty || generating}
                 startIcon={generating ? <LoadingSpinner size={20} /> : <AutoAwesomeIcon />}
-              >
+          >
                 {generating ? 'Đang tạo bài tập...' : 'Tạo bài tập với AI'}
               </CreateButton>
-            </Stack>
+        </Stack>
           </ModalContent>
         </ModalContainer>
       </Fade>

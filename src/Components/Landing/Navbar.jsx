@@ -635,7 +635,7 @@ const Navbar = () => {
               </ListItemIcon>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {category.text}
+              {category.text}
                 </Typography>
               </Box>
               <StatusChip 
@@ -682,25 +682,25 @@ const Navbar = () => {
               {menuItems.map((item, index) =>
                 (!item.requiresLogin || isLoggedIn) && (
                   <Box 
-                    key={item.text}
+                       key={item.text}
                     sx={{ 
                       animation: `${slideInLeft} ${0.8 + index * 0.1}s ease-out` 
                     }}
                   >
                     {item.text === "Bài học" ? (
                       <NavButtonComponent
-                        text={item.text}
-                        path={item.path}
-                        icon={item.icon}
-                        isDropdown={true}
-                      />
-                    ) : (
+                       text={item.text}
+                       path={item.path}
+                       icon={item.icon}
+                       isDropdown={true}
+                     />
+                  ) : (
                       <NavButtonComponent
-                        text={item.text}
-                        path={item.path}
-                        icon={item.icon}
-                        isDropdown={false}
-                      />
+                     text={item.text}
+                     path={item.path}
+                     icon={item.icon}
+                     isDropdown={false}
+                   />
                     )}
                   </Box>
                 )
@@ -747,8 +747,8 @@ const Navbar = () => {
                   <LoginButton
                     onClick={() => navigate("/login")}
                     isDarkMode={isDarkMode}
-                  >
-                    Đăng nhập
+                    >
+                      Đăng nhập
                   </LoginButton>
                 )}
               </Box>
@@ -793,14 +793,14 @@ const Navbar = () => {
           </Typography>
           <IconButton
             onClick={handleMobileMenuToggle}
-            sx={{
+                    sx={{
               color: theme.palette.text.primary,
               '&:hover': {
                 background: 'rgba(255, 107, 107, 0.1)',
                 transform: 'rotate(90deg)',
-              },
-            }}
-          >
+                      },
+                    }}
+                  >
             <CloseIcon />
           </IconButton>
         </DrawerHeader>
@@ -908,9 +908,9 @@ const Navbar = () => {
                   <ListItemIcon sx={{ color: theme.palette.text.primary, minWidth: 40 }}>
                     {setting.name === "Hồ sơ" ? (
                       userInfo?.imgURL ? (
-                        <Avatar src={userInfo.imgURL} sx={{ width: 24, height: 24 }} />
+                         <Avatar src={userInfo.imgURL} sx={{ width: 24, height: 24 }} />
                       ) : (
-                        <Person />
+                         <Person />
                       )
                     ) : (
                       setting.icon

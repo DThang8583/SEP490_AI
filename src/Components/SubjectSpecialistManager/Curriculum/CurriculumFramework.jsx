@@ -545,7 +545,7 @@ const CurriculumFramework = () => {
 
     const handleViewCurriculumDetail = (curriculumId) => {
         if (curriculumId) {
-            navigate(`/manager/curriculum-detail/${curriculumId}`);
+            navigate(`/quanly/thongtinchuongtrinh/${curriculumId}`);
         } else {
             alert("Vui lòng chọn một chương trình trước khi xem chi tiết");
         }
