@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Card,
   CardContent,
+  IconButton,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -26,12 +27,18 @@ import {
   SupervisorAccount as RoleIcon,
   School as SchoolIcon,
   Class as GradeIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
+import { useTheme } from '../../../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const CreateAccount = () => {
   const navigate = useNavigate();
+  const theme = useMuiTheme();
+  const { isDarkMode } = useTheme();
 
   const [formData, setFormData] = useState({
     username: '',
@@ -50,6 +57,7 @@ const CreateAccount = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,8 +111,6 @@ const CreateAccount = () => {
     // Password validation
     if (formData.password.length < 6) {
       errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
-    } else if (!/(?=.*[A-Z])/.test(formData.password)) {
-      errors.password = 'Mật khẩu phải chứa ít nhất 1 chữ hoa';
     } else if (!/(?=.*[0-9])/.test(formData.password)) {
       errors.password = 'Mật khẩu phải chứa ít nhất 1 số';
     }
@@ -176,6 +182,11 @@ const CreateAccount = () => {
         });
         setValidationErrors({});
         setError('');
+        
+        // Auto navigate back after success
+        setTimeout(() => {
+          navigate(-1);
+        }, 2000);
       } else {
         console.log('Error response data:', response.data);
         setError('Có lỗi xảy ra khi tạo tài khoản.');
@@ -200,8 +211,8 @@ const CreateAccount = () => {
           flexDirection: 'column',
           gap: 2,
         }}>
-          <CircularProgress size={50} sx={{ color: '#1976d2' }} />
-          <Typography variant="h6" color="#1976d2">Đang tải dữ liệu...</Typography>
+          <CircularProgress size={50} sx={{ color: theme.palette.primary.main }} />
+          <Typography variant="h6" color="primary">Đang tải dữ liệu...</Typography>
         </Box>
       </Container>
     );
@@ -210,31 +221,24 @@ const CreateAccount = () => {
   return (
     <Box sx={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      background: isDarkMode 
+        ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)'
+        : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
       py: 4
     }}>
       <Container maxWidth="md">
         {/* Header */}
         <Card sx={{ 
           mb: 3, 
-          background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-          color: 'white',
+          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          color: '#ffffff',
           borderRadius: 3,
-          boxShadow: '0 4px 20px rgba(25, 118, 210, 0.3)'
+          boxShadow: isDarkMode 
+            ? `0 4px 20px rgba(255, 107, 107, 0.3)`
+            : `0 4px 20px rgba(255, 107, 107, 0.2)`
         }}>
           <CardContent sx={{ py: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <PersonAddIcon sx={{ fontSize: 32 }} />
-                <Box>
-                  <Typography variant="h4" component="h1" fontWeight="600">
-                    Tạo tài khoản mới
-                  </Typography>
-                  <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                    Thêm tài khoản giáo viên hoặc quản trị viên
-                  </Typography>
-                </Box>
-              </Box>
               <Button
                 startIcon={<ArrowBackIcon />}
                 onClick={() => navigate(-1)}
@@ -247,6 +251,17 @@ const CreateAccount = () => {
               >
                 Quay lại
               </Button>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <PersonAddIcon sx={{ fontSize: 32 }} />
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography variant="h4" component="h1" fontWeight="600">
+                    Tạo tài khoản mới
+                  </Typography>
+                  <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
+                    Thêm tài khoản giáo viên hoặc quản trị viên
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
           </CardContent>
         </Card>
@@ -258,7 +273,9 @@ const CreateAccount = () => {
             sx={{ 
               mb: 2, 
               borderRadius: 2,
-              boxShadow: '0 2px 10px rgba(76, 175, 80, 0.2)'
+              boxShadow: '0 2px 10px rgba(76, 175, 80, 0.2)',
+              backgroundColor: isDarkMode ? 'rgba(76, 175, 80, 0.1)' : undefined,
+              color: isDarkMode ? '#4caf50' : undefined,
             }}
           >
             {success}
@@ -271,7 +288,9 @@ const CreateAccount = () => {
             sx={{ 
               mb: 2, 
               borderRadius: 2,
-              boxShadow: '0 2px 10px rgba(244, 67, 54, 0.2)'
+              boxShadow: '0 2px 10px rgba(244, 67, 54, 0.2)',
+              backgroundColor: isDarkMode ? 'rgba(244, 67, 54, 0.1)' : undefined,
+              color: isDarkMode ? '#f44336' : undefined,
             }}
           >
             {error}
@@ -281,8 +300,10 @@ const CreateAccount = () => {
         {/* Form */}
         <Card sx={{ 
           borderRadius: 3, 
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-          background: '#ffffff'
+          boxShadow: isDarkMode 
+            ? '0 8px 32px rgba(0,0,0,0.3)'
+            : '0 8px 32px rgba(0,0,0,0.1)',
+          backgroundColor: theme.palette.background.paper
         }}>
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ mb: 3, textAlign: 'center' }}>
@@ -309,10 +330,11 @@ const CreateAccount = () => {
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
                       }
                     }}
                     InputProps={{
-                      startAdornment: <PersonIcon sx={{ color: 'primary.main', mr: 1 }} />
+                      startAdornment: <PersonIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
                     }}
                   />
                 </Grid>
@@ -331,10 +353,11 @@ const CreateAccount = () => {
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
                       }
                     }}
                     InputProps={{
-                      startAdornment: <EmailIcon sx={{ color: 'primary.main', mr: 1 }} />
+                      startAdornment: <EmailIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
                     }}
                   />
                 </Grid>
@@ -344,7 +367,7 @@ const CreateAccount = () => {
                     fullWidth
                     label="Mật khẩu"
                     name="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={handleChange}
                     required
@@ -353,10 +376,19 @@ const CreateAccount = () => {
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
                       }
                     }}
                     InputProps={{
-                      startAdornment: <LockIcon sx={{ color: 'primary.main', mr: 1 }} />
+                      startAdornment: <LockIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />,
+                      endAdornment: (
+                        <IconButton
+                          onClick={(e) => { e.preventDefault(); setShowPassword(!showPassword); }}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                        </IconButton>
+                      ),
                     }}
                   />
                 </Grid>
@@ -369,6 +401,7 @@ const CreateAccount = () => {
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
                       }
                     }}
                   >
@@ -378,7 +411,7 @@ const CreateAccount = () => {
                       value={formData.roleId}
                       onChange={handleChange}
                       label="Vai trò"
-                      startAdornment={<RoleIcon sx={{ color: 'primary.main', mr: 1 }} />}
+                      startAdornment={<RoleIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />}
                     >
                       {roles.map((role) => (
                         <MenuItem key={role.roleId} value={role.roleId}>
@@ -402,6 +435,7 @@ const CreateAccount = () => {
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
                       }
                     }}
                   >
@@ -411,7 +445,7 @@ const CreateAccount = () => {
                       value={formData.gradeId}
                       onChange={handleChange}
                       label="Khối lớp"
-                      startAdornment={<GradeIcon sx={{ color: 'primary.main', mr: 1 }} />}
+                      startAdornment={<GradeIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />}
                     >
                       {grades.map((grade) => (
                         <MenuItem key={grade.gradeId} value={grade.gradeId}>
@@ -431,15 +465,19 @@ const CreateAccount = () => {
                   <TextField
                     fullWidth
                     label="Trường học"
-                    value={schoolInfo ? `${schoolInfo.name} - ${schoolInfo.description}` : 'Đang tải...'}
+                    value={schoolInfo ? `${schoolInfo.name} ` : 'Đang tải...'}
                     disabled
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                      },
+                      '& .MuiInputBase-input.Mui-disabled': {
+                        WebkitTextFillColor: theme.palette.text.secondary,
                       }
                     }}
                     InputProps={{
-                      startAdornment: <SchoolIcon sx={{ color: 'primary.main', mr: 1 }} />
+                      startAdornment: <SchoolIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
                     }}
                   />
                 </Grid>
@@ -458,9 +496,9 @@ const CreateAccount = () => {
                         py: 1.5,
                         fontSize: '16px',
                         fontWeight: 600,
-                        boxShadow: '0 4px 20px rgba(25, 118, 210, 0.3)',
+                        boxShadow: `0 4px 20px ${theme.palette.primary.main}30`,
                         '&:hover': {
-                          boxShadow: '0 6px 25px rgba(25, 118, 210, 0.4)',
+                          boxShadow: `0 6px 25px ${theme.palette.primary.main}40`,
                         }
                       }}
                     >

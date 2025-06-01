@@ -18,7 +18,9 @@ import {
   ListItemAvatar,
   ListItemText,
   Snackbar,
-  IconButton
+  IconButton,
+  Fade,
+  Zoom
 } from '@mui/material';
 import { 
   ArrowBack,
@@ -29,13 +31,273 @@ import {
   Send as SendIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Article as ArticleIcon,
+  Comment as CommentIcon
 } from '@mui/icons-material';
+import { styled, keyframes } from '@mui/material/styles';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { format, parse, parseISO, isValid } from 'date-fns';
 import { vi } from 'date-fns/locale';
+
+// Animations
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const float = keyframes`
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+`;
+
+const shimmer = keyframes`
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+`;
+
+// Styled Components
+const MainContainer = styled(Box)(({ theme, isDarkMode }) => ({
+  minHeight: 'calc(100vh - 64px)',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+    : 'linear-gradient(135deg, #2196F3 0%, #21CBF3 50%, #2196F3 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+  paddingTop: '32px',
+  paddingBottom: '32px',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: isDarkMode
+      ? 'radial-gradient(circle at 20% 80%, rgba(33, 150, 243, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(156, 39, 176, 0.1) 0%, transparent 50%)'
+      : 'radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+    pointerEvents: 'none',
+  },
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+  position: 'relative',
+  zIndex: 2,
+}));
+
+const MainCard = styled(Paper)(({ theme, isDarkMode }) => ({
+  padding: '40px',
+  borderRadius: '20px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.2)',
+  boxShadow: isDarkMode
+    ? '0 20px 40px rgba(0, 0, 0, 0.3)'
+    : '0 20px 40px rgba(0, 0, 0, 0.1)',
+  position: 'relative',
+  overflow: 'hidden',
+  animation: `${fadeIn} 0.8s ease-out`,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(33, 150, 243, 0.1), transparent)',
+    animation: `${shimmer} 3s ease-in-out infinite`,
+  },
+}));
+
+const SidebarCard = styled(Paper)(({ theme, isDarkMode }) => ({
+  padding: '24px',
+  borderRadius: '16px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)'
+    : 'linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.01) 100%)',
+  backdropFilter: 'blur(10px)',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.1)',
+  boxShadow: isDarkMode
+    ? '0 12px 30px rgba(0, 0, 0, 0.2)'
+    : '0 12px 30px rgba(0, 0, 0, 0.05)',
+}));
+
+const MainTitle = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 800,
+  fontSize: '2.2rem',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #fff 0%, #e3f2fd 100%)'
+    : 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  letterSpacing: '0.5px',
+  lineHeight: 1.3,
+  [theme.breakpoints.down('md')]: {
+    fontSize: '1.8rem',
+  },
+}));
+
+const SectionTitle = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 700,
+  fontSize: '1.3rem',
+  color: isDarkMode ? '#2196F3' : '#1976D2',
+  marginBottom: '16px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+}));
+
+const ContentText = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontSize: '1rem',
+  lineHeight: 1.7,
+  color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+  marginBottom: '16px',
+}));
+
+const StyledTextField = styled(TextField)(({ theme, isDarkMode }) => ({
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: isDarkMode 
+      ? 'rgba(255, 255, 255, 0.1)' 
+      : 'rgba(255, 255, 255, 0.9)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '12px',
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    '& fieldset': {
+      borderColor: isDarkMode 
+        ? 'rgba(255, 255, 255, 0.2)' 
+        : 'rgba(33, 150, 243, 0.3)',
+    },
+    '&:hover fieldset': {
+      borderColor: isDarkMode 
+        ? 'rgba(255, 255, 255, 0.4)' 
+        : 'rgba(33, 150, 243, 0.5)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#2196F3',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    fontWeight: 600,
+  },
+  '& .MuiInputBase-input': {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  },
+}));
+
+const SubmitButton = styled(Button)(({ theme, isDarkMode }) => ({
+  background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  color: '#fff',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 700,
+  fontSize: '0.9rem',
+  padding: '12px 24px',
+  borderRadius: '12px',
+  boxShadow: '0 8px 25px rgba(33, 150, 243, 0.3)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 35px rgba(33, 150, 243, 0.4)',
+    background: 'linear-gradient(135deg, #1976D2 0%, #2196F3 100%)',
+  },
+  '&:disabled': {
+    opacity: 0.7,
+    transform: 'none',
+  },
+}));
+
+const BackButton = styled(Button)(({ theme, isDarkMode }) => ({
+  marginBottom: '24px',
+  color: isDarkMode ? '#ffffff' : '#2D3436',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 600,
+  borderRadius: '12px',
+  padding: '12px 24px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+  backdropFilter: 'blur(10px)',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.2)',
+  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(33, 150, 243, 0.1)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 35px rgba(0, 0, 0, 0.15)',
+  },
+}));
+
+const FloatingBubble = styled(Box)(({ theme, size, top, left, delay, isDarkMode }) => ({
+  position: 'absolute',
+  width: size,
+  height: size,
+  borderRadius: '50%',
+  background: isDarkMode
+    ? `rgba(33, 150, 243, ${Math.random() * 0.1 + 0.05})`
+    : `rgba(33, 150, 243, ${Math.random() * 0.08 + 0.02})`,
+  top: top,
+  left: left,
+  animation: `${float} ${Math.random() * 8 + 8}s ease-in-out infinite`,
+  animationDelay: delay,
+  zIndex: 1,
+  pointerEvents: 'none',
+}));
+
+const LoadingContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '60vh',
+  animation: `${float} 2s ease-in-out infinite`,
+}));
 
 const RecentUsersList = ({ comments, handleDeleteComment, handleEditClick, editingCommentId, editedCommentBody, setEditedCommentBody, handleSaveComment, handleCancelClick, currentUser }) => (
   <List>
@@ -148,7 +410,7 @@ const BlogLessonDetail = () => {
       }
 
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs/${blogId}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -212,7 +474,7 @@ const BlogLessonDetail = () => {
       console.log('Token:', token);
 
       const response = await axios.post(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs/${blogId}/comments`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}/comments`,
         { body: newComment },
         {
           headers: {
@@ -228,7 +490,7 @@ const BlogLessonDetail = () => {
         
         // Fetch lại blog details để lấy thông tin comment mới nhất
         const blogResponse = await axios.get(
-          `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs/${blogId}`,
+          `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`
@@ -285,7 +547,7 @@ const BlogLessonDetail = () => {
       }
 
       const response = await axios.put(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs/${blogId}/comments/${commentId}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}/comments/${commentId}`,
         { body: editedCommentBody },
         {
           headers: {
@@ -387,7 +649,7 @@ const BlogLessonDetail = () => {
       }
 
       const response = await axios.delete(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/danh-sach-bai-dangs/${blogId}/comments/${commentId}`,
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/blogs/${blogId}/comments/${commentId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -436,269 +698,353 @@ const BlogLessonDetail = () => {
 
   if (loading || loadingBlog) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress />
-      </Box>
+      <MainContainer isDarkMode={isDarkMode}>
+        <LoadingContainer>
+          <CircularProgress size={60} sx={{ color: '#2196F3' }} />
+        </LoadingContainer>
+      </MainContainer>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Alert severity="error">{error}</Alert>
-      </Container>
+      <MainContainer isDarkMode={isDarkMode}>
+        <StyledContainer maxWidth="lg">
+          <Alert 
+            severity="error"
+            sx={{ 
+              mt: 4,
+              borderRadius: '12px',
+              fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+            }}
+          >
+            {error}
+          </Alert>
+        </StyledContainer>
+      </MainContainer>
     );
   }
 
   return (
-    <Box
-      sx={{
-        py: 4,
-        minHeight: 'calc(100vh - 64px)',
-        background: isDarkMode
-          ? 'linear-gradient(135deg, rgb(18, 18, 18) 0%, rgb(30, 30, 30) 100%)'
-          : 'linear-gradient(135deg, rgb(245, 247, 250) 0%, rgb(255, 255, 255) 100%)',
-      }}
-    >
-      <Container maxWidth="lg">
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(-1)}
-          sx={{ mb: 3 }}
-        >
-          Quay lại
-        </Button>
+    <MainContainer isDarkMode={isDarkMode}>
+      {/* Floating Bubbles */}
+      {[...Array(15)].map((_, index) => (
+        <FloatingBubble
+          key={index}
+          size={Math.random() * 80 + 40}
+          top={`${Math.random() * 100}%`}
+          left={`${Math.random() * 100}%`}
+          delay={`${Math.random() * 5}s`}
+          isDarkMode={isDarkMode}
+        />
+      ))}
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            borderRadius: '16px',
-            backgroundColor: isDarkMode ? 'rgba(40, 40, 40, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-            backdropFilter: 'blur(12px)',
-            border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
-            boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.2)' : '0 8px 32px rgba(0,0,0,0.05)',
-          }}
-        >
-          <Stack spacing={4}>
-            {/* Header */}
-            <Box>
-              <Stack direction="row" alignItems="center" spacing={2} mb={2}>
-                <SchoolIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-                <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-                  {blogDetails?.title}
-                </Typography>
-              </Stack>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Typography variant="body2" color="text.secondary">
-                  <EventIcon sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
-                  {blogDetails?.publicationDate}
-                </Typography>
-              </Stack>
-              {blogDetails && (
-                <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
-                     {blogDetails.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Danh mục: {blogDetails.category}
-                  </Typography>
+      <StyledContainer maxWidth="lg">
+        <Fade in timeout={800}>
+          <BackButton
+            startIcon={<ArrowBack />}
+            onClick={() => navigate(-1)}
+            isDarkMode={isDarkMode}
+          >
+            Quay lại
+          </BackButton>
+        </Fade>
+
+        <Zoom in timeout={1000}>
+          <MainCard elevation={0} isDarkMode={isDarkMode}>
+            <Stack spacing={5}>
+              {/* Header Section */}
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={2} mb={3}>
+                  <ArticleIcon sx={{ fontSize: 40, color: '#2196F3' }} />
+                  <MainTitle variant="h4" component="h1" isDarkMode={isDarkMode}>
+                    {blogDetails?.title}
+                  </MainTitle>
                 </Stack>
-              )}
-            </Box>
-
-            <Divider />
-
-            {/* Content */}
-            <Grid container spacing={4}>
-              <Grid item xs={12} md={8}>
-                <Stack spacing={4}>
-                  <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                      Nội dung bài viết
-                    </Typography>
-                    {formatContent(blogDetails?.body)}
-                  </Box>
-
-                  {/* Lesson Plan Details (Mục tiêu, Giáo viên chuẩn bị, Hoạt động) */}
-                  {lesson && (
-                    <Stack spacing={4}>
-                      {/* Mục tiêu */}
-                      <Box>
-                        <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-                          <Assignment color="primary" />
-                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            Mục tiêu
-                          </Typography>
-                        </Stack>
-                        {formatContent(lesson?.goal)}
-                      </Box>
-
-                      {/* Giáo viên chuẩn bị */}
-                      <Box>
-                        <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-                          <Description color="primary" />
-                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            Giáo viên chuẩn bị
-                          </Typography>
-                        </Stack>
-                        {formatContent(lesson?.schoolSupply)}
-                      </Box>
-
-                      {/* Hoạt động Khởi động */}
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                          1. Hoạt động Khởi động
-                        </Typography>
-                        {formatContent(lesson?.startUp)}
-                      </Box>
-
-                      {/* Hoạt động Hình thành Kiến thức */}
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                          2. Hoạt động Hình thành Kiến thức
-                        </Typography>
-                        {formatContent(lesson?.knowledge)}
-                      </Box>
-
-                      {/* Hoạt động Luyện tập */}
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                          3. Hoạt động Luyện tập
-                        </Typography>
-                        {formatContent(lesson?.practice)}
-                      </Box>
-
-                      {/* Hoạt động Vận dụng */}
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                          4. Hoạt động Vận dụng
-                        </Typography>
-                        {formatContent(lesson?.apply)}
-                      </Box>
-                    </Stack>
-                  )}
-
-                  {/* Comments Section */}
-                  <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                      Bình luận
-                    </Typography>
-                    
-                    {/* Comment Input */}
-                    <Box sx={{ mb: 3 }}>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        placeholder="Viết bình luận của bạn..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        variant="outlined"
-                        sx={{ mb: 1 }}
-                      />
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          endIcon={<SendIcon />}
-                          onClick={handleSubmitComment}
-                          disabled={!newComment.trim() || submittingComment}
-                        >
-                          {submittingComment ? 'Đang gửi...' : 'Gửi bình luận'}
-                        </Button>
-                      </Box>
-                    </Box>
-
-                    {/* Display existing comments */}
-                    {!loadingBlog && !error && blogDetails && blogDetails.comments && ( // Pass necessary props
-                      <RecentUsersList
-                        comments={comments}
-                        handleDeleteComment={handleDeleteComment}
-                        handleEditClick={handleEditClick}
-                        editingCommentId={editingCommentId}
-                        editedCommentBody={editedCommentBody}
-                        setEditedCommentBody={setEditedCommentBody}
-                        handleSaveComment={handleSaveComment}
-                        handleCancelClick={handleCancelClick}
-                        currentUser={currentUser}
-                      />
-                    )}
-                     {!loadingBlog && !error && (!blogDetails || !blogDetails.comments || blogDetails.comments.length === 0) && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                        Chưa có bình luận nào.
-                      </Typography>
-                    )}
-                  </Box>
-                </Stack>
-              </Grid>
-
-              {/* Sidebar (Thông tin Giáo án) */}
-              {lesson && (
-                <Grid item xs={12} md={4}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 3,
-                      borderRadius: '12px',
-                      backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+                <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                      fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
                     }}
                   >
-                    <Stack spacing={2}>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        Thông tin Giáo án
+                    <EventIcon sx={{ fontSize: 16 }} />
+                    {blogDetails?.publicationDate}
+                  </Typography>
+                  {blogDetails && (
+                    <>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                        }}
+                      >
+                        Tác giả: {blogDetails.name}
                       </Typography>
-                      <Divider />
-                      {/* Module */}
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Chủ đề
-                        </Typography>
-                        <Typography variant="body1">
-                          {lesson?.module || 'N/A'}
-                        </Typography>
-                      </Box>
-                      {/* Created At */}
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Ngày tạo
-                        </Typography>
-                        <Typography variant="body1">
-                          {lesson.createdAt}
-                        </Typography>
-                      </Box>
-                      {/* Grade and Total Periods - assuming they are in lesson data */}
-                      {(lesson?.grade || lesson?.totalPeriods) && (
-                          <Box>
-                             <Typography variant="body2" color="text.secondary">
-                               Lớp / Số tiết
-                             </Typography>
-                             <Typography variant="body1">
-                               {`${lesson?.grade || 'N/A'} / ${lesson?.totalPeriods || 'N/A'}`}
-                             </Typography>
-                          </Box>
-                      )}
-                    </Stack>
-                  </Paper>
-                </Grid>
-              )}
-            </Grid>
-          </Stack>
-        </Paper>
-      </Container>
+                      <Chip 
+                        label={blogDetails.category}
+                        size="small"
+                        sx={{
+                          background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+                          color: '#fff',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 600,
+                        }}
+                      />
+                    </>
+                  )}
+                </Stack>
+              </Box>
 
-      {/* Snackbar for notifications */}
+              <Divider sx={{ borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(33, 150, 243, 0.2)' }} />
+
+              {/* Main Content */}
+              <Grid container spacing={4}>
+                <Grid item xs={12} md={8}>
+                  <Stack spacing={5}>
+                    {/* Blog Content */}
+                    <Fade in timeout={1200}>
+                      <Box>
+                        <SectionTitle isDarkMode={isDarkMode}>
+                          <Description />
+                          Nội dung bài viết
+                        </SectionTitle>
+                        {blogDetails?.body?.split('\n').map((line, index) => (
+                          <ContentText key={index} isDarkMode={isDarkMode}>
+                            {line}
+                          </ContentText>
+                        ))}
+                      </Box>
+                    </Fade>
+
+                    {/* Lesson Plan Details */}
+                    {lesson && (
+                      <Fade in timeout={1400}>
+                        <Stack spacing={4}>
+                          {/* Goal Section */}
+                          <Box>
+                            <SectionTitle isDarkMode={isDarkMode}>
+                              <Assignment />
+                              Mục tiêu
+                            </SectionTitle>
+                            {lesson?.goal?.split('\n').map((line, index) => (
+                              <ContentText key={index} isDarkMode={isDarkMode}>
+                                {line}
+                              </ContentText>
+                            ))}
+                          </Box>
+
+                          {/* School Supply Section */}
+                          <Box>
+                            <SectionTitle isDarkMode={isDarkMode}>
+                              <Description />
+                              Giáo viên chuẩn bị
+                            </SectionTitle>
+                            {lesson?.schoolSupply?.split('\n').map((line, index) => (
+                              <ContentText key={index} isDarkMode={isDarkMode}>
+                                {line}
+                              </ContentText>
+                            ))}
+                          </Box>
+
+                          {/* Activity Sections */}
+                          {[
+                            { title: '1. Hoạt động Khởi động', content: lesson?.startUp },
+                            { title: '2. Hoạt động Hình thành Kiến thức', content: lesson?.knowledge },
+                            { title: '3. Hoạt động Luyện tập', content: lesson?.practice },
+                            { title: '4. Hoạt động Vận dụng', content: lesson?.apply }
+                          ].map((section, index) => (
+                            <Box key={index}>
+                              <SectionTitle isDarkMode={isDarkMode}>
+                                {section.title}
+                              </SectionTitle>
+                              {section.content?.split('\n').map((line, lineIndex) => (
+                                <ContentText key={lineIndex} isDarkMode={isDarkMode}>
+                                  {line}
+                                </ContentText>
+                              ))}
+                            </Box>
+                          ))}
+                        </Stack>
+                      </Fade>
+                    )}
+
+                    {/* Comments Section */}
+                    <Fade in timeout={1600}>
+                      <Box>
+                        <SectionTitle isDarkMode={isDarkMode}>
+                          <CommentIcon />
+                          Bình luận
+                        </SectionTitle>
+                        
+                        {/* Comment Input */}
+                        <Box sx={{ mb: 4 }}>
+                          <StyledTextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            placeholder="Viết bình luận của bạn..."
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            variant="outlined"
+                            isDarkMode={isDarkMode}
+                            sx={{ mb: 2 }}
+                          />
+                          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <SubmitButton
+                              variant="contained"
+                              endIcon={<SendIcon />}
+                              onClick={handleSubmitComment}
+                              disabled={!newComment.trim() || submittingComment}
+                              isDarkMode={isDarkMode}
+                            >
+                              {submittingComment ? 'Đang gửi...' : 'Gửi bình luận'}
+                            </SubmitButton>
+                          </Box>
+                        </Box>
+
+                        {/* Display Comments */}
+                        {!loadingBlog && !error && blogDetails && blogDetails.comments && (
+                          <RecentUsersList
+                            comments={comments}
+                            handleDeleteComment={handleDeleteComment}
+                            handleEditClick={handleEditClick}
+                            editingCommentId={editingCommentId}
+                            editedCommentBody={editedCommentBody}
+                            setEditedCommentBody={setEditedCommentBody}
+                            handleSaveComment={handleSaveComment}
+                            handleCancelClick={handleCancelClick}
+                            currentUser={currentUser}
+                          />
+                        )}
+                        {!loadingBlog && !error && (!blogDetails || !blogDetails.comments || blogDetails.comments.length === 0) && (
+                          <ContentText isDarkMode={isDarkMode} sx={{ textAlign: 'center', fontStyle: 'italic' }}>
+                            Chưa có bình luận nào.
+                          </ContentText>
+                        )}
+                      </Box>
+                    </Fade>
+                  </Stack>
+                </Grid>
+
+                {/* Sidebar */}
+                {lesson && (
+                  <Grid item xs={12} md={4}>
+                    <Fade in timeout={1800}>
+                      <SidebarCard elevation={0} isDarkMode={isDarkMode}>
+                        <Stack spacing={3}>
+                          <SectionTitle isDarkMode={isDarkMode}>
+                            <SchoolIcon />
+                            Thông tin Giáo án
+                          </SectionTitle>
+                          <Divider sx={{ borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(33, 150, 243, 0.1)' }} />
+                          
+                          {/* Module */}
+                          <Box>
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                color: isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
+                                fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                                mb: 1,
+                              }}
+                            >
+                              Chủ đề
+                            </Typography>
+                            <Typography 
+                              variant="body1"
+                              sx={{ 
+                                fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {lesson?.module || 'N/A'}
+                            </Typography>
+                          </Box>
+                          
+                          {/* Created Date */}
+                          <Box>
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                color: isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
+                                fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                                mb: 1,
+                              }}
+                            >
+                              Ngày tạo
+                            </Typography>
+                            <Typography 
+                              variant="body1"
+                              sx={{ 
+                                fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {lesson.createdAt}
+                            </Typography>
+                          </Box>
+                          
+                          {/* Grade and Periods */}
+                          {(lesson?.grade || lesson?.totalPeriods) && (
+                            <Box>
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  color: isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
+                                  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                                  mb: 1,
+                                }}
+                              >
+                                Lớp / Số tiết
+                              </Typography>
+                              <Typography 
+                                variant="body1"
+                                sx={{ 
+                                  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {`${lesson?.grade || 'N/A'} / ${lesson?.totalPeriods || 'N/A'}`}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Stack>
+                      </SidebarCard>
+                    </Fade>
+                  </Grid>
+                )}
+              </Grid>
+            </Stack>
+          </MainCard>
+        </Zoom>
+      </StyledContainer>
+
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ 
+            width: '100%',
+            borderRadius: '12px',
+            fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+          }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </MainContainer>
   );
 };
 

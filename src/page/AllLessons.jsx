@@ -16,12 +16,277 @@ import {
   Button,
   TextField,
   InputAdornment,
-  useTheme
+  useTheme,
+  Fade,
+  Zoom
 } from '@mui/material';
 import { School as SchoolIcon, Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
+import { styled, keyframes } from '@mui/material/styles';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
+
+// Animations
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const float = keyframes`
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+`;
+
+const shimmer = keyframes`
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+`;
+
+const cardHover = keyframes`
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  100% {
+    transform: translateY(-8px) scale(1.02);
+  }
+`;
+
+// Styled Components
+const MainContainer = styled(Box)(({ theme, isDarkMode }) => ({
+  minHeight: 'calc(100vh - 64px)',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+    : 'linear-gradient(135deg, #2196F3 0%, #21CBF3 50%, #2196F3 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+  paddingTop: '32px',
+  paddingBottom: '32px',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: isDarkMode
+      ? 'radial-gradient(circle at 20% 80%, rgba(33, 150, 243, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(156, 39, 176, 0.1) 0%, transparent 50%)'
+      : 'radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+    pointerEvents: 'none',
+  },
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+  position: 'relative',
+  zIndex: 2,
+}));
+
+const HeaderSection = styled(Paper)(({ theme, isDarkMode }) => ({
+  padding: '32px',
+  marginBottom: '32px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.2)',
+  boxShadow: isDarkMode
+    ? '0 20px 40px rgba(0, 0, 0, 0.3)'
+    : '0 20px 40px rgba(0, 0, 0, 0.1)',
+  position: 'relative',
+  overflow: 'hidden',
+  animation: `${fadeIn} 0.8s ease-out`,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(33, 150, 243, 0.1), transparent)',
+    animation: `${shimmer} 3s ease-in-out infinite`,
+  },
+}));
+
+const MainTitle = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 800,
+  fontSize: '2.5rem',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #fff 0%, #e3f2fd 100%)'
+    : 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  letterSpacing: '0.5px',
+  [theme.breakpoints.down('md')]: {
+    fontSize: '2rem',
+  },
+}));
+
+const SearchField = styled(TextField)(({ theme, isDarkMode }) => ({
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: isDarkMode 
+      ? 'rgba(255, 255, 255, 0.1)' 
+      : 'rgba(255, 255, 255, 0.9)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '12px',
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    '& fieldset': {
+      borderColor: isDarkMode 
+        ? 'rgba(255, 255, 255, 0.2)' 
+        : 'rgba(33, 150, 243, 0.3)',
+    },
+    '&:hover fieldset': {
+      borderColor: isDarkMode 
+        ? 'rgba(255, 255, 255, 0.4)' 
+        : 'rgba(33, 150, 243, 0.5)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#2196F3',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    fontWeight: 600,
+  },
+  '& .MuiInputBase-input': {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  },
+}));
+
+const CreateButton = styled(Button)(({ theme, isDarkMode }) => ({
+  background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  color: '#fff',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 700,
+  fontSize: '1rem',
+  padding: '12px 24px',
+  borderRadius: '12px',
+  boxShadow: '0 8px 25px rgba(33, 150, 243, 0.3)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 35px rgba(33, 150, 243, 0.4)',
+    background: 'linear-gradient(135deg, #1976D2 0%, #2196F3 100%)',
+  },
+}));
+
+const LessonCard = styled(Card)(({ theme, isDarkMode }) => ({
+  height: '100%',
+  borderRadius: '16px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.2)',
+  boxShadow: isDarkMode
+    ? '0 12px 30px rgba(0, 0, 0, 0.2)'
+    : '0 12px 30px rgba(0, 0, 0, 0.1)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  cursor: 'pointer',
+  position: 'relative',
+  overflow: 'hidden',
+  '&:hover': {
+    transform: 'translateY(-8px) scale(1.02)',
+    boxShadow: isDarkMode
+      ? '0 20px 50px rgba(0, 0, 0, 0.4)'
+      : '0 20px 50px rgba(33, 150, 243, 0.2)',
+  },
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(33, 150, 243, 0.1), transparent)',
+    transition: 'left 0.5s ease',
+  },
+  '&:hover::before': {
+    left: '100%',
+  },
+}));
+
+const FloatingBubble = styled(Box)(({ theme, size, top, left, delay, isDarkMode }) => ({
+  position: 'absolute',
+  width: size,
+  height: size,
+  borderRadius: '50%',
+  background: isDarkMode
+    ? `rgba(33, 150, 243, ${Math.random() * 0.1 + 0.05})`
+    : `rgba(33, 150, 243, ${Math.random() * 0.08 + 0.02})`,
+  top: top,
+  left: left,
+  animation: `${float} ${Math.random() * 8 + 8}s ease-in-out infinite`,
+  animationDelay: delay,
+  zIndex: 1,
+  pointerEvents: 'none',
+}));
+
+const LoadingContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '60vh',
+  animation: `${float} 2s ease-in-out infinite`,
+}));
+
+const StyledPagination = styled(Pagination)(({ theme, isDarkMode }) => ({
+  '& .MuiPaginationItem-root': {
+    color: isDarkMode ? '#fff' : '#2196F3',
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    fontWeight: 600,
+    backgroundColor: isDarkMode 
+      ? 'rgba(255, 255, 255, 0.1)' 
+      : 'rgba(255, 255, 255, 0.8)',
+    backdropFilter: 'blur(10px)',
+    border: isDarkMode 
+      ? '1px solid rgba(255, 255, 255, 0.1)' 
+      : '1px solid rgba(33, 150, 243, 0.2)',
+    margin: '0 4px',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    '&:hover': {
+      backgroundColor: isDarkMode 
+        ? 'rgba(255, 255, 255, 0.2)' 
+        : 'rgba(33, 150, 243, 0.1)',
+      transform: 'translateY(-2px)',
+    },
+    '&.Mui-selected': {
+      backgroundColor: '#2196F3',
+      color: '#fff',
+      boxShadow: '0 8px 25px rgba(33, 150, 243, 0.3)',
+    },
+  },
+}));
 
 const AllLessons = () => {
   const theme = useTheme();
@@ -152,194 +417,258 @@ const AllLessons = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress />
-      </Box>
+      <MainContainer isDarkMode={isDarkMode}>
+        <LoadingContainer>
+          <CircularProgress size={60} sx={{ color: '#2196F3' }} />
+        </LoadingContainer>
+      </MainContainer>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Alert severity="error">{error}</Alert>
-      </Container>
+      <MainContainer isDarkMode={isDarkMode}>
+        <StyledContainer maxWidth="lg">
+          <Alert 
+            severity="error" 
+            sx={{ 
+              borderRadius: '12px', 
+              fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+              mt: 4 
+            }}
+          >
+            {error}
+          </Alert>
+        </StyledContainer>
+      </MainContainer>
     );
   }
 
   return (
-    <Box
-      sx={{
-        py: 4,
-        minHeight: 'calc(100vh - 64px)',
-        background: isDarkMode
-          ? 'linear-gradient(135deg, rgb(18, 18, 18) 0%, rgb(30, 30, 30) 100%)'
-          : 'linear-gradient(135deg, rgb(245, 247, 250) 0%, rgb(255, 255, 255) 100%)',
-      }}
-    >
-      <Container maxWidth="lg">
-        <Stack direction="row" alignItems="center" spacing={2} mb={4}>
-          <SchoolIcon sx={{ fontSize: 32, color: theme.palette.primary.main }} />
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Danh sách bài đăng
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
-            <TextField
-              inputRef={searchInputRef}
-              label="Tìm kiếm bài đăng"
-              variant="outlined"
-              size="small"
-              value={currentSearchTerm}
-              onChange={handleSearch}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              sx={{
-                ml: 2,
-                backgroundColor: isDarkMode ? theme.palette.primary.main : '#FFFFFF',
-                color: isDarkMode ? '#FFFFFF' : theme.palette.primary.main,
-                '&:hover': {
-                  backgroundColor: isDarkMode ? theme.palette.primary.dark : '#FF5252',
-                  color: '#FFFFFF'
-                }
-              }}
-              startIcon={<AddIcon />}
-              onClick={handleCreateBlog}
+    <MainContainer isDarkMode={isDarkMode}>
+      {/* Floating Bubbles */}
+      {[...Array(12)].map((_, index) => (
+        <FloatingBubble
+          key={index}
+          size={Math.random() * 80 + 40}
+          top={`${Math.random() * 100}%`}
+          left={`${Math.random() * 100}%`}
+          delay={`${Math.random() * 5}s`}
+          isDarkMode={isDarkMode}
+        />
+      ))}
+
+      <StyledContainer maxWidth="lg">
+        <Fade in timeout={800}>
+          <HeaderSection elevation={0} isDarkMode={isDarkMode}>
+            <Stack 
+              direction={{ xs: 'column', sm: 'row' }} 
+              alignItems={{ xs: 'flex-start', sm: 'center' }} 
+              spacing={2}
             >
-              Đăng bài
-            </Button>
-          </Box>
-        </Stack>
-
-        <Grid container spacing={2}>
-          {blogs.map((blog) => (
-            <Grid item xs={12} sm={6} md={4} key={blog.blogId}>
-              <Card
-                elevation={0}
-                sx={{
-                  height: '100%',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? 'rgba(40, 40, 40, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-                  backdropFilter: 'blur(12px)',
-                  border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
-                  boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.2)' : '0 8px 32px rgba(0,0,0,0.05)',
-                  transition: 'transform 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    cursor: 'pointer',
-                  },
-                }}
-                onClick={() => handleViewLesson(blog.blogId)}
+              <Stack direction="row" alignItems="center" spacing={2} flexGrow={1}>
+                <SchoolIcon sx={{ fontSize: 40, color: '#2196F3' }} />
+                <MainTitle variant="h4" component="h1" isDarkMode={isDarkMode}>
+                  Danh sách bài đăng
+                </MainTitle>
+              </Stack>
+              
+              <Stack 
+                direction={{ xs: 'column', sm: 'row' }} 
+                spacing={2} 
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
               >
-                <CardContent>
-                  <Stack spacing={2}>
-                    <Typography 
-                      variant="h6" 
-                      component="h2" 
-                      sx={{ 
-                        fontWeight: 600,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        lineHeight: 1.3,
-                        color: isDarkMode ? '#FFFFFF' : 'inherit'
-                      }}
-                    >
-                      {blog.title}
-                    </Typography>
-                    
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary"
-                      sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                        minHeight: '4.5em',
-                        color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'inherit'
-                      }}
-                    >
-                      {blog.body}
-                    </Typography>
+                <SearchField
+                  inputRef={searchInputRef}
+                  label="Tìm kiếm bài đăng"
+                  variant="outlined"
+                  size="small"
+                  value={currentSearchTerm}
+                  onChange={handleSearch}
+                  isDarkMode={isDarkMode}
+                  sx={{ minWidth: { xs: '100%', sm: '280px' } }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: '#2196F3' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <CreateButton
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleCreateBlog}
+                  isDarkMode={isDarkMode}
+                >
+                  Đăng bài
+                </CreateButton>
+              </Stack>
+            </Stack>
+          </HeaderSection>
+        </Fade>
 
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Stack spacing={0.5}>
-                        <Typography variant="caption" color="text.secondary">
-                          {blog.publicationDate}
-                        </Typography>
-                        <Typography variant="caption" color="primary" sx={{ fontWeight: 500 }}>
-                          {blog.name || 'Ẩn danh'}
-                        </Typography>
-                      </Stack>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewLesson(blog.blogId);
-                        }}
+        <Grid container spacing={3}>
+          {blogs.map((blog, index) => (
+            <Grid item xs={12} sm={6} md={4} key={blog.blogId}>
+              <Zoom in timeout={1000 + index * 100}>
+                <LessonCard
+                  elevation={0}
+                  isDarkMode={isDarkMode}
+                  onClick={() => handleViewLesson(blog.blogId)}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Stack spacing={2.5}>
+                      <Typography 
+                        variant="h6" 
+                        component="h2" 
                         sx={{ 
-                          borderRadius: '8px',
-                          textTransform: 'none',
-                          minWidth: '100px',
-                          borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'inherit',
-                          color: isDarkMode ? '#FFFFFF' : 'inherit',
-                          '&:hover': {
-                            borderColor: isDarkMode ? '#FFFFFF' : 'inherit',
-                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'inherit'
-                          }
+                          fontWeight: 700,
+                          fontSize: '1.2rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          lineHeight: 1.4,
+                          color: isDarkMode ? '#fff' : '#2196F3',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          minHeight: '2.8em',
                         }}
                       >
-                        Xem chi tiết
-                      </Button>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
+                        {blog.title}
+                      </Typography>
+                      
+                      <Typography 
+                        variant="body2"
+                        sx={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          minHeight: '4.5em',
+                          color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {blog.body}
+                      </Typography>
+
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                        <Stack spacing={0.5}>
+                          <Typography 
+                            variant="caption" 
+                            sx={{ 
+                              color: isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
+                              fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                              fontSize: '0.75rem',
+                            }}
+                          >
+                            {blog.publicationDate}
+                          </Typography>
+                          <Chip
+                            label={blog.name || 'Ẩn danh'}
+                            size="small"
+                            sx={{
+                              background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+                              color: '#fff',
+                              fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                              fontWeight: 600,
+                              fontSize: '0.7rem',
+                              height: '24px',
+                            }}
+                          />
+                        </Stack>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewLesson(blog.blogId);
+                          }}
+                          sx={{ 
+                            borderRadius: '8px',
+                            textTransform: 'none',
+                            minWidth: '100px',
+                            fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                            fontWeight: 600,
+                            borderColor: '#2196F3',
+                            color: '#2196F3',
+                            backgroundColor: isDarkMode 
+                              ? 'rgba(33, 150, 243, 0.1)' 
+                              : 'rgba(33, 150, 243, 0.05)',
+                            '&:hover': {
+                              borderColor: '#1976D2',
+                              backgroundColor: isDarkMode 
+                                ? 'rgba(33, 150, 243, 0.2)' 
+                                : 'rgba(33, 150, 243, 0.1)',
+                              transform: 'translateY(-2px)',
+                            }
+                          }}
+                        >
+                          Xem chi tiết
+                        </Button>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </LessonCard>
+              </Zoom>
             </Grid>
           ))}
         </Grid>
 
         {pagination.totalPages > 1 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <Pagination
-              count={pagination.totalPages}
-              page={pagination.currentPage}
-              onChange={handlePageChange}
-              color="primary"
-              size="large"
-              showFirstButton
-              showLastButton
-              sx={{
-                '& .MuiPaginationItem-root': {
-                  color: isDarkMode ? '#fff' : 'inherit',
-                  '&.Mui-selected': {
-                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : undefined,
-                  },
-                },
-              }}
-            />
-          </Box>
+          <Fade in timeout={1500}>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              mt: 6,
+              mb: 2,
+            }}>
+              <StyledPagination
+                count={pagination.totalPages}
+                page={pagination.currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                size="large"
+                showFirstButton
+                showLastButton
+                isDarkMode={isDarkMode}
+              />
+            </Box>
+          </Fade>
         )}
 
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            Tổng số bài viết: {pagination.totalRecords} | Trang {pagination.currentPage} / {pagination.totalPages}
-          </Typography>
-        </Box>
-      </Container>
-    </Box>
+        <Fade in timeout={2000}>
+          <Box sx={{ 
+            mt: 3, 
+            textAlign: 'center',
+            p: 3,
+            borderRadius: '16px',
+            background: isDarkMode
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
+              : 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: isDarkMode
+              ? '1px solid rgba(255, 255, 255, 0.1)'
+              : '1px solid rgba(33, 150, 243, 0.2)',
+          }}>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                fontWeight: 600,
+              }}
+            >
+              Tổng số bài viết: {pagination.totalRecords} | Trang {pagination.currentPage} / {pagination.totalPages}
+            </Typography>
+          </Box>
+        </Fade>
+      </StyledContainer>
+    </MainContainer>
   );
 };
 

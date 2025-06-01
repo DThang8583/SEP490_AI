@@ -41,7 +41,6 @@ import {
   School as SchoolIcon,
   AdminPanelSettings as AdminIcon,
   SupervisorAccount as TeacherIcon,
-  Edit as EditIcon,
   Phone as PhoneIcon,
   Email as EmailIcon,
   LocationOn as LocationIcon,
@@ -218,7 +217,7 @@ const TotalAccounts = () => {
   const [sortOrder, setSortOrder] = useState('desc');
   const [roleIdFilter, setRoleIdFilter] = useState('');
   const [schoolIdFilter, setSchoolIdFilter] = useState('');
-  const [isActiveFilter, setIsActiveFilter] = useState(true);
+  const [isActiveFilter, setIsActiveFilter] = useState(1);
   const [roles, setRoles] = useState([]);
   const [grades, setGrades] = useState([]);
   const [schools, setSchools] = useState([]);
@@ -238,11 +237,11 @@ const TotalAccounts = () => {
           Authorization: `Bearer ${token}`,
         },
         params: {
-          SearchTerm: searchTerm,
           SortColumn: sortColumn,
           SortOrder: sortOrder,
           Page: 1, // Always fetch from page 1 to get all data
           PageSize: 1000, // Get more data for client-side filtering
+          IsActive: isActiveFilter, // Add IsActive filter
         },
       });
 
@@ -384,7 +383,7 @@ const TotalAccounts = () => {
   };
 
   const handleIsActiveFilterChange = (event) => {
-    setIsActiveFilter(event.target.checked ? true : false);
+    setIsActiveFilter(event.target.checked ? 1 : 0);
     setPage(1);
   };
 
@@ -461,11 +460,7 @@ const TotalAccounts = () => {
     let label = role;
 
     switch (role.toLowerCase()) {
-      case 'administrator':
-        chipType = "administrator";
-        icon = <AdminIcon sx={{ fontSize: '18px' }} />;
-        label = "Quản trị viên";
-        break;
+
       case 'subject specialist manager':
       case 'tổ trưởng chuyên môn':
         chipType = "manager";
@@ -490,10 +485,6 @@ const TotalAccounts = () => {
         size="small"
       />
     );
-  };
-
-  const handleEdit = (userId) => {
-    navigate(`/admin/edit-account/${userId}`);
   };
 
   const handleDelete = async (userId) => {
@@ -532,27 +523,27 @@ const TotalAccounts = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <PeopleIcon sx={{ fontSize: 40 }} />
-              <Box>
+        <Box>
                 <Typography variant="h4" component="h1" fontWeight="bold">
                   Quản lý tài khoản
                 </Typography>
                 <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                  Danh sách tài khoản giáo viên và quản trị viên
+                  Danh sách tài khoản Giáo viên và Tổ trưởng bộ môn
                 </Typography>
               </Box>
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <ActionButton 
                 className="download"
-                onClick={exportToCSV}
+            onClick={exportToCSV} 
                 size="large"
-              >
+          >
                 <DownloadIcon />
               </ActionButton>
-              <Button 
-                variant="contained" 
+          <Button 
+            variant="contained" 
                 startIcon={<AddIcon />}
-                onClick={() => navigate('/admin/create-account')}
+            onClick={() => navigate('/admin/create-account')}
                 sx={{
                   background: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
                   borderRadius: '25px',
@@ -567,51 +558,47 @@ const TotalAccounts = () => {
                 }}
               >
                 Tạo tài khoản mới
-              </Button>
-            </Box>
-          </Box>
+          </Button>
+        </Box>
+      </Box>
         </CardContent>
       </HeaderCard>
 
       {/* Stats Section */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
+      <Grid container spacing={2} sx={{ mb: 3, justifyContent: 'center' }}>
+        <Grid item xs={12} sm={6} md={4}>
           <StatsCard>
             <Typography variant="h4" fontWeight="bold" color="primary">
-              {totalCount}
+              {allAccounts.length}
             </Typography>
             <Typography variant="body2" color="textSecondary">
               Tổng tài khoản
             </Typography>
           </StatsCard>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <StatsCard>
             <Typography variant="h4" fontWeight="bold" sx={{ color: '#00d2d3' }}>
-              {accounts.filter(acc => acc.role?.toLowerCase().includes('teacher')).length}
+              {allAccounts.filter(acc => 
+                acc.role?.toLowerCase() === 'teacher' || 
+                acc.role?.toLowerCase() === 'giáo viên'
+              ).length}
             </Typography>
             <Typography variant="body2" color="textSecondary">
               Giáo viên
             </Typography>
           </StatsCard>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <StatsCard>
             <Typography variant="h4" fontWeight="bold" sx={{ color: '#4834d4' }}>
-              {accounts.filter(acc => acc.role?.toLowerCase().includes('manager')).length}
+              {allAccounts.filter(acc => 
+                acc.role?.toLowerCase() === 'subject specialist manager' || 
+                acc.role?.toLowerCase() === 'tổ trưởng chuyên môn'
+              ).length}
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              Tổ trưởng
-            </Typography>
-          </StatsCard>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatsCard>
-            <Typography variant="h4" fontWeight="bold" sx={{ color: '#ff6b6b' }}>
-              {accounts.filter(acc => acc.role?.toLowerCase().includes('administrator')).length}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Quản trị viên
+              Tổ trưởng chuyên môn
             </Typography>
           </StatsCard>
         </Grid>
@@ -635,11 +622,11 @@ const TotalAccounts = () => {
           
           <Grid container spacing={3} alignItems="center">
             <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
+            <TextField
+              fullWidth
                 label="🔍 Tìm kiếm theo tên, email..."
-                value={searchTerm}
-                onChange={handleSearch}
+              value={searchTerm}
+              onChange={handleSearch}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '16px',
@@ -651,23 +638,23 @@ const TotalAccounts = () => {
                     },
                   },
                 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
                       <SearchIcon color="primary" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
             
             <Grid item xs={12} md={3}>
-              <FormControl fullWidth disabled={loadingFilters}>
+            <FormControl fullWidth disabled={loadingFilters}>
                 <InputLabel>👤 Vai trò</InputLabel>
-                <Select
-                  value={roleIdFilter}
+              <Select
+                value={roleIdFilter}
                   label="👤 Vai trò"
-                  onChange={handleRoleFilterChange}
+                onChange={handleRoleFilterChange}
                   sx={{
                     borderRadius: '16px',
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
@@ -676,14 +663,14 @@ const TotalAccounts = () => {
                   }}
                 >
                   <MenuItem value=""><em>Tất cả vai trò</em></MenuItem>
-                  {roles.map((role) => (
+                {roles.map((role) => (
                     <MenuItem key={role.roleId} value={role.roleId}>
                       {role.roleName}
                     </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
             
             <Grid item xs={12} md={5}>
               <Box sx={{ textAlign: 'center' }}>
@@ -693,18 +680,18 @@ const TotalAccounts = () => {
                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
                   {[1, 2, 3, 4, 5].map(gradeNumber => (
                     <GradeButton
-                      key={gradeNumber}
+                  key={gradeNumber}
                       selected={selectedGradeNumber === gradeNumber}
-                      onClick={() => handleGradeButtonClick(gradeNumber)}
-                    >
-                      Khối {gradeNumber}
+                  onClick={() => handleGradeButtonClick(gradeNumber)}
+                >
+                  Khối {gradeNumber}
                     </GradeButton>
-                  ))}
-                  {selectedGradeNumber !== null && (
-                    <Button
-                      variant="outlined"
+              ))}
+              {selectedGradeNumber !== null && (
+                <Button
+                  variant="outlined"
                       startIcon={<ClearIcon />}
-                      onClick={() => handleGradeButtonClick(null)}
+                  onClick={() => handleGradeButtonClick(null)}
                       sx={{
                         borderRadius: '25px',
                         color: '#ff6b6b',
@@ -716,9 +703,9 @@ const TotalAccounts = () => {
                       }}
                     >
                       Xóa lọc
-                    </Button>
-                  )}
-                </Box>
+                </Button>
+              )}
+            </Box>
               </Box>
             </Grid>
           </Grid>
@@ -727,7 +714,7 @@ const TotalAccounts = () => {
             <FormControlLabel
               control={
                 <Switch
-                  checked={isActiveFilter}
+                  checked={isActiveFilter === 1}
                   onChange={handleIsActiveFilterChange}
                   sx={{
                     '& .MuiSwitch-switchBase.Mui-checked': {
@@ -881,27 +868,44 @@ const TotalAccounts = () => {
 
                     <CardActions sx={{ pt: 0, pb: 2, px: 2, justifyContent: 'space-between' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <ActionButton 
-                          className="edit"
-                          onClick={() => handleEdit(account.userId)}
-                          size="small"
-                        >
-                          <EditIcon sx={{ fontSize: 18 }} />
-                        </ActionButton>
-                        
-                        <Switch
+                        {(account.role?.toLowerCase().includes('subject specialist manager') || 
+                          account.role?.toLowerCase().includes('tổ trưởng chuyên môn')) ? (
+                          <Tooltip title="Không thể tạm dừng tài khoản Tổ trưởng chuyên môn">
+                            <span>
+                              <Switch
+                                checked={account.isActive}
+                                onChange={() => handleDelete(account.userId)}
+                                disabled={true}
+                                size="small"
+                                sx={{
+                                  '& .MuiSwitch-switchBase.Mui-checked': {
+                                    color: '#00d2d3',
+                                  },
+                                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                    backgroundColor: '#00d2d3',
+                                  },
+                                  '&.Mui-disabled': {
+                                    opacity: 0.6,
+                                  },
+                                }}
+                              />
+                            </span>
+                    </Tooltip>
+                        ) : (
+                       <Switch
                           checked={account.isActive}
                           onChange={() => handleDelete(account.userId)}
-                          size="small"
-                          sx={{
-                            '& .MuiSwitch-switchBase.Mui-checked': {
-                              color: '#00d2d3',
-                            },
-                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                              backgroundColor: '#00d2d3',
-                            },
-                          }}
-                        />
+                            size="small"
+                            sx={{
+                              '& .MuiSwitch-switchBase.Mui-checked': {
+                                color: '#00d2d3',
+                              },
+                              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                backgroundColor: '#00d2d3',
+                              },
+                            }}
+                          />
+                        )}
                       </Box>
                       
                       <Typography 
@@ -936,7 +940,7 @@ const TotalAccounts = () => {
           <Typography variant="body1" color="textSecondary" textAlign="center">
             Thử điều chỉnh bộ lọc hoặc tạo tài khoản mới
           </Typography>
-        </Box>
+         </Box>
       )}
 
       {/* Pagination */}
