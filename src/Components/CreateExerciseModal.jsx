@@ -561,7 +561,7 @@ const CreateExerciseModal = ({ open, handleClose, onQuizCreated }) => {
 
         console.log('Generated Content:', text);
 
-        navigate('/generated-quiz', { state: { content: text, lessonId: lessonId, exerciseName: exerciseName } });
+        navigate('/bai-tap-AI-tao', { state: { content: text, lessonId: lessonId, exerciseName: exerciseName } });
 
         handleClose();
         if (onQuizCreated) {
