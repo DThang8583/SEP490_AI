@@ -160,6 +160,7 @@ const AppContent = () => {
   const location = useLocation();
   const isManagerRoute = location.pathname.startsWith('/manager');
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isLoginRoute = location.pathname === '/login';
 
   const toggleSidebar = (value) => {
     const newState = value !== undefined ? value : !sidebarOpen;
@@ -168,7 +169,7 @@ const AppContent = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {!isManagerRoute && <Navbar />}
+      {!isManagerRoute && !isAdminRoute && <Navbar />}
       <main style={{ flex: 1 }}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -218,7 +219,7 @@ const AppContent = () => {
           <Route path="/slide-preview" element={<SlidePreview />} />
         </Routes>
       </main>
-      {!isManagerRoute && !isAdminRoute && <Footer />}
+      {!isManagerRoute && !isAdminRoute && !isLoginRoute && <Footer />}
     </div>
   );
 };

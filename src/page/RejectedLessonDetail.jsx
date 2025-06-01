@@ -16,7 +16,9 @@ import {
   IconButton,
   Tooltip,
   Chip,
-  Snackbar
+  Snackbar,
+  Fade,
+  Zoom
 } from '@mui/material';
 import { 
   ArrowBack, 
@@ -30,12 +32,339 @@ import {
   Build,
   AccessTime as AccessTimeIcon,
   Close as CloseIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Dangerous as RejectedIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useTheme} from '../context/ThemeContext';
+import { styled, keyframes } from '@mui/material/styles';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, TabStopType, TabStopPosition } from 'docx';
 import { saveAs } from 'file-saver';
+
+// Animations
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const float = keyframes`
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(244, 67, 54, 0);
+  }
+`;
+
+const shimmer = keyframes`
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+`;
+
+const glow = keyframes`
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(244, 67, 54, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(244, 67, 54, 0.6));
+  }
+`;
+
+// Styled Components
+const MainContainer = styled(Box)(({ theme, isDarkMode }) => ({
+  minHeight: 'calc(100vh - 64px)',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+    : 'linear-gradient(135deg, #F44336 0%, #EF5350 50%, #F44336 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+  paddingTop: '32px',
+  paddingBottom: '32px',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: isDarkMode
+      ? 'radial-gradient(circle at 20% 80%, rgba(244, 67, 54, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(156, 39, 176, 0.1) 0%, transparent 50%)'
+      : 'radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+    pointerEvents: 'none',
+  },
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+  position: 'relative',
+  zIndex: 2,
+}));
+
+const BackButton = styled(Button)(({ theme, isDarkMode }) => ({
+  marginBottom: '24px',
+  color: isDarkMode ? '#ffffff' : '#2D3436',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 600,
+  borderRadius: '12px',
+  padding: '12px 24px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+  backdropFilter: 'blur(10px)',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(244, 67, 54, 0.2)',
+  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 35px rgba(0, 0, 0, 0.15)',
+  },
+}));
+
+const DetailCard = styled(Paper)(({ theme, isDarkMode }) => ({
+  padding: '32px',
+  marginBottom: '24px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(244, 67, 54, 0.2)',
+  boxShadow: isDarkMode
+    ? '0 20px 40px rgba(0, 0, 0, 0.3)'
+    : '0 20px 40px rgba(0, 0, 0, 0.1)',
+  position: 'relative',
+  overflow: 'hidden',
+  animation: `${fadeIn} 0.8s ease-out`,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(244, 67, 54, 0.1), transparent)',
+    animation: `${shimmer} 3s ease-in-out infinite`,
+  },
+}));
+
+const TitleSection = styled(Box)(({ theme }) => ({
+  marginBottom: '32px',
+  animation: `${slideInUp} 0.8s ease-out`,
+}));
+
+const MainTitle = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 800,
+  fontSize: '2.5rem',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #fff 0%, #e3f2fd 100%)'
+    : 'linear-gradient(135deg, #F44336 0%, #C62828 100%)',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  marginBottom: '8px',
+  letterSpacing: '0.5px',
+  [theme.breakpoints.down('md')]: {
+    fontSize: '2rem',
+  },
+}));
+
+const StatusChip = styled(Chip)(({ theme, isDarkMode }) => ({
+  background: 'linear-gradient(135deg, #F44336 0%, #EF5350 100%)',
+  color: '#fff',
+  fontWeight: 700,
+  fontSize: '1rem',
+  padding: '8px 16px',
+  height: 'auto',
+  borderRadius: '16px',
+  boxShadow: '0 8px 25px rgba(244, 67, 54, 0.3)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  animation: `${pulse} 2s ease-in-out infinite`,
+  '& .MuiChip-icon': {
+    color: '#fff',
+    marginLeft: '8px',
+    animation: `${glow} 2s ease-in-out infinite`,
+  },
+}));
+
+const InfoGrid = styled(Grid)(({ theme }) => ({
+  marginBottom: '32px',
+  '& .MuiGrid-item': {
+    animation: `${slideInUp} 0.8s ease-out`,
+  },
+}));
+
+const InfoCard = styled(Box)(({ theme, isDarkMode }) => ({
+  padding: '20px',
+  borderRadius: '16px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
+    : 'linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%)',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(244, 67, 54, 0.2)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: '0 12px 30px rgba(0, 0, 0, 0.1)',
+  },
+}));
+
+const SectionDivider = styled(Divider)(({ theme, isDarkMode }) => ({
+  margin: '32px 0',
+  borderStyle: 'dashed',
+  borderColor: isDarkMode
+    ? 'rgba(255, 255, 255, 0.2)'
+    : 'rgba(244, 67, 54, 0.3)',
+  borderWidth: '2px',
+}));
+
+const SectionContainer = styled(Box)(({ theme }) => ({
+  marginBottom: '32px',
+  animation: `${slideInUp} 0.8s ease-out`,
+}));
+
+const SectionHeader = styled(Stack)(({ theme }) => ({
+  marginBottom: '16px',
+  alignItems: 'center',
+  direction: 'row',
+  spacing: 1,
+}));
+
+const SectionTitle = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 700,
+  fontSize: '1.5rem',
+  color: isDarkMode ? '#fff' : '#F44336',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+}));
+
+const SectionContent = styled(Box)(({ theme }) => ({
+  paddingLeft: '56px',
+  '& p': {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    fontSize: '1rem',
+    lineHeight: 1.7,
+    marginBottom: '8px',
+  },
+}));
+
+const QualitySection = styled(Box)(({ theme, isDarkMode }) => ({
+  marginTop: '24px',
+  paddingLeft: '16px',
+  borderLeft: `4px solid ${isDarkMode ? '#EF5350' : '#F44336'}`,
+  marginLeft: '-20px',
+  paddingTop: '8px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(244, 67, 54, 0.05) 0%, rgba(244, 67, 54, 0.02) 100%)',
+  borderRadius: '0 12px 12px 0',
+  padding: '16px',
+}));
+
+const QualityChip = styled(Chip)(({ theme }) => ({
+  background: 'linear-gradient(135deg, #F44336 0%, #EF5350 100%)',
+  color: '#fff',
+  fontWeight: 600,
+  marginBottom: '12px',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  '& .MuiChip-icon': {
+    color: '#fff',
+  },
+}));
+
+const ReasonSection = styled(Box)(({ theme, isDarkMode }) => ({
+  padding: '24px',
+  borderRadius: '16px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(244, 67, 54, 0.15) 0%, rgba(244, 67, 54, 0.1) 100%)'
+    : 'linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%)',
+  border: `2px solid ${isDarkMode ? 'rgba(244, 67, 54, 0.3)' : 'rgba(244, 67, 54, 0.2)'}`,
+  marginBottom: '32px',
+  animation: `${slideInUp} 0.8s ease-out`,
+}));
+
+const ActionButton = styled(Button)(({ theme, isDarkMode }) => ({
+  minWidth: '250px',
+  padding: '16px 24px',
+  borderRadius: '12px',
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 700,
+  fontSize: '1rem',
+  background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  boxShadow: '0 8px 25px rgba(33, 150, 243, 0.3)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 35px rgba(33, 150, 243, 0.4)',
+  },
+  '&:disabled': {
+    opacity: 0.7,
+  },
+}));
+
+const LoadingContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '400px',
+  animation: `${float} 2s ease-in-out infinite`,
+}));
+
+const FloatingBubble = styled(Box)(({ theme, size, top, left, delay, isDarkMode }) => ({
+  position: 'absolute',
+  width: size,
+  height: size,
+  borderRadius: '50%',
+  background: isDarkMode
+    ? `rgba(244, 67, 54, ${Math.random() * 0.1 + 0.05})`
+    : `rgba(244, 67, 54, ${Math.random() * 0.08 + 0.02})`,
+  top: top,
+  left: left,
+  animation: `${float} ${Math.random() * 8 + 8}s ease-in-out infinite`,
+  animationDelay: delay,
+  zIndex: 1,
+  pointerEvents: 'none',
+}));
 
 // Helper function to create a URL/filename-friendly slug
 const slugify = (str) => {
@@ -308,164 +637,213 @@ const RejectedLessonDetail = () => {
     }
 
     const formatDisplayContent = (text) => {
-         if (!text) return <Typography component="span" sx={{ fontStyle: 'italic' }}>N/A</Typography>;
+         if (!text) return <Typography component="span" sx={{ fontStyle: 'italic', color: isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>N/A</Typography>;
          return text.split('\n').map((line, index) => 
               line.startsWith('-') || line.startsWith('*') ? 
-              <Typography key={index} component="p" sx={{ mb: 0.5, pl: 2, position: 'relative', '&::before': { content: '"•"', position: 'absolute', left: 0, color: 'text.primary' } }}>{line.substring(1).trim()}</Typography> : 
-              <Typography key={index} component="p" sx={{ mb: 1 }}>{line}</Typography>
+              <Typography key={index} component="p" sx={{ 
+                mb: 0.5, 
+                pl: 2, 
+                position: 'relative', 
+                color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+                fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                '&::before': { 
+                  content: '"•"', 
+                  position: 'absolute', 
+                  left: 0, 
+                  color: '#F44336',
+                  fontWeight: 'bold'
+                } 
+              }}>{line.substring(1).trim()}</Typography> : 
+              <Typography key={index} component="p" sx={{ 
+                mb: 1,
+                color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+                fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+              }}>{line}</Typography>
          );
     };
 
     return (
-        <Box mb={4}> 
-           <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+        <SectionContainer> 
+           <SectionHeader>
              {icon} 
-             <Typography variant="h6" sx={{ fontWeight: 600, color: isDarkMode ? 'primary.light' : 'primary.dark' }}>
+             <SectionTitle isDarkMode={isDarkMode}>
                {title}
-             </Typography>
-           </Stack>
-          <Divider sx={{ mb: 2 }} /> 
-          <Box sx={{ pl: 4.5 }}> {/* Indent content */}
+             </SectionTitle>
+           </SectionHeader>
+          <Divider sx={{ mb: 2, borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(244, 67, 54, 0.2)' }} /> 
+          <SectionContent>
              {formatDisplayContent(mainContent)}
              {qualityContent && (
-                <Box mt={2} pl={2} borderLeft={theme?.palette ? `3px solid ${theme.palette.secondary.main}` : '3px solid grey'} ml={-2.5} pt={0.5} > {/* Highlight Quality section */} 
-                    <Chip 
+                <QualitySection isDarkMode={isDarkMode}>
+                    <QualityChip 
                         icon={<CheckCircle fontSize="small"/>} 
                         label="Phẩm chất" 
-                        color="secondary"
                         size="small"
-                        sx={{ mb: 1.5, fontWeight: 500 }}
                     />
                      {formatDisplayContent(qualityContent)}
-                </Box>
+                </QualitySection>
              )}
-          </Box>
-        </Box>
+          </SectionContent>
+        </SectionContainer>
       );
   }
 
   const renderSkeletonDetails = () => (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-      <CircularProgress />
-    </Box>
+    <LoadingContainer>
+      <CircularProgress size={60} sx={{ color: '#F44336' }} />
+    </LoadingContainer>
   );
 
   return (
-    <Box sx={{ 
-        py: 4, 
-        minHeight: 'calc(100vh - 64px)',
-        background: isDarkMode
-          ? 'linear-gradient(135deg, rgb(18, 18, 18) 0%, rgb(30, 30, 30) 100%)'
-          : 'linear-gradient(135deg, rgb(245, 247, 250) 0%, rgb(255, 255, 255) 100%)',
-     }}>
-      <Container maxWidth="lg">
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(-1)}
-          sx={{
-            mb: 3,
-            color: isDarkMode ? '#ffffff' : '#2D3436',
-            '&:hover': {
-              backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-            },
-          }}
-        >
-          Quay lại danh sách
-        </Button>
+    <MainContainer isDarkMode={isDarkMode}>
+      {/* Floating Bubbles */}
+      {[...Array(8)].map((_, index) => (
+        <FloatingBubble
+          key={index}
+          size={Math.random() * 80 + 40}
+          top={`${Math.random() * 100}%`}
+          left={`${Math.random() * 100}%`}
+          delay={`${Math.random() * 5}s`}
+          isDarkMode={isDarkMode}
+        />
+      ))}
 
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: { xs: 2, sm: 3, md: 4 }, 
-            borderRadius: '16px',
-            backgroundColor: isDarkMode ? 'rgba(40, 40, 40, 0.85)' : 'rgba(255, 255, 255, 0.85)', 
-            backdropFilter: 'blur(12px)',
-            border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
-            boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.2)' : '0 8px 32px rgba(0,0,0,0.05)',
-          }}
-        >
-          {loading ? (
-            renderSkeletonDetails()
-          ) : error ? (
-            <Alert severity="error" sx={{ my: 2 }}>{`Lỗi tải chi tiết: ${error}`}</Alert>
-          ) : lessonDetail ? (
-            <Box p={1}>
-              <Stack 
-                direction={{ xs: 'column', md: 'row' }} 
-                alignItems={{ xs: 'flex-start', md: 'center' }} 
-                spacing={1.5} 
-                mb={4}
-              > 
-                <Box flexGrow={1}>
-                  <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-                    <Cancel sx={{ color: 'error.main', fontSize: '1.8rem', verticalAlign: 'middle', mr: 1 }} />
-                    {lessonDetail.lesson || 'Chi Tiết Giáo án Đã Từ Chối'}
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary" sx={{ pl: 4.5 }}>Trạng thái: Đã từ chối</Typography>
-                </Box>
-              </Stack>
-              
-              <Grid container spacing={3} mb={3}>
-                <Grid item xs={12} md={6}>
-                   <Typography variant="body2" color="text.secondary">Chủ đề:</Typography>
-                   <Typography variant="h6">{lessonDetail.module || 'N/A'}</Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                   <Typography variant="body2" color="text.secondary">Ngày tạo:</Typography>
-                   <Typography variant="h6">{(lessonDetail.createdAt)}</Typography>
-                </Grid>
-              </Grid>
-              
-              <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
+      <StyledContainer maxWidth="lg">
+        <Fade in timeout={800}>
+          <BackButton
+            startIcon={<ArrowBack />}
+            onClick={() => navigate(-1)}
+            isDarkMode={isDarkMode}
+          >
+            Quay lại danh sách
+          </BackButton>
+        </Fade>
 
-              {renderDetailSection("Mục tiêu", lessonDetail.goal, <Assignment color="primary" />)}
-              {renderDetailSection("Giáo viên chuẩn bị", lessonDetail.schoolSupply, <Build color="action"/>)} 
-              {renderDetailSection("Hoạt động Khởi động", lessonDetail.startUp, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>1.</Typography>)}
-              {renderDetailSection("Hoạt động Hình thành Kiến thức", lessonDetail.knowledge, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>2.</Typography>)}
-              {renderDetailSection("Hoạt động Luyện tập", lessonDetail.practice, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>3.</Typography>)}
-              {renderDetailSection("Hoạt động Vận dụng", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
-              
-              {lessonDetail.disapprovedReason && (
-                <Box mb={4}>
-                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                    <Cancel color="error" />
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'error.main' }}>
-                      Lý do từ chối
-                    </Typography>
+        <Zoom in timeout={1200}>
+          <DetailCard elevation={0} isDarkMode={isDarkMode}>
+            {loading ? (
+              renderSkeletonDetails()
+            ) : error ? (
+              <Alert severity="error" sx={{ my: 2, borderRadius: '12px', fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}>
+                {`Lỗi tải chi tiết: ${error}`}
+              </Alert>
+            ) : lessonDetail ? (
+              <Box>
+                <TitleSection>
+                  <Stack 
+                    direction={{ xs: 'column', md: 'row' }} 
+                    alignItems={{ xs: 'flex-start', md: 'center' }} 
+                    spacing={2} 
+                    mb={3}
+                  > 
+                    <Box flexGrow={1}>
+                      <MainTitle isDarkMode={isDarkMode}>
+                        <RejectedIcon sx={{ fontSize: '2rem', verticalAlign: 'middle', mr: 1, color: '#F44336' }} />
+                        {lessonDetail.lesson || 'Chi Tiết Giáo án Đã Từ Chối'}
+                      </MainTitle>
+                      <StatusChip
+                        icon={<Cancel />}
+                        label="Đã từ chối"
+                        isDarkMode={isDarkMode}
+                      />
+                    </Box>
                   </Stack>
-                  <Divider sx={{ mb: 2 }} />
-                  <Box sx={{ pl: 4.5 }}>
-                    <Typography>{lessonDetail.disapprovedReason}</Typography>
-                  </Box>
+                  
+                  <InfoGrid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <InfoCard isDarkMode={isDarkMode}>
+                        <Typography variant="body2" sx={{ 
+                          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 600,
+                          mb: 1
+                        }}>
+                          Chủ đề:
+                        </Typography>
+                        <Typography variant="h6" sx={{ 
+                          color: isDarkMode ? '#fff' : '#F44336',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 700
+                        }}>
+                          {lessonDetail.module || 'N/A'}
+                        </Typography>
+                      </InfoCard>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <InfoCard isDarkMode={isDarkMode}>
+                        <Typography variant="body2" sx={{ 
+                          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 600,
+                          mb: 1
+                        }}>
+                          Ngày tạo:
+                        </Typography>
+                        <Typography variant="h6" sx={{ 
+                          color: isDarkMode ? '#fff' : '#F44336',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 700
+                        }}>
+                          {formatDate(lessonDetail.createdAt)}
+                        </Typography>
+                      </InfoCard>
+                    </Grid>
+                  </InfoGrid>
+                </TitleSection>
+                
+                <SectionDivider isDarkMode={isDarkMode} />
+
+                {renderDetailSection("Mục tiêu", lessonDetail.goal, <Assignment sx={{ color: '#F44336', fontSize: '1.8rem' }} />)}
+                {renderDetailSection("Giáo viên chuẩn bị", lessonDetail.schoolSupply, <Build sx={{ color: '#F44336', fontSize: '1.8rem' }} />)} 
+                {renderDetailSection("Hoạt động Khởi động", lessonDetail.startUp, <Typography sx={{fontWeight: 'bold', color: '#F44336', fontSize: '1.8rem'}}>1.</Typography>)}
+                {renderDetailSection("Hoạt động Hình thành Kiến thức", lessonDetail.knowledge, <Typography sx={{fontWeight: 'bold', color: '#F44336', fontSize: '1.8rem'}}>2.</Typography>)}
+                {renderDetailSection("Hoạt động Luyện tập", lessonDetail.practice, <Typography sx={{fontWeight: 'bold', color: '#F44336', fontSize: '1.8rem'}}>3.</Typography>)}
+                {renderDetailSection("Hoạt động Vận dụng", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: '#F44336', fontSize: '1.8rem'}}>4.</Typography>)}
+                
+                {lessonDetail.disapprovedReason && (
+                  <ReasonSection isDarkMode={isDarkMode}>
+                    <SectionHeader>
+                      <Cancel sx={{ color: '#F44336', fontSize: '1.8rem' }} />
+                      <SectionTitle isDarkMode={isDarkMode} sx={{ color: '#F44336' }}>
+                        Lý do từ chối
+                      </SectionTitle>
+                    </SectionHeader>
+                    <Divider sx={{ mb: 2, borderColor: isDarkMode ? 'rgba(244, 67, 54, 0.3)' : 'rgba(244, 67, 54, 0.2)' }} />
+                    <Box sx={{ pl: 4.5 }}>
+                      <Typography sx={{ 
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+                        fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                        fontSize: '1rem',
+                        lineHeight: 1.7,
+                      }}>
+                        {lessonDetail.disapprovedReason}
+                      </Typography>
+                    </Box>
+                  </ReasonSection>
+                )}
+                
+                {/* Add the "Về nháp để chỉnh sửa" button at the bottom */}
+                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+                  <Tooltip title="Về nháp để chỉnh sửa">
+                    <ActionButton 
+                      startIcon={isMovingToDraft ? <CircularProgress size={20} color="inherit"/> : <EditIcon />}
+                      onClick={handleMoveToDraft}
+                      disabled={isMovingToDraft}
+                      isDarkMode={isDarkMode}
+                    >
+                      {isMovingToDraft ? 'Đang xử lý...' : 'Về nháp để chỉnh sửa'}
+                    </ActionButton>
+                  </Tooltip>
                 </Box>
-              )}
-              
-              {/* Add the "Về nháp để chỉnh sửa" button at the bottom */}
-              <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-                <Tooltip title="Về nháp để chỉnh sửa">
-                  <Button 
-                    variant="contained"
-                    color="info"
-                    size="large"
-                    startIcon={isMovingToDraft ? <CircularProgress size={20} color="inherit"/> : <EditIcon />}
-                    onClick={handleMoveToDraft}
-                    disabled={isMovingToDraft}
-                    sx={{ 
-                      minWidth: '250px',
-                      py: 1.5,
-                      boxShadow: 3
-                    }}
-                  >
-                    {isMovingToDraft ? 'Đang xử lý...' : 'Về nháp để chỉnh sửa'}
-                  </Button>
-                </Tooltip>
               </Box>
-            </Box>
-          ) : (
-             <Alert severity="warning">Không tìm thấy chi tiết Giáo án.</Alert>
-          )}
-        </Paper>
-      </Container>
+            ) : (
+               <Alert severity="warning" sx={{ borderRadius: '12px', fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}>
+                 Không tìm thấy chi tiết Giáo án.
+               </Alert>
+            )}
+          </DetailCard>
+        </Zoom>
+      </StyledContainer>
 
       <Snackbar
         open={snackbar.open}
@@ -480,7 +858,7 @@ const RejectedLessonDetail = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </MainContainer>
   );
 };
 

@@ -17,7 +17,9 @@ import {
   Tooltip,
   Chip,
   Snackbar,
-  TextField
+  TextField,
+  Fade,
+  Zoom
 } from '@mui/material';
 import { 
   ArrowBack, 
@@ -36,8 +38,106 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { styled, keyframes } from '@mui/material/styles';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, TabStopType, TabStopPosition } from 'docx';
 import { saveAs } from 'file-saver';
+
+// Animations
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const float = keyframes`
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(158, 158, 158, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(158, 158, 158, 0);
+  }
+`;
+
+const shimmer = keyframes`
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+`;
+
+// Styled Components
+const MainContainer = styled(Box)(({ theme, isDarkMode }) => ({
+  minHeight: 'calc(100vh - 64px)',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+    : 'linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 50%, #9E9E9E 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+  paddingTop: '32px',
+  paddingBottom: '32px',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: isDarkMode
+      ? 'radial-gradient(circle at 20% 80%, rgba(158, 158, 158, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(156, 39, 176, 0.1) 0%, transparent 50%)'
+      : 'radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+    pointerEvents: 'none',
+  },
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+  position: 'relative',
+  zIndex: 2,
+}));
+
+const FloatingBubble = styled(Box)(({ theme, size, top, left, delay, isDarkMode }) => ({
+  position: 'absolute',
+  width: size,
+  height: size,
+  borderRadius: '50%',
+  background: isDarkMode
+    ? `rgba(158, 158, 158, ${Math.random() * 0.1 + 0.05})`
+    : `rgba(158, 158, 158, ${Math.random() * 0.08 + 0.02})`,
+  top: top,
+  left: left,
+  animation: `${float} ${Math.random() * 8 + 8}s ease-in-out infinite`,
+  animationDelay: delay,
+  zIndex: 1,
+  pointerEvents: 'none',
+}));
 
 // Helper function to create a URL/filename-friendly slug
 const slugify = (str) => {
@@ -384,11 +484,28 @@ const DraftLessonDetail = () => {
   };
 
   const formatDisplayContent = (text) => {
-    if (!text) return <Typography component="span" sx={{ fontStyle: 'italic' }}>N/A</Typography>;
+    if (!text) return <Typography component="span" sx={{ fontStyle: 'italic', color: isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>N/A</Typography>;
     return text.split('\n').map((line, index) => 
       line.startsWith('-') || line.startsWith('*') ? 
-        <Typography key={index} component="p" sx={{ mb: 0.5, pl: 2, position: 'relative', '&::before': { content: '"•"', position: 'absolute', left: 0, color: 'text.primary' } }}>{line.substring(1).trim()}</Typography> : 
-        <Typography key={index} component="p" sx={{ mb: 1 }}>{line}</Typography>
+        <Typography key={index} component="p" sx={{ 
+          mb: 0.5, 
+          pl: 2, 
+          position: 'relative', 
+          color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+          '&::before': { 
+            content: '"•"', 
+            position: 'absolute', 
+            left: 0, 
+            color: '#9E9E9E',
+            fontWeight: 'bold'
+          } 
+        }}>{line.substring(1).trim()}</Typography> : 
+        <Typography key={index} component="p" sx={{ 
+          mb: 1,
+          color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+        }}>{line}</Typography>
     );
   };
 
@@ -406,43 +523,80 @@ const DraftLessonDetail = () => {
     }
 
     return (
-        <Box mb={4}> 
-           <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-             {icon} 
-             <Typography variant="h6" sx={{ fontWeight: 600, color: isDarkMode ? 'primary.light' : 'primary.dark' }}>
-               {title}
-             </Typography>
-           </Stack>
-          <Divider sx={{ mb: 2 }} /> 
-          <Box sx={{ pl: 4.5 }}> {/* Indent content */}
-             {formatDisplayContent(mainContent)}
-             {qualityContent && (
-                <Box mt={2} pl={2} borderLeft={theme?.palette ? `3px solid ${theme.palette.secondary.main}` : '3px solid grey'} ml={-2.5} pt={0.5} > {/* Highlight Quality section */} 
-                    <Chip 
-                        icon={<CheckCircle fontSize="small"/>} 
-                        label="Phẩm chất" 
-                        color="secondary"
-                        size="small"
-                        sx={{ mb: 1.5, fontWeight: 500 }}
-                    />
-                     {formatDisplayContent(qualityContent)}
-                </Box>
-             )}
-          </Box>
+      <Box mb={4} sx={{ animation: `${slideInUp} 0.8s ease-out` }}> 
+        <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+          {icon} 
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 700,
+              fontSize: '1.5rem',
+              color: isDarkMode ? '#fff' : '#9E9E9E',
+              fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+            }}
+          >
+            {title}
+          </Typography>
+        </Stack>
+        <Divider sx={{ mb: 2, borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(158, 158, 158, 0.2)' }} /> 
+        <Box sx={{ pl: 4.5 }}>
+          {formatDisplayContent(mainContent)}
+          {qualityContent && (
+            <Box 
+              sx={{
+                marginTop: '24px',
+                paddingLeft: '16px',
+                borderLeft: `4px solid ${isDarkMode ? '#BDBDBD' : '#9E9E9E'}`,
+                marginLeft: '-20px',
+                paddingTop: '8px',
+                background: isDarkMode
+                  ? 'linear-gradient(135deg, rgba(158, 158, 158, 0.1) 0%, rgba(158, 158, 158, 0.05) 100%)'
+                  : 'linear-gradient(135deg, rgba(158, 158, 158, 0.05) 0%, rgba(158, 158, 158, 0.02) 100%)',
+                borderRadius: '0 12px 12px 0',
+                padding: '16px',
+              }}
+            >
+              <Chip 
+                icon={<CheckCircle fontSize="small"/>} 
+                label="Phẩm chất" 
+                size="small"
+                sx={{
+                  background: 'linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 100%)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  marginBottom: '12px',
+                  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                  '& .MuiChip-icon': {
+                    color: '#fff',
+                  },
+                }}
+              />
+              {formatDisplayContent(qualityContent)}
+            </Box>
+          )}
         </Box>
-      );
+      </Box>
+    );
   }
 
   const renderEditableSection = (title, field, icon) => {
     return (
-      <Box mb={4}>
+      <Box mb={4} sx={{ animation: `${slideInUp} 0.8s ease-out` }}>
         <Stack direction="row" alignItems="center" spacing={1} mb={1}>
           {icon}
-          <Typography variant="h6" sx={{ fontWeight: 600, color: isDarkMode ? 'primary.light' : 'primary.dark' }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 700,
+              fontSize: '1.5rem',
+              color: isDarkMode ? '#fff' : '#9E9E9E',
+              fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+            }}
+          >
             {title}
           </Typography>
         </Stack>
-        <Divider sx={{ mb: 2 }} />
+        <Divider sx={{ mb: 2, borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(158, 158, 158, 0.2)' }} />
         <Box sx={{ pl: 4.5 }}>
           {isEditing ? (
             <TextField
@@ -455,7 +609,21 @@ const DraftLessonDetail = () => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
-                }
+                  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                  borderRadius: '12px',
+                  '& fieldset': {
+                    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(158, 158, 158, 0.3)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(158, 158, 158, 0.5)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#9E9E9E',
+                  },
+                },
+                '& .MuiInputBase-input': {
+                  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                },
               }}
             />
           ) : (
@@ -467,202 +635,453 @@ const DraftLessonDetail = () => {
   };
 
   const renderSkeletonDetails = () => (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-      <CircularProgress />
+    <Box 
+      sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '400px',
+        animation: `${float} 2s ease-in-out infinite`,
+      }}
+    >
+      <CircularProgress size={60} sx={{ color: '#9E9E9E' }} />
     </Box>
   );
 
   return (
-    <Box sx={{ 
-        py: 4, 
-        minHeight: 'calc(100vh - 64px)',
-        background: isDarkMode
-          ? 'linear-gradient(135deg, rgb(18, 18, 18) 0%, rgb(30, 30, 30) 100%)'
-          : 'linear-gradient(135deg, rgb(245, 247, 250) 0%, rgb(255, 255, 255) 100%)',
-     }}>
-      <Container maxWidth="lg">
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(-1)}
-          sx={{
-            mb: 3,
-            color: isDarkMode ? '#ffffff' : '#2D3436',
-            '&:hover': {
-              backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-            },
-          }}
-        >
-          Quay lại danh sách
-        </Button>
+    <MainContainer isDarkMode={isDarkMode}>
+      {/* Floating Bubbles */}
+      {[...Array(8)].map((_, index) => (
+        <FloatingBubble
+          key={index}
+          size={Math.random() * 80 + 40}
+          top={`${Math.random() * 100}%`}
+          left={`${Math.random() * 100}%`}
+          delay={`${Math.random() * 5}s`}
+          isDarkMode={isDarkMode}
+        />
+      ))}
 
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          justifyContent="space-between" 
-          alignItems={{ xs: 'flex-start', sm: 'center' }}
-          mb={3}
-          sx={{ px: { xs: 2, sm: 3, md: 0 } }} 
-        >
-          <Stack direction="row" alignItems="center" spacing={1.5} mb={{ xs: 2, sm: 0 }}> 
-            <Edit sx={{ color: 'info.main', fontSize: '2.2rem' }} />
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-              Chi Tiết Giáo án Nháp
-            </Typography>
-          </Stack>
-          <Tooltip title="Xuất ra file Word (.docx)">
-            <span>
-              <Button 
-                variant="contained"
-                color="primary"
-                startIcon={isExporting ? <CircularProgress size={20} color="inherit"/> : <Download />}
-                onClick={handleExportToWord}
-                disabled={!lessonDetail || isExporting}
-              >
-                {isExporting ? 'Đang xuất...' : 'Xuất ra Word'}
-              </Button>
-            </span>
-          </Tooltip>
-        </Stack>
+      <StyledContainer maxWidth="lg">
+        <Fade in timeout={800}>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate(-1)}
+            sx={{
+              mb: 3,
+              color: isDarkMode ? '#ffffff' : '#2D3436',
+              fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 600,
+              borderRadius: '12px',
+              padding: '12px 24px',
+              background: isDarkMode
+                ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+              backdropFilter: 'blur(10px)',
+              border: isDarkMode
+                ? '1px solid rgba(255, 255, 255, 0.1)'
+                : '1px solid rgba(158, 158, 158, 0.2)',
+              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(158, 158, 158, 0.1)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 12px 35px rgba(0, 0, 0, 0.15)',
+              },
+            }}
+          >
+            Quay lại danh sách
+          </Button>
+        </Fade>
 
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: { xs: 2, sm: 3, md: 4 }, 
-            borderRadius: '16px',
-            backgroundColor: isDarkMode ? 'rgba(40, 40, 40, 0.85)' : 'rgba(255, 255, 255, 0.85)', 
-            backdropFilter: 'blur(12px)',
-            border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
-            boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.2)' : '0 8px 32px rgba(0,0,0,0.05)',
-          }}
-        >
-          {loading ? (
-            renderSkeletonDetails()
-          ) : error ? (
-            <Alert severity="error" sx={{ my: 2 }}>{`Lỗi tải chi tiết: ${error}`}</Alert>
-          ) : lessonDetail ? (
-            <Box p={1}>
-              <Stack 
-                direction={{ xs: 'column', md: 'row' }} 
-                alignItems={{ xs: 'flex-start', md: 'center' }} 
-                spacing={1.5} 
-                mb={4}
-              > 
-                <Box flexGrow={1}>
-                  <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-                    <Edit sx={{ color: 'info.main', fontSize: '1.8rem', verticalAlign: 'middle', mr: 1 }} />
-                    {lessonDetail.lesson || 'Chi Tiết Giáo án Nháp'}
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary" sx={{ pl: 4.5 }}>Trạng thái: Nháp</Typography>
-                </Box>
-              </Stack>
-              
-              <Grid container spacing={3} mb={3}>
-                <Grid item xs={12} md={6}>
-                   <Typography variant="body2" color="text.secondary">Chủ đề:</Typography>
-                   <Typography variant="h6">{lessonDetail.module || 'N/A'}</Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                   <Typography variant="body2" color="text.secondary">Ngày gửi:</Typography>
-                   <Typography variant="h6">{formatDate(lessonDetail.createdAt)}</Typography>
-                </Grid>
-              </Grid>
-              
-              <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
-
-              <Stack direction="row" spacing={2} mb={3}>
-                {!isEditing ? (
-                  <Button
-                    variant="contained"
-                    startIcon={<Edit />}
-                    onClick={handleEdit}
-                    sx={{ borderRadius: '8px' }}
-                  >
-                    Chỉnh sửa
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      startIcon={<CheckCircle />}
-                      onClick={handleSave}
-                      sx={{ borderRadius: '8px' }}
-                    >
-                      Lưu
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      startIcon={<Cancel />}
-                      onClick={handleCancel}
-                      sx={{ borderRadius: '8px' }}
-                    >
-                      Hủy
-                    </Button>
-                  </>
-                )}
-              </Stack>
-
-              {isEditing ? (
-                <>
-                  {renderEditableSection("Mục tiêu", "goal", <Assignment color="primary" />)}
-                  {renderEditableSection("Giáo viên chuẩn bị", "schoolSupply", <Build color="action"/>)}
-                  {renderEditableSection("Hoạt động Khởi động(5 phút)", "startUp", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>1.</Typography>)}
-                  {renderEditableSection("Hoạt động Hình thành Kiến thức(12 phút)", "knowledge", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>2.</Typography>)}
-                  {renderEditableSection("Hoạt động Luyện tập(15 phút)", "practice", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>3.</Typography>)}
-                  {renderEditableSection("Hoạt động Vận dụng(3 phút)", "apply", <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
-                </>
-              ) : (
-                <>
-                  {renderDetailSection("Mục tiêu", lessonDetail.goal, <Assignment color="primary" />)}
-                  {renderDetailSection("Giáo viên chuẩn bị", lessonDetail.schoolSupply, <Build color="action"/>)}
-                  {renderDetailSection("Hoạt động Khởi động(5 phút)", lessonDetail.startUp, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>1.</Typography>)}
-                  {renderDetailSection("Hoạt động Hình thành Kiến thức(12 phút)", lessonDetail.knowledge, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>2.</Typography>)}
-                  {renderDetailSection("Hoạt động Luyện tập(15 phút)", lessonDetail.practice, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>3.</Typography>)}
-                  {renderDetailSection("Hoạt động Vận dụng(3 phút)", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: 'info.main'}}>4.</Typography>)}
-                </>
-              )}
-              
-              {lessonDetail.disapprovedReason && (
-                <Box mb={4}>
-                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                    <Cancel color="error" />
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'error.main' }}>
-                      Lý do từ chối
-                    </Typography>
-                  </Stack>
-                  <Divider sx={{ mb: 2 }} />
-                  <Box sx={{ pl: 4.5 }}>
-                    <Typography>{lessonDetail.disapprovedReason}</Typography>
-                  </Box>
-                </Box>
-              )}
-              
-              {/* Add the "Gửi cho người quản lý chuyên môn" button at the bottom */}
-              <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-                <Tooltip title="Gửi cho người quản lý chuyên môn">
-                  <Button 
-                    variant="contained"
-                    color="success"
-                    size="large"
-                    startIcon={isSendingToPending ? <CircularProgress size={20} color="inherit"/> : <SendIcon />}
-                    onClick={handleSendToPending}
-                    disabled={isSendingToPending}
-                    sx={{ 
-                      minWidth: '300px',
-                      py: 1.5,
-                      boxShadow: 3
+        <Zoom in timeout={1000}>
+          <Paper
+            elevation={0}
+            sx={{
+              padding: '32px',
+              marginBottom: '24px',
+              background: isDarkMode
+                ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '20px',
+              border: isDarkMode
+                ? '1px solid rgba(255, 255, 255, 0.1)'
+                : '1px solid rgba(158, 158, 158, 0.2)',
+              boxShadow: isDarkMode
+                ? '0 20px 40px rgba(0, 0, 0, 0.3)'
+                : '0 20px 40px rgba(0, 0, 0, 0.1)',
+              position: 'relative',
+              overflow: 'hidden',
+              animation: `${fadeIn} 0.8s ease-out`,
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: '-100%',
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(90deg, transparent, rgba(158, 158, 158, 0.1), transparent)',
+                animation: `${shimmer} 3s ease-in-out infinite`,
+              },
+            }}
+          >
+            <Stack 
+              direction={{ xs: 'column', sm: 'row' }} 
+              justifyContent="space-between" 
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              spacing={3}
+            >
+              <Stack direction="row" alignItems="center" spacing={2} mb={{ xs: 2, sm: 0 }}>
+                <Edit sx={{ color: '#9E9E9E', fontSize: '2.5rem' }} />
+                <Box>
+                  <Typography
+                    variant="h4"
+                    component="h1"
+                    sx={{
+                      fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                      fontWeight: 800,
+                      fontSize: '2.5rem',
+                      background: isDarkMode
+                        ? 'linear-gradient(135deg, #fff 0%, #e3f2fd 100%)'
+                        : 'linear-gradient(135deg, #9E9E9E 0%, #757575 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      marginBottom: '8px',
+                      letterSpacing: '0.5px',
                     }}
                   >
-                    {isSendingToPending ? 'Đang xử lý...' : 'Gửi cho người quản lý chuyên môn'}
+                    Chi Tiết Giáo án Nháp
+                  </Typography>
+                  <Chip
+                    icon={<Edit />}
+                    label="Nháp"
+                    sx={{
+                      background: 'linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 100%)',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: '1rem',
+                      padding: '8px 16px',
+                      height: 'auto',
+                      borderRadius: '16px',
+                      boxShadow: '0 8px 25px rgba(158, 158, 158, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                      animation: `${pulse} 2s ease-in-out infinite`,
+                    }}
+                  />
+                </Box>
+              </Stack>
+              <Tooltip title="Xuất ra file Word (.docx)">
+                <span>
+                  <Button 
+                    variant="contained"
+                    startIcon={isExporting ? <CircularProgress size={20} color="inherit"/> : <Download />}
+                    onClick={handleExportToWord}
+                    disabled={!lessonDetail || isExporting}
+                    sx={{
+                      background: 'linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 100%)',
+                      color: '#fff',
+                      fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                      fontWeight: 700,
+                      fontSize: '1rem',
+                      padding: '12px 24px',
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 25px rgba(158, 158, 158, 0.3)',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 12px 35px rgba(158, 158, 158, 0.4)',
+                      },
+                    }}
+                  >
+                    {isExporting ? 'Đang xuất...' : 'Xuất ra Word'}
                   </Button>
-                </Tooltip>
+                </span>
+              </Tooltip>
+            </Stack>
+          </Paper>
+        </Zoom>
+
+        <Zoom in timeout={1200}>
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              p: { xs: 2, sm: 3, md: 4 }, 
+              borderRadius: '20px',
+              background: isDarkMode
+                ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: isDarkMode
+                ? '1px solid rgba(255, 255, 255, 0.1)'
+                : '1px solid rgba(158, 158, 158, 0.2)',
+              boxShadow: isDarkMode
+                ? '0 20px 40px rgba(0, 0, 0, 0.3)'
+                : '0 20px 40px rgba(0, 0, 0, 0.1)',
+              position: 'relative',
+              overflow: 'hidden',
+              animation: `${fadeIn} 0.8s ease-out`,
+            }}
+          >
+            {loading ? (
+              renderSkeletonDetails()
+            ) : error ? (
+              <Alert severity="error" sx={{ my: 2, borderRadius: '12px', fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}>
+                {`Lỗi tải chi tiết: ${error}`}
+              </Alert>
+            ) : lessonDetail ? (
+              <Box p={1}>
+                <Stack 
+                  direction={{ xs: 'column', md: 'row' }} 
+                  alignItems={{ xs: 'flex-start', md: 'center' }} 
+                  spacing={1.5} 
+                  mb={4}
+                > 
+                  <Box flexGrow={1}>
+                    <Typography 
+                      variant="h4" 
+                      component="h1" 
+                      sx={{ 
+                        fontWeight: 700,
+                        fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                        color: isDarkMode ? '#fff' : '#9E9E9E',
+                      }}
+                    >
+                      <Edit sx={{ color: '#9E9E9E', fontSize: '1.8rem', verticalAlign: 'middle', mr: 1 }} />
+                      {lessonDetail.lesson || 'Chi Tiết Giáo án Nháp'}
+                    </Typography>
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        pl: 4.5,
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(158, 158, 158, 0.8)',
+                        fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                      }}
+                    >
+                      Trạng thái: Nháp
+                    </Typography>
+                  </Box>
+                </Stack>
+                
+                <Grid container spacing={3} mb={3}>
+                  <Grid item xs={12} md={6}>
+                    <Box
+                      sx={{
+                        padding: '20px',
+                        borderRadius: '16px',
+                        background: isDarkMode
+                          ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
+                          : 'linear-gradient(135deg, rgba(158, 158, 158, 0.1) 0%, rgba(158, 158, 158, 0.05) 100%)',
+                        border: isDarkMode
+                          ? '1px solid rgba(255, 255, 255, 0.1)'
+                          : '1px solid rgba(158, 158, 158, 0.2)',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 12px 30px rgba(0, 0, 0, 0.1)',
+                        },
+                      }}
+                    >
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 600,
+                          mb: 1
+                        }}
+                      >
+                        Chủ đề:
+                      </Typography>
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          color: isDarkMode ? '#fff' : '#9E9E9E',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 700
+                        }}
+                      >
+                        {lessonDetail.module || 'N/A'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Box
+                      sx={{
+                        padding: '20px',
+                        borderRadius: '16px',
+                        background: isDarkMode
+                          ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
+                          : 'linear-gradient(135deg, rgba(158, 158, 158, 0.1) 0%, rgba(158, 158, 158, 0.05) 100%)',
+                        border: isDarkMode
+                          ? '1px solid rgba(255, 255, 255, 0.1)'
+                          : '1px solid rgba(158, 158, 158, 0.2)',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 12px 30px rgba(0, 0, 0, 0.1)',
+                        },
+                      }}
+                    >
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 600,
+                          mb: 1
+                        }}
+                      >
+                        Ngày gửi:
+                      </Typography>
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          color: isDarkMode ? '#fff' : '#9E9E9E',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 700
+                        }}
+                      >
+                        {formatDate(lessonDetail.createdAt)}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+                
+                <Divider 
+                  sx={{ 
+                    my: 4, 
+                    borderStyle: 'dashed',
+                    borderColor: isDarkMode
+                      ? 'rgba(255, 255, 255, 0.2)'
+                      : 'rgba(158, 158, 158, 0.3)',
+                    borderWidth: '2px',
+                  }} 
+                />
+
+                <Stack direction="row" spacing={2} mb={3}>
+                  {!isEditing ? (
+                    <Button
+                      variant="contained"
+                      startIcon={<Edit />}
+                      onClick={handleEdit}
+                      sx={{ 
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 100%)',
+                        fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Chỉnh sửa
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<CheckCircle />}
+                        onClick={handleSave}
+                        sx={{ 
+                          borderRadius: '8px',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Lưu
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<Cancel />}
+                        onClick={handleCancel}
+                        sx={{ 
+                          borderRadius: '8px',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Hủy
+                      </Button>
+                    </>
+                  )}
+                </Stack>
+
+                {isEditing ? (
+                  <>
+                    {renderEditableSection("Mục tiêu", "goal", <Assignment sx={{ color: '#9E9E9E', fontSize: '1.8rem' }} />)}
+                    {renderEditableSection("Giáo viên chuẩn bị", "schoolSupply", <Build sx={{ color: '#9E9E9E', fontSize: '1.8rem' }} />)}
+                    {renderEditableSection("Hoạt động Khởi động(5 phút)", "startUp", <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>1.</Typography>)}
+                    {renderEditableSection("Hoạt động Hình thành Kiến thức(12 phút)", "knowledge", <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>2.</Typography>)}
+                    {renderEditableSection("Hoạt động Luyện tập(15 phút)", "practice", <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>3.</Typography>)}
+                    {renderEditableSection("Hoạt động Vận dụng(3 phút)", "apply", <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>4.</Typography>)}
+                  </>
+                ) : (
+                  <>
+                    {renderDetailSection("Mục tiêu", lessonDetail.goal, <Assignment sx={{ color: '#9E9E9E', fontSize: '1.8rem' }} />)}
+                    {renderDetailSection("Giáo viên chuẩn bị", lessonDetail.schoolSupply, <Build sx={{ color: '#9E9E9E', fontSize: '1.8rem' }} />)}
+                    {renderDetailSection("Hoạt động Khởi động(5 phút)", lessonDetail.startUp, <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>1.</Typography>)}
+                    {renderDetailSection("Hoạt động Hình thành Kiến thức(12 phút)", lessonDetail.knowledge, <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>2.</Typography>)}
+                    {renderDetailSection("Hoạt động Luyện tập(15 phút)", lessonDetail.practice, <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>3.</Typography>)}
+                    {renderDetailSection("Hoạt động Vận dụng(3 phút)", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>4.</Typography>)}
+                  </>
+                )}
+                
+                {lessonDetail.disapprovedReason && (
+                  <Box mb={4}>
+                    <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                      <Cancel color="error" />
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          fontWeight: 600, 
+                          color: 'error.main',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                        }}
+                      >
+                        Lý do từ chối
+                      </Typography>
+                    </Stack>
+                    <Divider sx={{ mb: 2 }} />
+                    <Box sx={{ pl: 4.5 }}>
+                      <Typography sx={{ fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}>
+                        {lessonDetail.disapprovedReason}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+                
+                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+                  <Tooltip title="Gửi cho người quản lý chuyên môn">
+                    <Button 
+                      variant="contained"
+                      color="success"
+                      size="large"
+                      startIcon={isSendingToPending ? <CircularProgress size={20} color="inherit"/> : <SendIcon />}
+                      onClick={handleSendToPending}
+                      disabled={isSendingToPending}
+                      sx={{ 
+                        minWidth: '300px',
+                        py: 1.5,
+                        boxShadow: 3,
+                        fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {isSendingToPending ? 'Đang xử lý...' : 'Gửi cho người quản lý chuyên môn'}
+                    </Button>
+                  </Tooltip>
+                </Box>
               </Box>
-            </Box>
-          ) : (
-             <Alert severity="warning">Không tìm thấy chi tiết Giáo án.</Alert>
-          )}
-        </Paper>
-      </Container>
+            ) : (
+               <Alert severity="warning" sx={{ borderRadius: '12px', fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}>
+                 Không tìm thấy chi tiết Giáo án.
+               </Alert>
+            )}
+          </Paper>
+        </Zoom>
+      </StyledContainer>
 
       <Snackbar
         open={snackbar.open}
@@ -677,7 +1096,7 @@ const DraftLessonDetail = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </MainContainer>
   );
 };
 

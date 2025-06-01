@@ -19,18 +19,409 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  TextField
+  TextField,
+  InputAdornment,
+  Avatar,
+  Chip,
+  Card,
+  CardContent,
+  Fade,
+  Zoom,
 } from '@mui/material';
-import { CheckCircleOutline, InboxOutlined } from '@mui/icons-material';
+import { 
+  CheckCircleOutline, 
+  InboxOutlined,
+  Search as SearchIcon,
+  MenuBook as MenuBookIcon,
+  AccessTime as AccessTimeIcon,
+  School as SchoolIcon,
+  Verified as VerifiedIcon,
+} from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
+import { styled, keyframes } from '@mui/material/styles';
+
+// Animations
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const float = keyframes`
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(76, 175, 80, 0);
+  }
+`;
+
+const shimmer = keyframes`
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+`;
+
+const glow = keyframes`
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(76, 175, 80, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(76, 175, 80, 0.6));
+  }
+`;
+
+// Styled Components
+const MainContainer = styled(Box)(({ theme, isDarkMode }) => ({
+  minHeight: 'calc(100vh - 64px)',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+    : 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 50%, #4CAF50 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+  paddingTop: '32px',
+  paddingBottom: '32px',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: isDarkMode
+      ? 'radial-gradient(circle at 20% 80%, rgba(76, 175, 80, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(156, 39, 176, 0.1) 0%, transparent 50%)'
+      : 'radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+    pointerEvents: 'none',
+  },
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+  position: 'relative',
+  zIndex: 2,
+}));
+
+const HeaderCard = styled(Paper)(({ theme, isDarkMode }) => ({
+  padding: '48px 32px',
+  marginBottom: '32px',
+  textAlign: 'center',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '24px',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(255, 255, 255, 0.3)',
+  boxShadow: isDarkMode
+    ? '0 20px 40px rgba(0, 0, 0, 0.3)'
+    : '0 20px 40px rgba(0, 0, 0, 0.1)',
+  position: 'relative',
+  overflow: 'hidden',
+  animation: `${fadeIn} 0.8s ease-out`,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(76, 175, 80, 0.1), transparent)',
+    animation: `${shimmer} 3s ease-in-out infinite`,
+  },
+}));
+
+const FloatingIcon = styled(Avatar)(({ theme }) => ({
+  width: 80,
+  height: 80,
+  background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
+  marginBottom: '16px',
+  animation: `${float} 3s ease-in-out infinite`,
+  boxShadow: '0 12px 30px rgba(76, 175, 80, 0.4)',
+  border: '4px solid rgba(255, 255, 255, 0.2)',
+  '& .MuiSvgIcon-root': {
+    fontSize: '2.5rem',
+    color: '#fff',
+    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+  },
+}));
+
+const GradientTitle = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 800,
+  fontSize: '2.5rem',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #fff 0%, #e3f2fd 100%)'
+    : 'linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%)',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  textAlign: 'center',
+  marginBottom: '16px',
+  letterSpacing: '0.5px',
+  textShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+  [theme.breakpoints.down('md')]: {
+    fontSize: '2rem',
+  },
+}));
+
+const SubTitle = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontSize: '1.25rem',
+  fontWeight: 500,
+  color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(76, 175, 80, 0.8)',
+  marginBottom: '24px',
+  letterSpacing: '0.3px',
+  lineHeight: 1.6,
+}));
+
+const GradeChip = styled(Chip)(({ theme, isDarkMode }) => ({
+  background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
+  color: '#fff',
+  fontWeight: 700,
+  fontSize: '1rem',
+  padding: '8px 16px',
+  height: 'auto',
+  borderRadius: '16px',
+  boxShadow: '0 8px 25px rgba(76, 175, 80, 0.3)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  '& .MuiChip-label': {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  },
+  '& .MuiChip-icon': {
+    color: '#fff',
+    marginLeft: '8px',
+  },
+}));
+
+const ControlsCard = styled(Paper)(({ theme, isDarkMode }) => ({
+  padding: '24px',
+  marginBottom: '32px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(76, 175, 80, 0.2)',
+  boxShadow: isDarkMode
+    ? '0 15px 35px rgba(0, 0, 0, 0.2)'
+    : '0 15px 35px rgba(0, 0, 0, 0.08)',
+  animation: `${slideInUp} 0.8s ease-out`,
+}));
+
+const StyledTextField = styled(TextField)(({ theme, isDarkMode }) => ({
+  '& .MuiInputLabel-root': {
+    color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(76, 175, 80, 0.8)',
+    fontWeight: 600,
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  },
+  '& .MuiOutlinedInput-root': {
+    background: isDarkMode
+      ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
+      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '12px',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    '& fieldset': {
+      borderColor: isDarkMode
+        ? 'rgba(255, 255, 255, 0.1)'
+        : 'rgba(76, 175, 80, 0.2)',
+      borderWidth: '2px',
+    },
+    '&:hover fieldset': {
+      borderColor: isDarkMode
+        ? 'rgba(255, 255, 255, 0.2)'
+        : 'rgba(76, 175, 80, 0.4)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#4CAF50',
+      boxShadow: '0 0 0 3px rgba(76, 175, 80, 0.1)',
+    },
+    '& .MuiInputBase-input': {
+      color: isDarkMode ? '#fff' : '#2C3E50',
+      fontWeight: 600,
+      fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    },
+  },
+}));
+
+const StyledFormControl = styled(FormControl)(({ theme, isDarkMode }) => ({
+  '& .MuiInputLabel-root': {
+    color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(76, 175, 80, 0.8)',
+    fontWeight: 600,
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  },
+  '& .MuiOutlinedInput-root': {
+    background: isDarkMode
+      ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
+      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '12px',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    '& fieldset': {
+      borderColor: isDarkMode
+        ? 'rgba(255, 255, 255, 0.1)'
+        : 'rgba(76, 175, 80, 0.2)',
+      borderWidth: '2px',
+    },
+    '&:hover fieldset': {
+      borderColor: isDarkMode
+        ? 'rgba(255, 255, 255, 0.2)'
+        : 'rgba(76, 175, 80, 0.4)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#4CAF50',
+      boxShadow: '0 0 0 3px rgba(76, 175, 80, 0.1)',
+    },
+    '& .MuiSelect-select': {
+      color: isDarkMode ? '#fff' : '#2C3E50',
+      fontWeight: 600,
+      fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+    },
+  },
+}));
+
+const LessonCard = styled(Card)(({ theme, isDarkMode }) => ({
+  marginBottom: '16px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '16px',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(76, 175, 80, 0.1)',
+  boxShadow: isDarkMode
+    ? '0 8px 25px rgba(0, 0, 0, 0.2)'
+    : '0 8px 25px rgba(0, 0, 0, 0.05)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  cursor: 'pointer',
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(76, 175, 80, 0.1), transparent)',
+    transition: 'left 0.6s ease',
+  },
+  '&:hover': {
+    transform: 'translateY(-8px)',
+    boxShadow: isDarkMode
+      ? '0 16px 40px rgba(0, 0, 0, 0.3)'
+      : '0 16px 40px rgba(0, 0, 0, 0.1)',
+    '&::before': {
+      left: '100%',
+    },
+  },
+}));
+
+const LessonIcon = styled(Avatar)(({ theme }) => ({
+  width: 48,
+  height: 48,
+  background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
+  boxShadow: '0 4px 15px rgba(76, 175, 80, 0.3)',
+  '& .MuiSvgIcon-root': {
+    fontSize: '1.5rem',
+    color: '#fff',
+  },
+}));
+
+const EmptyStateContainer = styled(Paper)(({ theme, isDarkMode }) => ({
+  padding: '48px 32px',
+  textAlign: 'center',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(76, 175, 80, 0.2)',
+  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+  marginTop: '24px',
+  animation: `${slideInUp} 0.8s ease-out`,
+}));
+
+const EmptyIcon = styled(InboxOutlined)(({ theme }) => ({
+  fontSize: '4rem',
+  color: '#4CAF50',
+  marginBottom: '16px',
+  animation: `${float} 3s ease-in-out infinite`,
+  filter: 'drop-shadow(0 8px 16px rgba(76, 175, 80, 0.3))',
+}));
+
+const EmptyStateText = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontSize: '1.25rem',
+  fontWeight: 600,
+  color: isDarkMode ? '#fff' : '#4CAF50',
+  marginBottom: '8px',
+}));
+
+const EmptyStateSubText = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+  fontSize: '1rem',
+  color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(76, 175, 80, 0.7)',
+}));
+
+const FloatingBubble = styled(Box)(({ theme, size, top, left, delay, isDarkMode }) => ({
+  position: 'absolute',
+  width: size,
+  height: size,
+  borderRadius: '50%',
+  background: isDarkMode
+    ? `rgba(76, 175, 80, ${Math.random() * 0.1 + 0.05})`
+    : `rgba(76, 175, 80, ${Math.random() * 0.08 + 0.02})`,
+  top: top,
+  left: left,
+  animation: `${float} ${Math.random() * 8 + 8}s ease-in-out infinite`,
+  animationDelay: delay,
+  zIndex: 1,
+  pointerEvents: 'none',
+}));
 
 // Function to format date
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
-  // Return the original string instead of formatting
-  return dateString;
+  const date = new Date(dateString);
+  return date.toLocaleDateString('vi-VN');
 };
 
 const ApprovedLessons = () => {
@@ -43,35 +434,22 @@ const ApprovedLessons = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10); // Default page size
+  const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalRecords, setTotalRecords] = useState(0); // Thêm totalRecords cho đồng nhất với các trang khác
+  const [totalRecords, setTotalRecords] = useState(0);
 
-  // New state for filters
-  // gradeIdFilter sẽ được set tự động từ userInfo.grade
+  // Filters
   const [gradeIdFilter, setGradeIdFilter] = useState('');
   const [moduleIdFilter, setModuleIdFilter] = useState('');
-
-  // New state for search term
   const [searchTerm, setSearchTerm] = useState('');
 
-  // State for dropdown options
-  // const [grades, setGrades] = useState([]); // Không cần state này nữa
+  // Filter options
   const [modules, setModules] = useState([]);
   const [loadingFilterOptions, setLoadingFilterOptions] = useState(true);
 
-  // Log userInfo to debug grade display
-  console.log('ApprovedLessons - userInfo:', userInfo);
-  console.log('ApprovedLessons - userInfo.grade:', userInfo?.grade);
-
   // Use useCallback for the fetch lessons function
   const fetchApprovedLessons = useCallback(async (page = 1) => {
-    // Chỉ fetch lessons nếu có userInfo.id và gradeIdFilter đã được set
     if (!userInfo?.id || !gradeIdFilter) {
-      // Nếu chưa có gradeIdFilter (ví dụ, component mới mount và userInfo chưa có grade),
-      // giữ trạng thái loading cho đến khi gradeIdFilter được set trong useEffect
-      // console.log('Skipping fetch lessons: userInfo.id or gradeIdFilter missing', { userId: userInfo?.id, gradeIdFilter });
-      // setLoading(false); // Không set false ở đây để tránh nhấp nháy loading
       return;
     }
 
@@ -83,21 +461,16 @@ const ApprovedLessons = () => {
         throw new Error("Authentication token not found.");
       }
 
-      // Added Page and PageSize parameters, and changed status to Status=3
       let url = `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans?Status=3&userId=${userInfo.id}&Page=${page}&PageSize=${pageSize}`;
 
-      // Add filters if they have values
-      // gradeIdFilter luôn có giá trị sau khi được set từ userInfo
       url += `&GradeId=${gradeIdFilter}`;
 
       if (moduleIdFilter) {
           url += `&ModuleId=${moduleIdFilter}`;
       }
-      // Add search term if it has a value
       if (searchTerm) {
           url += `&SearchTerm=${encodeURIComponent(searchTerm)}`;
       }
-      // TODO: Add SortColumn and SortOrder if needed later
 
       const response = await axios.get(
         url,
@@ -105,36 +478,34 @@ const ApprovedLessons = () => {
           headers: {
             'Authorization': `Bearer ${token}`
           },
-          timeout: 15000 // 15 second timeout
+          timeout: 15000
         }
       );
 
       if (response.data && response.data.code === 0) {
-        // Extract data from the pagination structure
         const responseData = response.data.data;
         setLessons(responseData.items || []);
         setCurrentPage(responseData.currentPage || 1);
         setTotalPages(responseData.totalPages || 0);
-        setTotalRecords(responseData.totalRecords || 0); // Cập nhật totalRecords
+        setTotalRecords(responseData.totalRecords || 0);
       } else {
         throw new Error(response.data.message || "Failed to fetch approved lessons.");
       }
     } catch (err) {
       console.error("Error fetching approved lessons:", err);
       setError(err.message || "An error occurred while fetching lessons.");
-      setLessons([]); // Clear lessons on error
+      setLessons([]);
       setTotalPages(0);
-      setTotalRecords(0); // Reset totalRecords on error
+      setTotalRecords(0);
     } finally {
       setLoading(false);
     }
-  }, [userInfo?.id, pageSize, gradeIdFilter, moduleIdFilter, searchTerm]); // Thêm filter states vào dependencies
+  }, [userInfo?.id, pageSize, gradeIdFilter, moduleIdFilter, searchTerm]);
 
-
-  // Effect để lấy gradeId từ userInfo và fetch Modules (giống PendingLessons)
+  // Effect to fetch filter options
   useEffect(() => {
         const fetchModulesForUserGrade = async () => {
-            setLoadingFilterOptions(true); // Bắt đầu load options
+            setLoadingFilterOptions(true);
             try {
                 const token = localStorage.getItem('accessToken');
                 if (!token) {
@@ -143,26 +514,20 @@ const ApprovedLessons = () => {
                   return;
                 }
 
-                // Lấy gradeId từ userInfo
-                // Giả định userInfo.grade có định dạng "Lớp X" và gradeId là X
-                // Nếu userInfo có gradeId trực tiếp, sử dụng userInfo.gradeId
                 let userGradeId = null;
                 if (userInfo?.grade) {
-                    const gradeNumberMatch = userInfo.grade.match(/\d+/); // Tìm số trong chuỗi "Lớp X"
+                    const gradeNumberMatch = userInfo.grade.match(/\d+/);
                     if (gradeNumberMatch && gradeNumberMatch[0]) {
-                        // Giả định gradeId trùng với số lớp
                         userGradeId = parseInt(gradeNumberMatch[0], 10);
-                        if(isNaN(userGradeId)) userGradeId = null; // Đảm bảo là số hợp lệ
+                        if(isNaN(userGradeId)) userGradeId = null;
                     }
-                } else if (userInfo?.gradeId) { // Nếu userInfo có sẵn gradeId
+                } else if (userInfo?.gradeId) {
                     userGradeId = userInfo.gradeId;
                 }
 
-
                 if (userGradeId !== null) {
-                    setGradeIdFilter(userGradeId); // Set gradeIdFilter
+                    setGradeIdFilter(userGradeId);
 
-                    // Fetch Modules dựa trên userGradeId
                     const modulesResponse = await axios.get(
                         `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades/${userGradeId}/modules`,
                         { headers: { 'Authorization': `Bearer ${token}` } }
@@ -178,8 +543,8 @@ const ApprovedLessons = () => {
                 } else {
                     console.warn("UserInfo or user grade not found or could not be parsed.");
                      setError("Không tìm thấy thông tin lớp của người dùng.");
-                    setModules([]); // Clear modules if gradeId is not available
-                    setGradeIdFilter(''); // Ensure gradeIdFilter is empty
+                    setModules([]);
+                    setGradeIdFilter('');
                 }
 
             } catch (error) {
@@ -188,27 +553,22 @@ const ApprovedLessons = () => {
                 setModules([]);
                  setGradeIdFilter('');
             } finally {
-                setLoadingFilterOptions(false); // Kết thúc load options
+                setLoadingFilterOptions(false);
             }
         };
 
-        // Chỉ fetch khi userInfo có sẵn
         if (userInfo) {
              fetchModulesForUserGrade();
         }
 
-   }, [userInfo]); // Dependency array chỉ cần userInfo
+   }, [userInfo]);
 
-
-  // Effect để fetch lessons khi các filter hoặc trang thay đổi
   useEffect(() => {
-    // fetchApprovedLessons sẽ tự kiểm tra gradeIdFilter trước khi fetch
     fetchApprovedLessons(currentPage);
-  }, [fetchApprovedLessons, currentPage]); // Dependency array chỉ cần fetchLessons và currentPage
-
+  }, [fetchApprovedLessons, currentPage]);
 
   const handlePageChange = (event, value) => {
-    setCurrentPage(value); // Set page state, useEffect sẽ trigger fetch
+    setCurrentPage(value);
   };
 
   // Handle navigation to detail page
@@ -221,188 +581,252 @@ const ApprovedLessons = () => {
   };
 
   const renderSkeletons = () => (
-    <List>
+    <Box>
       {[...Array(pageSize)].map((_, index) => (
-        <ListItem key={index} divider>
-          <ListItemIcon>
-            <Skeleton variant="circular" width={24} height={24} />
-          </ListItemIcon>
-          <ListItemText primary={<Skeleton variant="text" width="60%" />} secondary={<Skeleton variant="text" width="40%" />} />
-        </ListItem>
-      ))
-    }
-    </List>
+        <Card key={index} sx={{ mb: 2, p: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Skeleton variant="circular" width={48} height={48} />
+            <Box sx={{ flex: 1 }}>
+              <Skeleton variant="text" width="60%" height={32} />
+              <Skeleton variant="text" width="40%" height={24} />
+            </Box>
+          </Box>
+        </Card>
+      ))}
+    </Box>
   );
 
   return (
-    <Box
-      sx={{
-        py: 4,
-        minHeight: 'calc(100vh - 64px)',
-        background: isDarkMode
-          ? 'linear-gradient(135deg, rgb(18, 18, 18) 0%, rgb(30, 30, 30) 100%)'
-          : 'linear-gradient(135deg, rgb(245, 247, 250) 0%, rgb(255, 255, 255) 100%)',
-      }}
-    >
-      <Container maxWidth="lg">
-        <Stack direction="row" alignItems="center" spacing={1.5} mb={3} sx={{ px: { xs: 2, sm: 3, md: 0 } }}>
-          <CheckCircleOutline sx={{ color: 'success.main', fontSize: '2.2rem' }} />
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Giáo án Đã Chấp Nhận
-          </Typography>
-          {userInfo?.grade && (
-             <Typography
-               variant="h6"
-               sx={{
-                 fontWeight: 600,
-                 ml: 2,
-                 px: 2,
-                 py: 0.5,
-                 borderRadius: '12px',
-                 backgroundColor: isDarkMode ? 'rgba(255, 107, 107, 0.15)' : 'rgba(255, 107, 107, 0.1)',
-                 color: 'warning.main', // Giữ màu warning.main cho consistency
-                 border: `1px solid ${isDarkMode ? 'rgba(255, 107, 107, 0.3)' : 'rgba(255, 107, 107, 0.2)'}`, // Giữ border cho consistency
-                 display: 'inline-flex',
-                 alignItems: 'center',
-                 gap: 1
-               }}
-             >
-                Lớp: {userInfo.grade.replace('Lớp ', '')}
-             </Typography>
-           )}
-        </Stack>
+    <MainContainer isDarkMode={isDarkMode}>
+      {/* Floating Bubbles */}
+      {[...Array(6)].map((_, index) => (
+        <FloatingBubble
+          key={index}
+          size={Math.random() * 60 + 30}
+          top={`${Math.random() * 100}%`}
+          left={`${Math.random() * 100}%`}
+          delay={`${Math.random() * 5}s`}
+          isDarkMode={isDarkMode}
+        />
+      ))}
+
+      <StyledContainer maxWidth="lg">
+        <Fade in timeout={1200}>
+          <HeaderCard elevation={0} isDarkMode={isDarkMode}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <FloatingIcon>
+                <VerifiedIcon />
+              </FloatingIcon>
+              <GradientTitle isDarkMode={isDarkMode}>
+                Giáo Án Đã Chấp Nhận
+              </GradientTitle>
+              <SubTitle isDarkMode={isDarkMode}>
+                Danh sách các giáo án đã được phê duyệt và sẵn sàng sử dụng
+              </SubTitle>
+              {userInfo?.grade && (
+                <GradeChip
+                  icon={<SchoolIcon />}
+                  label={userInfo.grade.replace('Lớp ', '')}
+                  isDarkMode={isDarkMode}
+                />
+              )}
+            </Box>
+          </HeaderCard>
+        </Fade>
+
+        <Zoom in timeout={1400}>
+          <ControlsCard elevation={0} isDarkMode={isDarkMode}>
+            {error && (
+              <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }}>
+                {error}
+              </Alert>
+            )}
+
+            <Grid container spacing={3}>
+              {(modules.length > 0 || loadingFilterOptions) && gradeIdFilter && (
+                <Grid item xs={12} md={4}>
+                  <StyledFormControl fullWidth size="small" disabled={loadingFilterOptions} isDarkMode={isDarkMode}>
+                    <InputLabel>Lọc theo Chủ đề</InputLabel>
+                    {loadingFilterOptions ? (
+                      <Skeleton variant="rectangular" height={40} sx={{ borderRadius: '12px' }} />
+                    ) : (
+                      <Select
+                        value={moduleIdFilter}
+                        label="Lọc theo Chủ đề"
+                        onChange={(e) => {
+                          setModuleIdFilter(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        startAdornment={<MenuBookIcon sx={{ mr: 1, color: '#4CAF50' }} />}
+                      >
+                        <MenuItem value=""><em>Tất cả Chủ đề</em></MenuItem>
+                        {modules.map((module) => (
+                          <MenuItem key={module.moduleId} value={module.moduleId}>
+                            {module.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    )}
+                  </StyledFormControl>
+                </Grid>
+              )}
+              
+              <Grid item xs={12} md={((modules.length > 0 || loadingFilterOptions) && gradeIdFilter) ? 8 : 12}>
+                <StyledTextField
+                  fullWidth
+                  size="small"
+                  label="Tìm kiếm Giáo án"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      setCurrentPage(1);
+                    }
+                  }}
+                  disabled={!gradeIdFilter && !loadingFilterOptions}
+                  isDarkMode={isDarkMode}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: '#4CAF50' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </ControlsCard>
+        </Zoom>
 
         <Paper
           elevation={0}
           sx={{
-            p: { xs: 2, sm: 3, md: 4 },
-            borderRadius: '16px',
-            backgroundColor: isDarkMode ? 'rgba(40, 40, 40, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-            backdropFilter: 'blur(12px)',
-            border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`, // Giữ border cho consistency
-            boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.2)' : '0 8px 32px rgba(0,0,0,0.05)',
+            p: 4,
+            borderRadius: '20px',
+            background: isDarkMode
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+              : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+            backdropFilter: 'blur(20px)',
+            border: isDarkMode
+              ? '1px solid rgba(255, 255, 255, 0.1)'
+              : '1px solid rgba(76, 175, 80, 0.2)',
+            boxShadow: isDarkMode
+              ? '0 20px 40px rgba(0, 0, 0, 0.3)'
+              : '0 20px 40px rgba(0, 0, 0, 0.1)',
           }}
         >
-          {error && <Alert severity="error" sx={{ my: 2 }}>{error}</Alert>}
-
-          {/* Filter Controls */}
-          <Grid container spacing={2} mb={3}>
-             {/* Chỉ hiển thị Module filter nếu có modules hoặc đang load options và có gradeIdFilter */}
-             {(modules.length > 0 || loadingFilterOptions) && gradeIdFilter && (
-               <Grid item xs={12} sm={12} md={4}> {/* Module filter */}
-                  <FormControl fullWidth size="small" disabled={loadingFilterOptions}>
-                     <InputLabel>Lọc theo Chủ đề</InputLabel>
-                     {loadingFilterOptions ? (
-                         <Skeleton variant="rectangular" height={40} /> // Skeleton khi đang load
-                     ) : (
-                        <Select
-                           value={moduleIdFilter}
-                           label="Lọc theo Chủ đề"
-                           onChange={(e) => {
-                               setModuleIdFilter(e.target.value);
-                               setCurrentPage(1); // Reset page to 1
-                            }}
-                        >
-                           <MenuItem value=""><em>Tất cả Chủ đề</em></MenuItem>
-                           {modules.map((module) => (
-                              <MenuItem key={module.moduleId} value={module.moduleId}>{module.name}</MenuItem>
-                           ))
-                        }
-                     </Select>
-                     )}
-                  </FormControl>
-               </Grid>
-             )}
-
-             {/* Search filter */}
-             {/* Điều chỉnh kích thước dựa trên việc module filter có hiển thị hay không */}
-             <Grid item xs={12} sm={12} md={((modules.length > 0 || loadingFilterOptions) && gradeIdFilter) ? 8 : 12}>
-                <TextField
-                   fullWidth
-                   size="small"
-                   label="Tìm kiếm Giáo án"
-                   value={searchTerm}
-                   onChange={(e) => setSearchTerm(e.target.value)}
-                   onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                         setCurrentPage(1);
-                      }
-                   }}
-                   InputLabelProps={{ shrink: true }}
-                   // Disable search nếu chưa có gradeIdFilter (trước khi load xong)
-                   disabled={!gradeIdFilter && !loadingFilterOptions}
-                />
-             </Grid>
-          </Grid>
-
-          {/* Hiển thị loading skeleton hoặc nội dung */}
-           {/* Hiển thị loading nếu đang fetch lessons HOẶC (đang fetch filter options VÀ CHƯA có gradeIdFilter) */}
           {loading || (loadingFilterOptions && !gradeIdFilter) ? (
-             renderSkeletons()
+            renderSkeletons()
           ) : !error && lessons.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 5 }}>
-                 <InboxOutlined sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}/>
-                 <Typography sx={{ color: 'text.secondary' }}>
-                   Không có Giáo án nào đã được chấp nhận.
-                 </Typography>
-              </Box>
-            ) : !error && lessons.length > 0 ? (
-              <>
-                <List sx={{ p: 0 }}>
-                  {lessons.map((lesson) => (
-                    <ListItem
-                      key={lesson.lessonPlanId}
-                      disablePadding
+            <EmptyStateContainer elevation={0} isDarkMode={isDarkMode}>
+              <EmptyIcon />
+              <EmptyStateText isDarkMode={isDarkMode}>
+                Không có Giáo án nào đã được chấp nhận
+              </EmptyStateText>
+              <EmptyStateSubText isDarkMode={isDarkMode}>
+                Các giáo án đã phê duyệt sẽ xuất hiện ở đây
+              </EmptyStateSubText>
+            </EmptyStateContainer>
+          ) : !error && lessons.length > 0 ? (
+            <>
+              <Box sx={{ mb: 3 }}>
+                {lessons.map((lesson, index) => (
+                  <Fade in timeout={800 + index * 100} key={lesson.lessonPlanId}>
+                    <LessonCard 
+                      isDarkMode={isDarkMode}
+                      onClick={() => handleNavigateToDetail(lesson.lessonPlanId)}
                     >
-                      <ListItemButton
-                         onClick={() => handleNavigateToDetail(lesson.lessonPlanId)}
-                         sx={{
-                           borderRadius: '8px', // Rounded corners for button
-                           mb: 0.5, // Small margin between items
-                           '&:hover': {
-                             backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.03)'
-                           }
-                         }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40, color: 'success.main' }}>
-                          <CheckCircleOutline />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={lesson.lesson || 'Không có tiêu đề'}
-                          secondary={`Chủ đề: ${lesson.module || 'N/A'} | Chấp nhận lúc: ${(lesson.createdAt)}`}
-                          primaryTypographyProps={{ fontWeight: 500 }}
-                          secondaryTypographyProps={{ color: 'text.secondary', fontSize: '0.85rem' }}
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                  ))
-                }
-                </List>
-
-                {totalPages > 1 && (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', pt: 3, mt: 2, borderTop: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}` }}>
-                    <Pagination
-                      count={totalPages}
-                      page={currentPage}
-                      onChange={handlePageChange}
-                      color="primary"
-                      sx={{
-                         '& .MuiPaginationItem-root': {
-                           color: isDarkMode ? '#fff' : '',
-                         },
-                         '& .Mui-selected': {
-                            backgroundColor: isDarkMode ? 'rgba(255, 107, 107, 0.3)' : 'rgba(255, 107, 107, 0.1)',
-                            fontWeight: 'bold'
-                         }
-                      }}
-                    />
-                  </Box>
-                )}
-              </>
-            ) : null /* Fallback for unexpected state */ }
+                      <CardContent sx={{ p: 3 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <LessonIcon>
+                            <CheckCircleOutline />
+                          </LessonIcon>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                                fontWeight: 700,
+                                color: isDarkMode ? '#fff' : '#2C3E50',
+                                mb: 1,
+                              }}
+                            >
+                              {lesson.lesson || 'Không có tiêu đề'}
+                            </Typography>
+                            <Stack direction="row" spacing={2} flexWrap="wrap" gap={1}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <MenuBookIcon sx={{ fontSize: '1rem', color: '#4CAF50' }} />
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                                    color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(44, 62, 80, 0.7)',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {lesson.module || 'N/A'}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <AccessTimeIcon sx={{ fontSize: '1rem', color: '#4CAF50' }} />
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                                    color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(44, 62, 80, 0.7)',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {formatDate(lesson.createdAt)}
+                                </Typography>
+                              </Box>
+                            </Stack>
+                          </Box>
+                          <Chip
+                            label="Đã chấp nhận"
+                            sx={{
+                              background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
+                              color: '#fff',
+                              fontWeight: 600,
+                              fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                            }}
+                          />
+                        </Box>
+                      </CardContent>
+                    </LessonCard>
+                  </Fade>
+                ))}
+              </Box>
+              
+              {totalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                  <Pagination 
+                    count={totalPages} 
+                    page={currentPage} 
+                    onChange={handlePageChange} 
+                    color="primary"
+                    sx={{
+                      '& .MuiPaginationItem-root': {
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                        fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                      },
+                      '& .Mui-selected': {
+                        backgroundColor: 'rgba(76, 175, 80, 0.2) !important',
+                        color: '#4CAF50 !important',
+                        fontWeight: 600,
+                        '&:hover': {
+                          backgroundColor: 'rgba(76, 175, 80, 0.3) !important',
+                        }
+                      }
+                    }}
+                  />
+                </Box>
+              )}
+            </>
+          ) : null}
         </Paper>
-      </Container>
-    </Box>
+      </StyledContainer>
+    </MainContainer>
   );
 };
 

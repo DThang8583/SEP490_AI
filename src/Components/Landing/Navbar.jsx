@@ -26,6 +26,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Chip,
+  Badge,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import {
@@ -46,42 +48,442 @@ import {
   CheckCircleOutline,
   EditNote,
   HourglassTop,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import { useTheme as useCustomTheme } from "../../context/ThemeContext";
-import { keyframes } from "@mui/system";
+import { styled, keyframes } from '@mui/material/styles';
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 
+// Animations
 const float = keyframes`
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-5px); }
-  100% { transform: translateY(0px); }
+  0%, 100% { 
+    transform: translateY(0px) rotate(0deg); 
+  }
+  50% { 
+    transform: translateY(-8px) rotate(2deg); 
+  }
 `;
+
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideInLeft = keyframes`
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(255, 107, 107, 0);
+  }
+`;
+
+const glow = keyframes`
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(255, 107, 107, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(255, 107, 107, 0.6));
+  }
+`;
+
+const shimmer = keyframes`
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+`;
+
+// Styled Components
+const StyledAppBar = styled(AppBar)(({ theme, isDarkMode }) => ({
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(30, 30, 46, 0.95) 0%, rgba(45, 45, 61, 0.9) 50%, rgba(30, 30, 46, 0.95) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 50%, rgba(255, 255, 255, 0.95) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderBottom: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(255, 107, 107, 0.1)',
+  boxShadow: isDarkMode
+    ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+    : '0 8px 32px rgba(255, 107, 107, 0.1)',
+  position: 'sticky',
+  zIndex: 1100,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: isDarkMode
+      ? 'radial-gradient(circle at 20% 80%, rgba(255, 107, 107, 0.05) 0%, transparent 50%)'
+      : 'radial-gradient(circle at 20% 80%, rgba(255, 107, 107, 0.08) 0%, transparent 50%)',
+    pointerEvents: 'none',
+  },
+}));
+
+const LogoContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  cursor: 'pointer',
+  padding: '8px 16px',
+  borderRadius: '16px',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(255, 107, 107, 0.1), transparent)',
+    transition: 'left 0.6s ease',
+  },
+  '&:hover': {
+    background: 'rgba(255, 107, 107, 0.08)',
+    transform: 'translateY(-2px)',
+    '&::before': {
+      left: '100%',
+    },
+  },
+}));
+
+const LogoIcon = styled(School)(({ theme }) => ({
+  fontSize: '2.5rem',
+  color: '#FF6B6B',
+  marginRight: '12px',
+  animation: `${float} 4s ease-in-out infinite`,
+  filter: 'drop-shadow(0 4px 8px rgba(255, 107, 107, 0.3))',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    animation: `${glow} 2s ease-in-out infinite`,
+  },
+}));
+
+const BrandText = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: 'sans-serif',
+  fontWeight: 800,
+  fontSize: '1.5rem',
+  background: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 50%, #FF6B6B 100%)',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  letterSpacing: '0.5px',
+  textShadow: '0 2px 4px rgba(255, 107, 107, 0.2)',
+  animation: `${fadeIn} 0.8s ease-out`,
+}));
+
+const NavButton = styled(Button)(({ theme, isActive, isDarkMode }) => ({
+  margin: '0 8px',
+  padding: '12px 20px',
+  borderRadius: '16px',
+  textTransform: 'none',
+  fontWeight: 600,
+  fontSize: '0.95rem',
+  position: 'relative',
+  overflow: 'hidden',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  background: isActive
+    ? 'linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(255, 107, 107, 0.08) 100%)'
+    : 'transparent',
+  color: isActive ? '#FF6B6B' : theme.palette.text.primary,
+  border: isActive
+    ? '1px solid rgba(255, 107, 107, 0.3)'
+    : '1px solid transparent',
+  backdropFilter: isActive ? 'blur(10px)' : 'none',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    bottom: 0,
+    left: '50%',
+    width: isActive ? '100%' : '0%',
+    height: '2px',
+    background: 'linear-gradient(90deg, #FF6B6B, #FF8E8E)',
+    transform: 'translateX(-50%)',
+    transition: 'width 0.3s ease',
+    borderRadius: '1px',
+  },
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(255, 107, 107, 0.1), transparent)',
+    transition: 'left 0.6s ease',
+  },
+  '&:hover': {
+    background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.12) 0%, rgba(255, 107, 107, 0.06) 100%)',
+    color: '#FF6B6B',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 8px 25px rgba(255, 107, 107, 0.2)',
+    '&::before': {
+      width: '100%',
+    },
+    '&::after': {
+      left: '100%',
+    },
+  },
+  '&:active': {
+    transform: 'translateY(0px)',
+  },
+}));
+
+const CreateButton = styled(Button)(({ theme }) => ({
+  background: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%)',
+  color: '#fff',
+  borderRadius: '20px',
+  padding: '12px 24px',
+  textTransform: 'none',
+  fontWeight: 700,
+  fontSize: '0.95rem',
+  boxShadow: '0 8px 25px rgba(255, 107, 107, 0.4)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
+    transition: 'left 0.6s ease',
+  },
+  '&:hover': {
+    background: 'linear-gradient(135deg, #FF8E8E 0%, #FF6B6B 100%)',
+    transform: 'translateY(-3px) scale(1.02)',
+    boxShadow: '0 12px 35px rgba(255, 107, 107, 0.5)',
+    '&::before': {
+      left: '100%',
+    },
+  },
+  '&:active': {
+    transform: 'translateY(-1px) scale(0.98)',
+  },
+  animation: `${pulse} 3s ease-in-out infinite`,
+}));
+
+const ThemeToggle = styled(IconButton)(({ theme, isDarkMode }) => ({
+  padding: '12px',
+  borderRadius: '16px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(45, 45, 61, 0.1) 0%, rgba(45, 45, 61, 0.05) 100%)',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.2)'
+    : '1px solid rgba(45, 45, 61, 0.2)',
+  color: theme.palette.text.primary,
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    background: isDarkMode
+      ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%)'
+      : 'linear-gradient(135deg, rgba(45, 45, 61, 0.15) 0%, rgba(45, 45, 61, 0.08) 100%)',
+    transform: 'scale(1.1) rotate(180deg)',
+    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
+  },
+}));
+
+const LoginButton = styled(Button)(({ theme, isDarkMode }) => ({
+  borderRadius: '16px',
+  padding: '10px 24px',
+  textTransform: 'none',
+  fontWeight: 600,
+  fontSize: '0.95rem',
+  border: isDarkMode
+    ? '2px solid rgba(255, 255, 255, 0.2)'
+    : '2px solid rgba(255, 107, 107, 0.3)',
+  color: isDarkMode ? '#fff' : '#FF6B6B',
+  background: 'transparent',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: isDarkMode
+      ? 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent)'
+      : 'linear-gradient(90deg, transparent, rgba(255, 107, 107, 0.1), transparent)',
+    transition: 'left 0.6s ease',
+  },
+  '&:hover': {
+    background: isDarkMode
+      ? 'rgba(255, 255, 255, 0.1)'
+      : 'rgba(255, 107, 107, 0.08)',
+    borderColor: isDarkMode ? '#fff' : '#FF6B6B',
+    transform: 'translateY(-2px)',
+    boxShadow: isDarkMode
+      ? '0 8px 25px rgba(255, 255, 255, 0.1)'
+      : '0 8px 25px rgba(255, 107, 107, 0.2)',
+    '&::before': {
+      left: '100%',
+    },
+  },
+}));
+
+const UserAvatar = styled(Avatar)(({ theme }) => ({
+  width: 40,
+  height: 40,
+  border: '2px solid rgba(255, 107, 107, 0.3)',
+  background: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  cursor: 'pointer',
+  '&:hover': {
+    transform: 'scale(1.1)',
+    border: '2px solid rgba(255, 107, 107, 0.6)',
+    boxShadow: '0 8px 25px rgba(255, 107, 107, 0.3)',
+  },
+}));
+
+const ModernDrawer = styled(Drawer)(({ theme, isDarkMode }) => ({
+  '& .MuiDrawer-paper': {
+    width: '320px',
+    background: isDarkMode
+      ? 'linear-gradient(135deg, rgba(30, 30, 46, 0.95) 0%, rgba(45, 45, 61, 0.9) 100%)'
+      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+    backdropFilter: 'blur(20px)',
+    border: isDarkMode
+      ? '1px solid rgba(255, 255, 255, 0.1)'
+      : '1px solid rgba(255, 107, 107, 0.1)',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+  },
+}));
+
+const DrawerHeader = styled(Box)(({ theme, isDarkMode }) => ({
+  padding: '24px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 107, 107, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 107, 107, 0.08) 0%, rgba(255, 107, 107, 0.04) 100%)',
+  borderBottom: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(255, 107, 107, 0.1)',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+}));
+
+const DrawerListItem = styled(ListItem)(({ theme, isActive, isDarkMode }) => ({
+  margin: '4px 16px',
+  borderRadius: '12px',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  background: isActive
+    ? 'linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(255, 107, 107, 0.08) 100%)'
+    : 'transparent',
+  border: isActive
+    ? '1px solid rgba(255, 107, 107, 0.3)'
+    : '1px solid transparent',
+  '&:hover': {
+    background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.12) 0%, rgba(255, 107, 107, 0.06) 100%)',
+    transform: 'translateX(8px)',
+    boxShadow: '0 4px 15px rgba(255, 107, 107, 0.2)',
+  },
+}));
+
+const ModernMenu = styled(Menu)(({ theme, isDarkMode }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: '16px',
+    background: isDarkMode
+      ? 'linear-gradient(135deg, rgba(30, 30, 46, 0.95) 0%, rgba(45, 45, 61, 0.9) 100%)'
+      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+    backdropFilter: 'blur(20px)',
+    border: isDarkMode
+      ? '1px solid rgba(255, 255, 255, 0.1)'
+      : '1px solid rgba(255, 107, 107, 0.1)',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
+    marginTop: '8px',
+    minWidth: '240px',
+  },
+}));
+
+const MenuItemStyled = styled(MenuItem)(({ theme, isDarkMode }) => ({
+  padding: '12px 20px',
+  borderRadius: '8px',
+  margin: '4px 8px',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.12) 0%, rgba(255, 107, 107, 0.06) 100%)',
+    transform: 'translateX(4px)',
+  },
+}));
+
+const StatusChip = styled(Chip)(({ theme, status }) => {
+  const colors = {
+    pending: { bg: '#FF9800', text: '#fff' },
+    approved: { bg: '#4CAF50', text: '#fff' },
+    rejected: { bg: '#f44336', text: '#fff' },
+    draft: { bg: '#9E9E9E', text: '#fff' }
+  };
+  
+  return {
+    background: `linear-gradient(135deg, ${colors[status]?.bg || '#FF9800'} 0%, ${colors[status]?.bg || '#FF9800'}CC 100%)`,
+    color: colors[status]?.text || '#fff',
+    fontWeight: 600,
+    fontSize: '0.75rem',
+    height: '24px',
+    '& .MuiChip-label': {
+      padding: '0 8px',
+    },
+  };
+});
 
 const lessonCategories = [
   { 
     text: "Giáo án đang chờ duyệt", 
     path: "/giao-an-cho-duyet",
     icon: <HourglassTop />, 
-    requiresTeacher: true 
+    requiresTeacher: true,
+    status: 'pending'
   },
   { 
     text: "Giáo án đã chấp nhận", 
     path: "/giao-an-da-duyet",
     icon: <CheckCircleOutline />, 
-    requiresTeacher: true 
+    requiresTeacher: true,
+    status: 'approved'
   },
   { 
     text: "Giáo án bị từ chối", 
     path: "/giao-an-bi-tu-choi",
     icon: <Cancel />,
-    requiresTeacher: true 
+    requiresTeacher: true,
+    status: 'rejected'
   },
   { 
-    text: "Giáo án nháp", 
+    text: "Giáo án Nháp", 
     path: "/giao-an-nhap",
     icon: <EditNote />, 
-    requiresTeacher: true 
+    requiresTeacher: true,
+    status: 'draft'
   }
 ];
 
@@ -106,7 +508,6 @@ const Navbar = () => {
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
   const [profileAlertOpen, setProfileAlertOpen] = useState(false);
   
-  // Add console.log for user role
   useEffect(() => {
   }, [userInfo, isLoggedIn]);
 
@@ -186,45 +587,25 @@ const Navbar = () => {
     setNotification({ ...notification, open: false });
   };
 
-  const isActive = (path) => location.pathname === path
+  const isActive = (path) => location.pathname === path;
 
   const isTeacher = userInfo?.role === 'Giáo viên';
-  const NavButton = ({ text, path, icon, isDropdown }) => (
+
+  const NavButtonComponent = ({ text, path, icon, isDropdown }) => (
     <React.Fragment>
-      <Button
+      <NavButton
         component={isDropdown ? undefined : Link}
         to={isDropdown ? undefined : path}
         onClick={isDropdown ? handleMenu : undefined}
         startIcon={icon}
         endIcon={isDropdown ? <KeyboardArrowDown /> : undefined}
-        sx={{
-          color: isActive(path) ? "#FF6B6B" : theme.palette.text.primary,
-          mx: 1,
-          "&:hover": {
-            color: "#FF6B6B",
-            backgroundColor: "rgba(255, 107, 107, 0.1)",
-          },
-          position: "relative",
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            bottom: 0,
-            left: "50%",
-            width: isActive(path) ? "100%" : "0%",
-            height: "2px",
-            backgroundColor: "#FF6B6B",
-            transition: "all 0.3s ease",
-            transform: "translateX(-50%)",
-          },
-          "&:hover::after": {
-            width: "100%",
-          },
-        }}
+        isActive={isActive(path)}
+        isDarkMode={isDarkMode}
       >
         {text}
-      </Button>
+      </NavButton>
       {isDropdown && (
-        <Menu
+        <ModernMenu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleClose}
@@ -236,44 +617,35 @@ const Navbar = () => {
             vertical: "top",
             horizontal: "left",
           }}
-          PaperProps={{
-            sx: {
-              backgroundColor: theme.palette.background.paper,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-              border: `1px solid ${
-                isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"
-              }`,
-              mt: 1.5,
-              minWidth: 200,
-              ml:28
-            },
-          }}
-          MenuListProps={{
-            sx: {
-              py: 0.5,
-            },
-          }}
+          isDarkMode={isDarkMode}
         >
           {lessonCategories.map((category) => (
-            <MenuItem
+            <MenuItemStyled
               key={category.text}
               onClick={() => handleNavigation(category.path)}
               sx={{
-                color: theme.palette.text.primary,
-                py: 1.5,
                 display: category.requiresTeacher && (!isLoggedIn || userInfo?.role !== 'Giáo viên') ? 'none' : 'flex',
-                "&:hover": {
-                  backgroundColor: "rgba(255, 107, 107, 0.1)",
-                },
+                alignItems: 'center',
+                gap: 2,
               }}
+              isDarkMode={isDarkMode}
             >
               <ListItemIcon sx={{ color: "#FF6B6B", minWidth: 40 }}>
                 {category.icon}
               </ListItemIcon>
-              {category.text}
-            </MenuItem>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {category.text}
+                </Typography>
+              </Box>
+              <StatusChip 
+                label={category.status} 
+                size="small" 
+                status={category.status}
+              />
+            </MenuItemStyled>
           ))}
-        </Menu>
+        </ModernMenu>
       )}
     </React.Fragment>
   );
@@ -288,146 +660,109 @@ const Navbar = () => {
   };
 
   return (
-    <AppBar
-      position="sticky"
-      sx={{
-        backgroundColor: theme.palette.background.paper,
-        boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-        borderBottom: `1px solid ${
-          isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"
-        }`,
-      }}
-    >
-      <Container maxWidth="lg">
-        <Toolbar disableGutters>
+    <StyledAppBar isDarkMode={isDarkMode}>
+      <Container maxWidth="xl">
+        <Toolbar disableGutters sx={{ py: 1 }}>
           {/* Logo */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              mr: 2,
-              cursor: "pointer",
-            }}
-            onClick={() => navigate("/")}
-          >
-            <School
-              sx={{
-                fontSize: 40,
-                color: "#FF6B6B",
-                mr: 1,
-                animation: `${float} 3s ease-in-out infinite`,
-              }}
-            />
-            
-          </Box>
+          <LogoContainer onClick={() => navigate("/")}>
+            <LogoIcon />
+            <BrandText isDarkMode={isDarkMode}>
+              AI Math Tools
+            </BrandText>
+          </LogoContainer>
 
           {/* Desktop Navigation */}
           {!isMobile && (
-            <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
-              {menuItems.map((item) =>
+            <Box sx={{ 
+              flexGrow: 1, 
+              display: "flex", 
+              justifyContent: "center",
+              animation: `${fadeIn} 1s ease-out`,
+            }}>
+              {menuItems.map((item, index) =>
                 (!item.requiresLogin || isLoggedIn) && (
-                  item.text === "Bài học" ? (
-                     <NavButton
-                       key={item.text}
-                       text={item.text}
-                       path={item.path}
-                       icon={item.icon}
-                       isDropdown={true}
-                     />
-                  ) : (
-                   <NavButton
-                     key={item.text}
-                     text={item.text}
-                     path={item.path}
-                     icon={item.icon}
-                     isDropdown={false}
-                   />
-                 )
+                  <Box 
+                    key={item.text}
+                    sx={{ 
+                      animation: `${slideInLeft} ${0.8 + index * 0.1}s ease-out` 
+                    }}
+                  >
+                    {item.text === "Bài học" ? (
+                      <NavButtonComponent
+                        text={item.text}
+                        path={item.path}
+                        icon={item.icon}
+                        isDropdown={true}
+                      />
+                    ) : (
+                      <NavButtonComponent
+                        text={item.text}
+                        path={item.path}
+                        icon={item.icon}
+                        isDropdown={false}
+                      />
+                    )}
+                  </Box>
                 )
               )}
               {isLoggedIn && isTeacher && (
-                <Button
-                  variant="contained"
+                <CreateButton
                   startIcon={<AutoAwesome />}
                   onClick={() => handleNavigation('/tao-giao-an')}
-                  sx={{
-                    ml: 2,
-                    backgroundColor: '#FFFFFF',
-                    '&:hover': {
-                      backgroundColor: '#FF5252',
-                    }
-                  }}
+                  sx={{ ml: 2 }}
                 >
-                  Tạo Giáo án bằng AI
-                </Button>
+                  Tạo Giáo án AI
+                </CreateButton>
               )}
             </Box>
           )}
 
-          {/* Auth Buttons and Theme Toggle */}
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <IconButton
+          {/* Right Side Controls */}
+          <Box sx={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: 2,
+            animation: `${fadeIn} 1.2s ease-out`,
+          }}>
+            <ThemeToggle
               onClick={toggleTheme}
-              sx={{
-                color: theme.palette.text.primary,
-                mr: 1,
-                "&:hover": {
-                  backgroundColor: "rgba(255, 107, 107, 0.1)",
-                },
-              }}
+              isDarkMode={isDarkMode}
             >
               {isDarkMode ? <LightMode /> : <DarkMode />}
-            </IconButton>
+            </ThemeToggle>
+
             {!isMobile ? (
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 {isLoggedIn ? (
-                  <Tooltip title="Mở cài đặt">
+                  <Tooltip title="Mở menu người dùng" arrow>
                     <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                      <Person
-                        sx={{
-                          fontSize: 40,
-                          color: theme.palette.text.primary,
-                        }}
-                      />
+                      <UserAvatar
+                        src={userInfo?.imgURL}
+                      >
+                        <Person />
+                      </UserAvatar>
                     </IconButton>
                   </Tooltip>
                 ) : (
-                  <>
-                    <Button
-                      variant="outlined"
-                      onClick={() => navigate("/Login")}
-                      sx={{
-                        color: isDarkMode ? "#ffffff" : "#2D3436",
-                        borderColor: isDarkMode
-                          ? "rgba(255, 255, 255, 0.2)"
-                          : "rgba(0, 0, 0, 0.1)",
-                        "&:hover": {
-                          borderColor: isDarkMode ? "#ffffff" : "#2D3436",
-                          backgroundColor: isDarkMode
-                            ? "rgba(255, 255, 255, 0.05)"
-                            : "rgba(0, 0, 0, 0.05)",
-                        },
-                        textTransform: "none",
-                        px: 3,
-                        py: 1,
-                        borderRadius: "12px",
-                        fontWeight: 500,
-                        fontSize: "0.95rem",
-                        transition: "all 0.2s ease",
-                      }}
-                    >
-                      Đăng nhập
-                    </Button>
-                  </>
+                  <LoginButton
+                    onClick={() => navigate("/login")}
+                    isDarkMode={isDarkMode}
+                  >
+                    Đăng nhập
+                  </LoginButton>
                 )}
               </Box>
             ) : (
               <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="start"
                 onClick={handleMobileMenuToggle}
-                sx={{ color: theme.palette.text.primary }}
+                sx={{
+                  color: theme.palette.text.primary,
+                  p: 1.5,
+                  borderRadius: '12px',
+                  '&:hover': {
+                    background: 'rgba(255, 107, 107, 0.1)',
+                  },
+                }}
               >
                 <MenuIcon />
               </IconButton>
@@ -437,205 +772,192 @@ const Navbar = () => {
       </Container>
 
       {/* Mobile Menu */}
-      <Drawer
+      <ModernDrawer
         anchor="right"
         open={mobileMenuOpen}
         onClose={handleMobileMenuToggle}
-        PaperProps={{
-          sx: {
-            width: "80%",
-            maxWidth: "300px",
-            backgroundColor: theme.palette.background.paper,
-          },
-        }}
+        isDarkMode={isDarkMode}
       >
-        <Box sx={{ p: 2 }}>
+        <DrawerHeader isDarkMode={isDarkMode}>
           <Typography
             variant="h6"
-            sx={{ mb: 2, color: theme.palette.text.primary }}
+            sx={{ 
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
           >
             Menu
           </Typography>
+          <IconButton
+            onClick={handleMobileMenuToggle}
+            sx={{
+              color: theme.palette.text.primary,
+              '&:hover': {
+                background: 'rgba(255, 107, 107, 0.1)',
+                transform: 'rotate(90deg)',
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DrawerHeader>
+
+        <Box sx={{ p: 2 }}>
           <List>
-            {menuItems.map((item) =>
+            {menuItems.map((item, index) =>
               (!item.requiresLogin || isLoggedIn) && (
-                item.text === "Các Giáo án" ? (
-                  <ListItem
-                    button
-                    key={item.text}
-                    onClick={() => handleNavigation(item.path)}
-                    sx={{
-                      color: isActive(item.path)
-                        ? "#FF6B6B"
-                        : theme.palette.text.primary,
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 107, 107, 0.1)",
-                      },
-                    }}
-                  >
-                    <ListItemIcon sx={{ color: "#FF6B6B" }}>{item.icon}</ListItemIcon>
-                    <ListItemText primary={item.text} />
-                  </ListItem>
-                ) : item.text === "Bài học" ? (
+                item.text === "Bài học" ? (
                   <React.Fragment key={item.text}>
-                    <ListItem
+                    <DrawerListItem
                       button
                       onClick={handleMenu}
+                      isActive={isActive(item.path)}
+                      isDarkMode={isDarkMode}
                       sx={{
-                        color: isActive(item.path)
-                          ? "#FF6B6B"
-                          : theme.palette.text.primary,
-                        "&:hover": {
-                          backgroundColor: "rgba(255, 107, 107, 0.1)",
-                        },
+                        animation: `${slideInLeft} ${0.6 + index * 0.1}s ease-out`,
                       }}
                     >
-                      <ListItemIcon
-                        sx={{
-                          color: isActive(item.path)
-                            ? "#FF6B6B"
-                            : theme.palette.text.primary,
-                        }}
-                      >
+                      <ListItemIcon sx={{ color: "#FF6B6B", minWidth: 40 }}>
                         {item.icon}
                       </ListItemIcon>
-                      <ListItemText primary={item.text} />
+                      <ListItemText 
+                        primary={item.text}
+                        sx={{ '& .MuiTypography-root': { fontWeight: 600 } }}
+                      />
                       <KeyboardArrowDown />
-                    </ListItem>
-                    {lessonCategories.map((category) => (
-                      <ListItem
+                    </DrawerListItem>
+                    {lessonCategories.map((category, catIndex) => (
+                      <DrawerListItem
                         button
                         key={category.text}
                         onClick={() => handleNavigation(category.path)}
                         sx={{
-                          pl: 4,
-                          color: theme.palette.text.primary,
-                          "&:hover": {
-                            backgroundColor: "rgba(255, 107, 107, 0.1)",
-                          },
+                          pl: 6,
+                          animation: `${slideInLeft} ${0.8 + catIndex * 0.05}s ease-out`,
                         }}
+                        isDarkMode={isDarkMode}
                       >
-                        <ListItemIcon sx={{ color: "#FF6B6B" }}>
+                        <ListItemIcon sx={{ color: "#FF6B6B", minWidth: 30 }}>
                           {category.icon}
                         </ListItemIcon>
-                        <ListItemText primary={category.text} />
-                      </ListItem>
+                        <ListItemText 
+                          primary={category.text}
+                          sx={{ '& .MuiTypography-root': { fontSize: '0.9rem' } }}
+                        />
+                        <StatusChip 
+                          label={category.status} 
+                          size="small" 
+                          status={category.status}
+                        />
+                      </DrawerListItem>
                     ))}
                   </React.Fragment>
                 ) : (
-                  <ListItem
+                  <DrawerListItem
                     button
                     key={item.text}
                     onClick={() => handleNavigation(item.path)}
+                    isActive={isActive(item.path)}
+                    isDarkMode={isDarkMode}
                     sx={{
-                      color: isActive(item.path)
-                        ? "#FF6B6B"
-                        : theme.palette.text.primary,
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 107, 107, 0.1)",
-                      },
+                      animation: `${slideInLeft} ${0.6 + index * 0.1}s ease-out`,
                     }}
                   >
-                    <ListItemIcon
-                      sx={{
-                        color: isActive(item.path)
-                          ? "#FF6B6B"
-                          : theme.palette.text.primary,
-                      }}
-                    >
+                    <ListItemIcon sx={{ color: "#FF6B6B", minWidth: 40 }}>
                       {item.icon}
                     </ListItemIcon>
-                    <ListItemText primary={item.text} />
-                  </ListItem>
+                    <ListItemText 
+                      primary={item.text}
+                      sx={{ '& .MuiTypography-root': { fontWeight: 600 } }}
+                    />
+                  </DrawerListItem>
                 )
               )
             )}
-            <Divider sx={{ my: 1 }} />
-            <ListItem
+
+            <Divider sx={{ my: 2, opacity: 0.3 }} />
+
+            <DrawerListItem
               button
               onClick={toggleTheme}
-              sx={{
-                color: theme.palette.text.primary,
-                "&:hover": {
-                  backgroundColor: "rgba(255, 107, 107, 0.1)",
-                },
-              }}
+              isDarkMode={isDarkMode}
             >
-              <ListItemIcon sx={{ color: theme.palette.text.primary }}>
+              <ListItemIcon sx={{ color: theme.palette.text.primary, minWidth: 40 }}>
                 {isDarkMode ? <LightMode /> : <DarkMode />}
               </ListItemIcon>
               <ListItemText
                 primary={isDarkMode ? "Chế độ sáng" : "Chế độ tối"}
+                sx={{ '& .MuiTypography-root': { fontWeight: 600 } }}
               />
-            </ListItem>
+            </DrawerListItem>
+
             {isLoggedIn ? (
-              settings.map((setting) => (
-                <ListItem
+              settings.map((setting, index) => (
+                <DrawerListItem
                   button
                   key={setting.name}
                   onClick={() => handleNavigation(setting.path)}
+                  isDarkMode={isDarkMode}
                   sx={{
-                    color: theme.palette.text.primary,
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 107, 107, 0.1)",
-                    },
+                    animation: `${slideInLeft} ${1.2 + index * 0.1}s ease-out`,
                   }}
                 >
-                  <ListItemIcon sx={{ color: theme.palette.text.primary }}>
+                  <ListItemIcon sx={{ color: theme.palette.text.primary, minWidth: 40 }}>
                     {setting.name === "Hồ sơ" ? (
                       userInfo?.imgURL ? (
-                         <Avatar src={userInfo.imgURL} sx={{ width: 24, height: 24 }} />
+                        <Avatar src={userInfo.imgURL} sx={{ width: 24, height: 24 }} />
                       ) : (
-                         <Person />
+                        <Person />
                       )
                     ) : (
                       setting.icon
                     )}
                   </ListItemIcon>
-                  <Typography textAlign="center">{setting.name}</Typography>
-                </ListItem>
+                  <ListItemText 
+                    primary={setting.name}
+                    sx={{ '& .MuiTypography-root': { fontWeight: 600 } }}
+                  />
+                </DrawerListItem>
               ))
             ) : (
               <>
-                <ListItem
+                <DrawerListItem
                   button
                   onClick={() => handleNavigation("/login")}
-                  sx={{
-                    color: theme.palette.text.primary,
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 107, 107, 0.1)",
-                    },
-                  }}
+                  isDarkMode={isDarkMode}
                 >
-                  <ListItemIcon sx={{ color: theme.palette.text.primary }}>
+                  <ListItemIcon sx={{ color: "#FF6B6B", minWidth: 40 }}>
                     <Person />
                   </ListItemIcon>
-                  <ListItemText primary="Đăng nhập" />
-                </ListItem>
-                <ListItem
+                  <ListItemText 
+                    primary="Đăng nhập"
+                    sx={{ '& .MuiTypography-root': { fontWeight: 600 } }}
+                  />
+                </DrawerListItem>
+                <DrawerListItem
                   button
                   onClick={() => handleNavigation("/register")}
-                  sx={{
-                    color: "#FF6B6B",
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 107, 107, 0.1)",
-                    },
-                  }}
+                  isDarkMode={isDarkMode}
                 >
-                  <ListItemIcon sx={{ color: "#FF6B6B" }}>
+                  <ListItemIcon sx={{ color: "#FF6B6B", minWidth: 40 }}>
                     <ExitToApp />
                   </ListItemIcon>
-                  <ListItemText primary="Đăng ký" />
-                </ListItem>
+                  <ListItemText 
+                    primary="Đăng ký"
+                    sx={{ '& .MuiTypography-root': { fontWeight: 600 } }}
+                  />
+                </DrawerListItem>
               </>
             )}
           </List>
         </Box>
-      </Drawer>
+      </ModernDrawer>
 
       {/* User Menu */}
-      <Menu
-        sx={{ mt: "45px" }}
+      <ModernMenu
         id="menu-appbar"
         anchorEl={anchorElUser}
         anchorOrigin={{
@@ -649,48 +971,33 @@ const Navbar = () => {
         }}
         open={Boolean(anchorElUser)}
         onClose={handleCloseUserMenu}
-        PaperProps={{
-          sx: {
-            background: isDarkMode
-              ? "rgba(18, 18, 18, 0.95)"
-              : "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(10px)",
-            border: `1px solid ${
-              isDarkMode
-                ? "rgba(255, 255, 255, 0.1)"
-                : "rgba(0, 0, 0, 0.1)"
-            }`,
-          },
-        }}
+        isDarkMode={isDarkMode}
+        sx={{ mt: "45px" }}
       >
-        {settings.map((setting) => (
-          <MenuItem
+        {settings.map((setting, index) => (
+          <MenuItemStyled
             key={setting.name}
             onClick={() => handleNavigation(setting.path)}
+            isDarkMode={isDarkMode}
             sx={{
-              color: isDarkMode ? "#ffffff" : "#2D3436",
-              "&:hover": {
-                backgroundColor: isDarkMode
-                  ? "rgba(255, 255, 255, 0.1)"
-                  : "rgba(0, 0, 0, 0.05)",
-              },
+              animation: `${fadeIn} ${0.8 + index * 0.1}s ease-out`,
             }}
           >
-            <ListItemIcon sx={{ color: isDarkMode ? "#ffffff" : "#2D3436" }}>
+            <ListItemIcon sx={{ color: theme.palette.text.primary, minWidth: 40 }}>
               {setting.name === "Hồ sơ" ? (
                 userInfo?.imgURL ? (
-                   <Avatar src={userInfo.imgURL} sx={{ width: 24, height: 24, color: isDarkMode ? "#ffffff" : "#2D3436" }} />
+                  <Avatar src={userInfo.imgURL} sx={{ width: 24, height: 24 }} />
                 ) : (
-                   <Person sx={{ color: isDarkMode ? "#ffffff" : "#2D3436" }} />
+                  <Person />
                 )
               ) : (
                 setting.icon
               )}
             </ListItemIcon>
-            <Typography textAlign="center">{setting.name}</Typography>
-          </MenuItem>
+            <Typography sx={{ fontWeight: 600 }}>{setting.name}</Typography>
+          </MenuItemStyled>
         ))}
-      </Menu>
+      </ModernMenu>
 
       {/* Profile Alert Dialog */}
       <Dialog
@@ -698,25 +1005,39 @@ const Navbar = () => {
         onClose={handleProfileAlertClose}
         PaperProps={{
           sx: {
-            backgroundColor: theme.palette.background.paper,
-            borderRadius: 2,
-            minWidth: 320,
+            borderRadius: '20px',
+            background: isDarkMode
+              ? 'linear-gradient(135deg, rgba(30, 30, 46, 0.95) 0%, rgba(45, 45, 61, 0.9) 100%)'
+              : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+            backdropFilter: 'blur(20px)',
+            border: isDarkMode
+              ? '1px solid rgba(255, 255, 255, 0.1)'
+              : '1px solid rgba(255, 107, 107, 0.1)',
+            minWidth: 360,
           },
         }}
       >
-        <DialogTitle sx={{ color: theme.palette.text.primary }}>
+        <DialogTitle sx={{ 
+          color: theme.palette.text.primary,
+          fontWeight: 700,
+          fontSize: '1.25rem',
+        }}>
           Thông báo
         </DialogTitle>
         <DialogContent>
-          <Typography sx={{ color: theme.palette.text.primary }}>
+          <Typography sx={{ 
+            color: theme.palette.text.primary,
+            lineHeight: 1.6,
+          }}>
             Bạn phải điền đầy đủ thông tin trong hồ sơ thì mới sử dụng được chức năng này
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 0 }}>
+        <DialogActions sx={{ p: 3, pt: 0, gap: 2 }}>
           <Button
             onClick={handleProfileAlertClose}
             sx={{
               color: theme.palette.text.primary,
+              borderRadius: '12px',
               '&:hover': {
                 backgroundColor: 'rgba(255, 107, 107, 0.1)',
               },
@@ -728,9 +1049,10 @@ const Navbar = () => {
             onClick={handleGoToProfile}
             variant="contained"
             sx={{
-              backgroundColor: '#FF6B6B',
+              background: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%)',
+              borderRadius: '12px',
               '&:hover': {
-                backgroundColor: '#FF5252',
+                background: 'linear-gradient(135deg, #FF8E8E 0%, #FF6B6B 100%)',
               },
             }}
           >
@@ -749,12 +1071,16 @@ const Navbar = () => {
         <Alert
           onClose={handleCloseNotification}
           severity={notification.severity}
-          sx={{ width: '100%' }}
+          sx={{ 
+            width: '100%',
+            borderRadius: '12px',
+            backdropFilter: 'blur(10px)',
+          }}
         >
           {notification.message}
         </Alert>
       </Snackbar>
-    </AppBar>
+    </StyledAppBar>
   );
 };
 

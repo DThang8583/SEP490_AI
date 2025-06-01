@@ -20,6 +20,9 @@ import {
   TextField,
   Button,
   IconButton,
+  Paper,
+  Avatar,
+  InputAdornment,
 } from '@mui/material';
 import {
   Quiz as QuizIcon,
@@ -29,9 +32,257 @@ import {
   Search as SearchIcon,
   AddCircleOutline as AddCircleOutlineIcon,
   DeleteOutline as DeleteOutlineIcon,
+  Psychology as PsychologyIcon,
+  EmojiEvents as EmojiEventsIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { useTheme as useCustomTheme } from '../../context/ThemeContext';
+import { styled, keyframes } from '@mui/material/styles';
 import CreateExerciseModal from '../../Components/CreateExerciseModal';
+
+// Animations
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const float = keyframes`
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(255, 107, 107, 0);
+  }
+`;
+
+const shimmer = keyframes`
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+`;
+
+const glow = keyframes`
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(255, 107, 107, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(255, 107, 107, 0.6));
+  }
+`;
+
+// Styled Components
+const MainContainer = styled(Box)(({ theme, isDarkMode }) => ({
+  minHeight: 'calc(100vh - 64px)',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+    : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+  paddingTop: '32px',
+  paddingBottom: '32px',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: isDarkMode
+      ? 'radial-gradient(circle at 20% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(156, 39, 176, 0.1) 0%, transparent 50%)'
+      : 'radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+    pointerEvents: 'none',
+  },
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+  position: 'relative',
+  zIndex: 2,
+}));
+
+const HeaderCard = styled(Paper)(({ theme, isDarkMode }) => ({
+  padding: '48px 32px',
+  marginBottom: '32px',
+  textAlign: 'center',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '24px',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(255, 255, 255, 0.3)',
+  boxShadow: isDarkMode
+    ? '0 20px 40px rgba(0, 0, 0, 0.3)'
+    : '0 20px 40px rgba(0, 0, 0, 0.1)',
+  position: 'relative',
+  overflow: 'hidden',
+  animation: `${fadeIn} 0.8s ease-out`,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(255, 107, 107, 0.1), transparent)',
+    animation: `${shimmer} 3s ease-in-out infinite`,
+  },
+}));
+
+const FloatingIcon = styled(Avatar)(({ theme }) => ({
+  width: 80,
+  height: 80,
+  background: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)',
+  marginBottom: '16px',
+  animation: `${float} 3s ease-in-out infinite`,
+  boxShadow: '0 12px 30px rgba(255, 107, 107, 0.4)',
+  border: '4px solid rgba(255, 255, 255, 0.2)',
+  '& .MuiSvgIcon-root': {
+    fontSize: '2.5rem',
+    color: '#fff',
+    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+  },
+}));
+
+const GradientTitle = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: 'sans-serif',
+  fontWeight: 800,
+  fontSize: '2.5rem',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, #fff 0%, #e3f2fd 100%)'
+    : 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  textAlign: 'center',
+  marginBottom: '16px',
+  letterSpacing: '0.5px',
+  textShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+  [theme.breakpoints.down('md')]: {
+    fontSize: '2rem',
+  },
+}));
+
+const SubTitle = styled(Typography)(({ theme, isDarkMode }) => ({
+  fontFamily: 'sans-serif',
+  fontSize: '1.25rem',
+  fontWeight: 500,
+  color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 107, 107, 0.8)',
+  marginBottom: '24px',
+  letterSpacing: '0.3px',
+  lineHeight: 1.6,
+}));
+
+const ControlsCard = styled(Paper)(({ theme, isDarkMode }) => ({
+  padding: '24px',
+  marginBottom: '32px',
+  background: isDarkMode
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: isDarkMode
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(255, 107, 107, 0.2)',
+  boxShadow: isDarkMode
+    ? '0 15px 35px rgba(0, 0, 0, 0.2)'
+    : '0 15px 35px rgba(0, 0, 0, 0.08)',
+  animation: `${slideInUp} 0.8s ease-out`,
+}));
+
+const StyledTextField = styled(TextField)(({ theme, isDarkMode }) => ({
+  '& .MuiInputLabel-root': {
+    color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 107, 107, 0.8)',
+    fontWeight: 600,
+  },
+  '& .MuiOutlinedInput-root': {
+    background: isDarkMode
+      ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
+      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '12px',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    '& fieldset': {
+      borderColor: isDarkMode
+        ? 'rgba(255, 255, 255, 0.1)'
+        : 'rgba(255, 107, 107, 0.2)',
+      borderWidth: '2px',
+    },
+    '&:hover fieldset': {
+      borderColor: isDarkMode
+        ? 'rgba(255, 255, 255, 0.2)'
+        : 'rgba(255, 107, 107, 0.4)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#FF6B6B',
+      boxShadow: '0 0 0 3px rgba(255, 107, 107, 0.1)',
+    },
+    '& .MuiInputBase-input': {
+      color: isDarkMode ? '#fff' : '#2C3E50',
+      fontWeight: 600,
+    },
+  },
+}));
+
+const ActionButton = styled(Button)(({ theme, variant = 'primary' }) => ({
+  background: variant === 'primary' 
+    ? 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)'
+    : 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  color: '#fff',
+  borderRadius: '12px',
+  padding: '12px 24px',
+  textTransform: 'none',
+  fontWeight: 700,
+  fontSize: '0.95rem',
+  boxShadow: variant === 'primary' 
+    ? '0 6px 20px rgba(255, 107, 107, 0.3)'
+    : '0 6px 20px rgba(33, 150, 243, 0.3)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    background: variant === 'primary' 
+      ? 'linear-gradient(135deg, #FF8E53 0%, #FF6B6B 100%)'
+      : 'linear-gradient(135deg, #21CBF3 0%, #2196F3 100%)',
+    transform: 'translateY(-2px)',
+    boxShadow: variant === 'primary' 
+      ? '0 8px 25px rgba(255, 107, 107, 0.4)'
+      : '0 8px 25px rgba(33, 150, 243, 0.4)',
+  },
+  '&:active': {
+    transform: 'translateY(0px)',
+  },
+}));
 
 const ExamList = () => {
   const navigate = useNavigate();
@@ -180,88 +431,84 @@ const ExamList = () => {
   console.log('User Full Name from localStorage:', userFullName);
 
   return (
-    <Box
-      sx={{
-        py: 4,
-        minHeight: 'calc(100vh - 64px)',
-        background: isDarkMode
-          ? 'linear-gradient(135deg, rgb(18, 18, 18) 0%, rgb(30, 30, 30) 100%)'
-          : 'linear-gradient(135deg, rgb(245, 247, 250) 0%, rgb(255, 255, 255) 100%)',
-      }}
-    >
-      <Container maxWidth="lg">
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{
-            fontWeight: 700,
-            mb: 4,
-            textAlign: 'center',
-            background: 'linear-gradient(45deg, #FF6B6B, #FF8E53)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          Danh sách bài bài tập đã tạo
-        </Typography>
+    <MainContainer isDarkMode={isDarkMode}>
+      <StyledContainer maxWidth="lg">
+        <HeaderCard elevation={0} isDarkMode={isDarkMode}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <FloatingIcon>
+              <EmojiEventsIcon />
+            </FloatingIcon>
+            <GradientTitle isDarkMode={isDarkMode}>
+              Bài Tập Đã Tạo
+            </GradientTitle>
+            <SubTitle isDarkMode={isDarkMode}>
+              Quản lý và xem lại các bài tập bạn đã tạo bằng AI
+            </SubTitle>
+          </Box>
+        </HeaderCard>
 
         {/* Search and Filter Section */}
-        <Box sx={{ mb: 4, display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2, alignItems: 'center' }}>
-          <TextField
-            label="Tìm kiếm bài kiểm tra"
-            variant="outlined"
-            size="small"
-            fullWidth={isMobile}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ flexGrow: 1 }}
-          />
-          <Button 
-            variant="contained" 
-            startIcon={<SearchIcon />}
-            onClick={handleSearch}
-            sx={{ 
-              background: 'linear-gradient(45deg, #FF6B6B, #FF8E53)',
-              color: 'white',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #FF8E53, #FF6B6B)',
-              }
-            }}
-          >
-            Tìm kiếm
-          </Button>
-          <TextField
-            select
-            label="Số bài/trang"
-            value={pageSize}
-            onChange={handlePageSizeChange}
-            size="small"
-            SelectProps={{
-              native: true,
-            }}
-            sx={{ minWidth: 120 }}
-          >
-            <option value={5}>5 bài/trang</option>
-            <option value={10}>10 bài/trang</option>
-            <option value={20}>20 bài/trang</option>
-            <option value={50}>50 bài/trang</option>
-          </TextField>
-          <Button 
-            variant="contained" 
-            startIcon={<AddCircleOutlineIcon />}
-            onClick={handleOpenModal}
-            sx={{ 
-              background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
-              color: 'white',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #21CBF3, #2196F3)',
-              }
-            }}
-          >
-            Tạo bài tập AI
-          </Button>
-        </Box>
+        <ControlsCard elevation={0} isDarkMode={isDarkMode}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={6} md={4}>
+              <StyledTextField
+                label="Tìm kiếm bài kiểm tra"
+                variant="outlined"
+                size="small"
+                fullWidth
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                isDarkMode={isDarkMode}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 107, 107, 0.5)' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <ActionButton 
+                variant="primary"
+                startIcon={<SearchIcon />}
+                onClick={handleSearch}
+                fullWidth={isMobile}
+              >
+                Tìm kiếm
+              </ActionButton>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StyledTextField
+                select
+                label="Số bài/trang"
+                value={pageSize}
+                onChange={handlePageSizeChange}
+                size="small"
+                fullWidth
+                isDarkMode={isDarkMode}
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                <option value={5}>5 bài/trang</option>
+                <option value={10}>10 bài/trang</option>
+                <option value={20}>20 bài/trang</option>
+                <option value={50}>50 bài/trang</option>
+              </StyledTextField>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <ActionButton 
+                variant="secondary"
+                startIcon={<AddCircleOutlineIcon />}
+                onClick={handleOpenModal}
+                fullWidth={isMobile}
+              >
+                Tạo bài tập AI
+              </ActionButton>
+            </Grid>
+          </Grid>
+        </ControlsCard>
 
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
@@ -407,7 +654,7 @@ const ExamList = () => {
             </Box>
           </>
         )}
-      </Container>
+      </StyledContainer>
 
       {/* Render the modal component */}
       <CreateExerciseModal 
@@ -416,7 +663,7 @@ const ExamList = () => {
         // Add a prop to trigger list refresh after creating a quiz
         onQuizCreated={fetchQuizzes}
       />
-    </Box>
+    </MainContainer>
   );
 };
 

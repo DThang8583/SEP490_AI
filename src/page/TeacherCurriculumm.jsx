@@ -27,6 +27,10 @@ import {
   DialogContent,
   DialogActions,
   Grid,
+  Card,
+  CardContent,
+  Chip,
+  Avatar,
 } from '@mui/material';
 import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
@@ -38,9 +42,669 @@ import {
   Subject as SubjectIcon,
   Assignment as AssignmentIcon,
   Visibility as VisibilityIcon,
+  AutoStories as AutoStoriesIcon,
+  Class as ClassIcon,
+  BookmarkBorder as BookmarkIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { styled, keyframes } from '@mui/material/styles';
+
+// Animations
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const float = keyframes`
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(33, 150, 243, 0);
+  }
+`;
+
+const shimmer = keyframes`
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+`;
+
+const glow = keyframes`
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(33, 150, 243, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(33, 150, 243, 0.6));
+  }
+`;
+
+// Styled Components
+const MainContainer = styled(Box)(({ theme }) => ({
+  minHeight: '100vh',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+    : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: theme.palette.mode === 'dark'
+      ? 'radial-gradient(circle at 20% 80%, rgba(33, 150, 243, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(156, 39, 176, 0.1) 0%, transparent 50%)'
+      : 'radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+    pointerEvents: 'none',
+  },
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+  padding: '32px 24px',
+  position: 'relative',
+  zIndex: 1,
+}));
+
+const HeaderCard = styled(Paper)(({ theme }) => ({
+  padding: '48px 32px',
+  marginBottom: '32px',
+  textAlign: 'center',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '24px',
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(255, 255, 255, 0.3)',
+  boxShadow: theme.palette.mode === 'dark'
+    ? '0 20px 40px rgba(0, 0, 0, 0.3)'
+    : '0 20px 40px rgba(0, 0, 0, 0.1)',
+  position: 'relative',
+  overflow: 'hidden',
+  animation: `${fadeIn} 0.8s ease-out`,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(33, 150, 243, 0.1), transparent)',
+    animation: `${shimmer} 3s ease-in-out infinite`,
+  },
+}));
+
+const TitleSection = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  marginBottom: '32px',
+  position: 'relative',
+}));
+
+const FloatingIcon = styled(Avatar)(({ theme }) => ({
+  width: 80,
+  height: 80,
+  background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  marginBottom: '16px',
+  animation: `${float} 3s ease-in-out infinite`,
+  boxShadow: '0 12px 30px rgba(33, 150, 243, 0.4)',
+  border: '4px solid rgba(255, 255, 255, 0.2)',
+  '& .MuiSvgIcon-root': {
+    fontSize: '2.5rem',
+    color: '#fff',
+    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
+  },
+}));
+
+const GradientTitle = styled(Typography)(({ theme }) => ({
+  fontFamily: 'sans-serif',
+  fontWeight: 800,
+  fontSize: '2.5rem',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, #fff 0%, #e3f2fd 100%)'
+    : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  textAlign: 'center',
+  marginBottom: '8px',
+  letterSpacing: '0.5px',
+  textShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+  [theme.breakpoints.down('md')]: {
+    fontSize: '2rem',
+  },
+}));
+
+const SubTitle = styled(Typography)(({ theme }) => ({
+  fontFamily: 'sans-serif',
+  fontSize: '1.25rem',
+  fontWeight: 500,
+  color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(25, 118, 210, 0.8)',
+  marginBottom: '16px',
+  letterSpacing: '0.3px',
+}));
+
+const InfoCardsContainer = styled(Box)(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+  gap: '24px',
+  marginBottom: '32px',
+  padding: '24px',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(33, 150, 243, 0.08) 0%, rgba(156, 39, 176, 0.08) 100%)'
+    : 'linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(156, 39, 176, 0.05) 100%)',
+  borderRadius: '20px',
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(255, 255, 255, 0.3)',
+  backdropFilter: 'blur(10px)',
+}));
+
+const InfoCard = styled(Card)(({ theme }) => ({
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '16px',
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.15)'
+    : '1px solid rgba(255, 255, 255, 0.3)',
+  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  position: 'relative',
+  overflow: 'hidden',
+  '&:hover': {
+    transform: 'translateY(-8px)',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+  },
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '4px',
+    background: 'linear-gradient(90deg, #2196F3, #21CBF3, #2196F3)',
+  },
+}));
+
+const InfoCardContent = styled(CardContent)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '16px',
+  padding: '20px',
+  '&:last-child': {
+    paddingBottom: '20px',
+  },
+}));
+
+const InfoIcon = styled(Avatar)(({ theme }) => ({
+  width: 48,
+  height: 48,
+  background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  boxShadow: '0 4px 15px rgba(33, 150, 243, 0.3)',
+  '& .MuiSvgIcon-root': {
+    fontSize: '1.5rem',
+    color: '#fff',
+  },
+}));
+
+const InfoText = styled(Typography)(({ theme }) => ({
+  fontFamily: 'sans-serif',
+  fontSize: '0.95rem',
+  fontWeight: 500,
+  color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(25, 118, 210, 0.8)',
+  textAlign: 'center',
+  letterSpacing: '0.2px',
+}));
+
+const ControlsContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: '16px',
+  marginBottom: '16px',
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+}));
+
+const ModernToggleGroup = styled(ToggleButtonGroup)(({ theme }) => ({
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '16px',
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.15)'
+    : '1px solid rgba(33, 150, 243, 0.2)',
+  overflow: 'hidden',
+  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
+  '& .MuiToggleButton-root': {
+    border: 'none',
+    padding: '12px 24px',
+    fontWeight: 600,
+    fontSize: '1rem',
+    color: theme.palette.mode === 'dark' ? '#fff' : '#1976d2',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    position: 'relative',
+    overflow: 'hidden',
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      top: 0,
+      left: '-100%',
+      width: '100%',
+      height: '100%',
+      background: 'linear-gradient(90deg, transparent, rgba(33, 150, 243, 0.1), transparent)',
+      transition: 'left 0.6s ease',
+    },
+    '&:hover': {
+      background: 'rgba(33, 150, 243, 0.1)',
+      '&::before': {
+        left: '100%',
+      },
+    },
+    '&.Mui-selected': {
+      background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+      color: '#fff',
+      boxShadow: '0 4px 15px rgba(33, 150, 243, 0.4)',
+      '&:hover': {
+        background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+      },
+    },
+  },
+}));
+
+const ActionButton = styled(Button)(({ theme }) => ({
+  background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  color: '#fff',
+  borderRadius: '16px',
+  padding: '12px 24px',
+  textTransform: 'none',
+  fontWeight: 700,
+  fontSize: '1rem',
+  boxShadow: '0 8px 25px rgba(33, 150, 243, 0.4)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
+    transition: 'left 0.6s ease',
+  },
+  '&:hover': {
+    background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 35px rgba(33, 150, 243, 0.5)',
+    '&::before': {
+      left: '100%',
+    },
+  },
+  '&:active': {
+    transform: 'translateY(0px)',
+  },
+  animation: `${pulse} 3s ease-in-out infinite`,
+}));
+
+const ModernTableContainer = styled(TableContainer)(({ theme }) => ({
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.2)',
+  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+  overflow: 'hidden',
+  animation: `${slideInUp} 0.8s ease-out`,
+}));
+
+const StyledTableHead = styled(TableHead)(({ theme }) => ({
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)'
+    : 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  '& .MuiTableCell-root': {
+    color: '#fff',
+    fontWeight: 700,
+    fontSize: '1.1rem',
+    padding: '20px 16px',
+    borderBottom: 'none',
+    position: 'relative',
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: '2px',
+      background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
+    },
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme, isExpanded }) => ({
+  background: isExpanded
+    ? theme.palette.mode === 'dark'
+      ? 'linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.08) 100%)'
+      : 'linear-gradient(135deg, rgba(33, 150, 243, 0.08) 0%, rgba(33, 150, 243, 0.04) 100%)'
+    : 'transparent',
+  cursor: 'pointer',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  position: 'relative',
+  '&:hover': {
+    background: theme.palette.mode === 'dark'
+      ? 'linear-gradient(135deg, rgba(33, 150, 243, 0.12) 0%, rgba(33, 150, 243, 0.06) 100%)'
+      : 'linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.02) 100%)',
+    transform: 'scale(1.01)',
+    boxShadow: '0 4px 15px rgba(33, 150, 243, 0.2)',
+  },
+  '& .MuiTableCell-root': {
+    padding: '16px',
+    borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(33, 150, 243, 0.1)'}`,
+    color: theme.palette.mode === 'dark' ? '#fff' : '#1976d2',
+    fontSize: '1rem',
+  },
+}));
+
+const ExpandButton = styled(IconButton)(({ theme, isExpanded }) => ({
+  background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  color: '#fff',
+  width: 36,
+  height: 36,
+  boxShadow: '0 4px 15px rgba(33, 150, 243, 0.3)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+  '&:hover': {
+    background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+    transform: isExpanded ? 'rotate(180deg) scale(1.1)' : 'rotate(0deg) scale(1.1)',
+    boxShadow: '0 6px 20px rgba(33, 150, 243, 0.4)',
+  },
+}));
+
+const CollapsibleContent = styled(Box)(({ theme }) => ({
+  margin: '16px',
+  padding: '24px',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
+    : 'linear-gradient(135deg, rgba(33, 150, 243, 0.03) 0%, rgba(33, 150, 243, 0.01) 100%)',
+  borderRadius: '16px',
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.1)',
+  backdropFilter: 'blur(10px)',
+  animation: `${fadeIn} 0.5s ease-out`,
+}));
+
+const LessonCard = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '16px 20px',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%)',
+  borderRadius: '12px',
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.1)',
+  marginBottom: '12px',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  position: 'relative',
+  overflow: 'hidden',
+  '&:hover': {
+    transform: 'translateX(8px)',
+    boxShadow: '0 8px 25px rgba(33, 150, 243, 0.15)',
+  },
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: '4px',
+    background: 'linear-gradient(180deg, #2196F3 0%, #21CBF3 100%)',
+  },
+}));
+
+const LessonInfo = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '16px',
+  flex: 1,
+}));
+
+const LessonIcon = styled(Avatar)(({ theme }) => ({
+  width: 40,
+  height: 40,
+  background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
+  '& .MuiSvgIcon-root': {
+    fontSize: '1.2rem',
+    color: '#fff',
+  },
+}));
+
+const LessonText = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4px',
+}));
+
+const LessonTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: 600,
+  fontSize: '1rem',
+  color: theme.palette.mode === 'dark' ? '#fff' : '#1976d2',
+  lineHeight: 1.3,
+}));
+
+const LessonSubtext = styled(Typography)(({ theme }) => ({
+  fontSize: '0.875rem',
+  color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(25, 118, 210, 0.7)',
+  fontWeight: 500,
+}));
+
+const ViewButton = styled(IconButton)(({ theme }) => ({
+  background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
+  color: '#fff',
+  width: 40,
+  height: 40,
+  boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    background: 'linear-gradient(135deg, #388E3C 0%, #66BB6A 100%)',
+    transform: 'scale(1.1)',
+    boxShadow: '0 6px 20px rgba(76, 175, 80, 0.4)',
+  },
+}));
+
+const LoadingContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '60vh',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
+    : 'linear-gradient(135deg, rgba(33, 150, 243, 0.03) 0%, rgba(33, 150, 243, 0.01) 100%)',
+  borderRadius: '20px',
+  backdropFilter: 'blur(20px)',
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.1)',
+  animation: `${fadeIn} 0.8s ease-out`,
+}));
+
+const LoadingSpinner = styled(CircularProgress)(({ theme }) => ({
+  color: '#2196F3',
+  marginBottom: '24px',
+  filter: 'drop-shadow(0 4px 8px rgba(33, 150, 243, 0.3))',
+  animation: `${glow} 2s ease-in-out infinite`,
+}));
+
+const LoadingText = styled(Typography)(({ theme }) => ({
+  fontFamily: 'sans-serif',
+  fontSize: '1.1rem',
+  fontWeight: 600,
+  color: theme.palette.mode === 'dark' ? '#fff' : '#1976d2',
+  textAlign: 'center',
+  marginTop: '16px',
+}));
+
+const ErrorContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '60vh',
+}));
+
+const StyledAlert = styled(Alert)(({ theme }) => ({
+  maxWidth: 600,
+  borderRadius: '16px',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(244, 67, 54, 0.08) 0%, rgba(244, 67, 54, 0.04) 100%)',
+  backdropFilter: 'blur(20px)',
+  border: '1px solid rgba(244, 67, 54, 0.2)',
+  boxShadow: '0 20px 40px rgba(244, 67, 54, 0.1)',
+  animation: `${fadeIn} 0.8s ease-out`,
+}));
+
+const EmptyStateContainer = styled(Paper)(({ theme }) => ({
+  padding: '48px 32px',
+  textAlign: 'center',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.2)',
+  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+  marginTop: '24px',
+  animation: `${slideInUp} 0.8s ease-out`,
+}));
+
+const EmptyStateText = styled(Typography)(({ theme }) => ({
+  fontFamily: 'sans-serif',
+  fontSize: '1.25rem',
+  fontWeight: 600,
+  color: theme.palette.mode === 'dark' ? '#fff' : '#1976d2',
+  marginBottom: '16px',
+}));
+
+const ModernDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialog-paper': {
+    borderRadius: '24px',
+    background: theme.palette.mode === 'dark'
+      ? 'linear-gradient(135deg, rgba(30, 30, 46, 0.95) 0%, rgba(45, 45, 61, 0.9) 100%)'
+      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+    backdropFilter: 'blur(20px)',
+    border: theme.palette.mode === 'dark'
+      ? '1px solid rgba(255, 255, 255, 0.1)'
+      : '1px solid rgba(33, 150, 243, 0.2)',
+    boxShadow: '0 30px 60px rgba(0, 0, 0, 0.3)',
+    overflow: 'hidden',
+  },
+}));
+
+const DialogTitleStyled = styled(DialogTitle)(({ theme }) => ({
+  background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+  color: '#fff',
+  fontWeight: 700,
+  fontSize: '1.5rem',
+  padding: '24px 32px',
+  position: 'relative',
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '2px',
+    background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
+  },
+}));
+
+const DetailCard = styled(Paper)(({ theme }) => ({
+  padding: '20px',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
+    : 'linear-gradient(135deg, rgba(33, 150, 243, 0.03) 0%, rgba(33, 150, 243, 0.01) 100%)',
+  borderRadius: '12px',
+  border: theme.palette.mode === 'dark'
+    ? '1px solid rgba(255, 255, 255, 0.1)'
+    : '1px solid rgba(33, 150, 243, 0.1)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: '0 8px 25px rgba(33, 150, 243, 0.15)',
+  },
+}));
+
+const DetailLabel = styled(Typography)(({ theme }) => ({
+  fontFamily: 'sans-serif',
+  fontSize: '0.875rem',
+  fontWeight: 600,
+  color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(25, 118, 210, 0.8)',
+  marginBottom: '8px',
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+}));
+
+const DetailValue = styled(Typography)(({ theme }) => ({
+  fontFamily: 'sans-serif',
+  fontSize: '1rem',
+  fontWeight: 500,
+  color: theme.palette.mode === 'dark' ? '#fff' : '#1976d2',
+  lineHeight: 1.5,
+}));
 
 const TeacherCurriculumm = () => {
   const { userInfo } = useAuth();
@@ -59,9 +723,10 @@ const TeacherCurriculumm = () => {
   const [sortColumn, setSortColumn] = useState(null); // State for sorting column
   const [sortDir, setSortDir] = useState(null); // State for sorting direction (0: asc, 1: desc)
   const [selectedLesson, setSelectedLesson] = useState(null);
-  const [lessonDetails, setLessonDetails] = useState(null);
-  const [loadingLessonDetails, setLoadingLessonDetails] = useState(false);
-  const [lessonDetailsError, setLessonDetailsError] = useState(null);
+  const [lessonDetails, setLessonDetails] = useState({});
+  const [loadingLessonDetails, setLoadingLessonDetails] = useState({});
+  const [lessonDetailsError, setLessonDetailsError] = useState({});
+  const [expandedLessons, setExpandedLessons] = useState({}); // Track expanded lessons
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const navigate = useNavigate(); // Get the navigate function
@@ -141,29 +806,47 @@ const TeacherCurriculumm = () => {
     navigate('/yeu-cau-can-dat', { state: { gradeId: userInfo?.gradeId } });
   };
 
-  const handleViewLesson = async (lessonId) => {
-    setSelectedLesson(lessonId);
-    setLoadingLessonDetails(true);
-    setLessonDetailsError(null);
+  const handleViewLesson = async (lessonId, moduleId) => {
+    const lessonKey = `${moduleId}-${lessonId}`;
+    
+    // Toggle expanded state
+    setExpandedLessons(prev => {
+      const isExpanded = !prev[lessonKey];
+      
+      if (isExpanded && !lessonDetails[lessonKey]) {
+        // Fetch lesson details if not already loaded
+        fetchLessonDetails(lessonId, moduleId);
+      }
+      
+      return { ...prev, [lessonKey]: isExpanded };
+    });
+  };
+
+  const fetchLessonDetails = async (lessonId, moduleId) => {
+    const lessonKey = `${moduleId}-${lessonId}`;
+    
+    setLoadingLessonDetails(prev => ({ ...prev, [lessonKey]: true }));
+    setLessonDetailsError(prev => ({ ...prev, [lessonKey]: null }));
+    
     try {
       const response = await axios.get(
-        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}/info`
+        `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lessons/${lessonId}`
       );
-      if (response.data.code === 0) {
-        setLessonDetails(response.data.data);
+      
+      if (response.data.code === 0 && response.data.data) {
+        setLessonDetails(prev => ({ ...prev, [lessonKey]: response.data.data }));
       } else {
-        setLessonDetailsError('Failed to fetch lesson details');
+        setLessonDetailsError(prev => ({ ...prev, [lessonKey]: 'Failed to fetch lesson details' }));
       }
     } catch (err) {
-      setLessonDetailsError('Error fetching lesson details: ' + err.message);
+      setLessonDetailsError(prev => ({ ...prev, [lessonKey]: 'Error fetching lesson details: ' + err.message }));
     } finally {
-      setLoadingLessonDetails(false);
+      setLoadingLessonDetails(prev => ({ ...prev, [lessonKey]: false }));
     }
   };
 
   const handleCloseLessonDetails = () => {
     setSelectedLesson(null);
-    setLessonDetails(null);
     setLessonDetailsError(null);
   };
 
@@ -246,184 +929,104 @@ const TeacherCurriculumm = () => {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: theme.palette.background.default,
-        }}
-      >
-        <Box sx={{ textAlign: 'center' }}>
-          <CircularProgress size={60} sx={{ color: theme.palette.primary.main }} />
-          <Typography variant="h6" sx={{ mt: 2, color: theme.palette.text.secondary }}>
-            Đang tải chương trình giảng dạy...
-          </Typography>
-        </Box>
-      </Box>
+      <MainContainer>
+        <StyledContainer maxWidth="xl">
+          <LoadingContainer>
+            <LoadingSpinner size={80} />
+            <LoadingText>
+              Đang tải chương trình giảng dạy...
+            </LoadingText>
+          </LoadingContainer>
+        </StyledContainer>
+      </MainContainer>
     );
   }
 
   if (error) {
     return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: theme.palette.background.default,
-        }}
-      >
-        <Alert severity="error" sx={{ maxWidth: 600, boxShadow: 2 }}>
-          <Typography variant="h6">Lỗi:</Typography>
-          <Typography>{error}</Typography>
-        </Alert>
-      </Box>
+      <MainContainer>
+        <StyledContainer maxWidth="xl">
+          <ErrorContainer>
+            <StyledAlert severity="error">
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Lỗi:</Typography>
+              <Typography>{error}</Typography>
+            </StyledAlert>
+          </ErrorContainer>
+        </StyledContainer>
+      </MainContainer>
     );
   }
 
   const commonInfo = modules[0] || {};
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        bgcolor: theme.palette.background.default,
-        py: 4,
-      }}
-    >
-      <Container maxWidth="xl">
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            mb: 4,
-            textAlign: 'center',
-            bgcolor: theme.palette.background.paper,
-            borderRadius: 3,
-            border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
-            boxShadow: theme.shadows[3],
-          }}
-        >
-          <Typography 
-            variant="h4" 
-            component="h1" 
-            gutterBottom 
-            sx={{ 
-              fontWeight: 'bold',
-              color: isDarkMode ? '#fff' : '#000',
-              fontFamily: 'sans-serif',
-              textShadow: isDarkMode ? 'none' : '1px 1px 2px rgba(0,0,0,0.1)',
-            }}
-          >
-            Sách Giáo Khoa Toán Lớp {userInfo?.gradeId}
-          </Typography>
-          <Typography 
-            variant="h6" 
-            sx={{
-              fontFamily: 'Chương trình giảng dạy',
-              color: isDarkMode ? '#fff' : '#000',
-              mb: 3,
-              fontWeight: 500,
-            }}
-          >
-            Chương trình giảng dạy
-          </Typography>
+    <MainContainer>
+      <StyledContainer maxWidth="xl">
+        <HeaderCard elevation={0}>
+          <TitleSection>
+            <FloatingIcon>
+              <AutoStoriesIcon />
+            </FloatingIcon>
+            <GradientTitle>
+              Sách Giáo Khoa Toán Lớp {userInfo?.gradeId}
+            </GradientTitle>
+            <SubTitle>
+              Chương trình giảng dạy hiện đại
+            </SubTitle>
+          </TitleSection>
 
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            gap: 4, 
-            mb: 3,
-            flexWrap: 'wrap',
-            bgcolor: theme.palette.background.default,
-            p: 2,
-            borderRadius: 2,
-            border: `1px solid ${isDarkMode ? theme.palette.divider : '#e0e0e0'}`,
-          }}>
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1,
-              bgcolor: theme.palette.background.paper,
-              p: 1.5,
-              borderRadius: 2,
-              boxShadow: theme.shadows[1],
-              border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
-            }}>
-              <SchoolIcon sx={{ color: isDarkMode ? '#fff' : '#000' }} />
-              <Typography sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 500 }}>
-                Lớp: {commonInfo.gradeNumber}
-              </Typography>
-            </Box>
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1,
-              bgcolor: theme.palette.background.paper,
-              p: 1.5,
-              borderRadius: 2,
-              boxShadow: theme.shadows[1],
-              border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
-            }}>
-              <MenuBookIcon sx={{ color: isDarkMode ? '#fff' : '#000' }} />
-              <Typography sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 500 }}>
-                Chương trình: {commonInfo.curriculum}
-              </Typography>
-            </Box>
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1,
-              bgcolor: theme.palette.background.paper,
-              p: 1.5,
-              borderRadius: 2,
-              boxShadow: theme.shadows[1],
-              border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
-            }}>
-              <BookIcon sx={{ color: isDarkMode ? '#fff' : '#000' }} />
-              <Typography sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 500 }}>
-                Sách: {commonInfo.book}
-              </Typography>
-            </Box>
-          </Box>
+          <InfoCardsContainer>
+            <InfoCard>
+              <InfoCardContent>
+                <InfoIcon>
+                  <ClassIcon />
+                </InfoIcon>
+                <Box>
+                  <InfoText>Lớp {commonInfo.gradeNumber}</InfoText>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Cấp học
+                  </Typography>
+                </Box>
+              </InfoCardContent>
+            </InfoCard>
+            
+            <InfoCard>
+              <InfoCardContent>
+                <InfoIcon>
+                  <MenuBookIcon />
+                </InfoIcon>
+                <Box>
+                  <InfoText>{commonInfo.curriculum}</InfoText>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Chương trình
+                  </Typography>
+                </Box>
+              </InfoCardContent>
+            </InfoCard>
+            
+            <InfoCard>
+              <InfoCardContent>
+                <InfoIcon>
+                  <BookIcon />
+                </InfoIcon>
+                <Box>
+                  <InfoText>{commonInfo.book}</InfoText>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Sách giáo khoa
+                  </Typography>
+                </Box>
+              </InfoCardContent>
+            </InfoCard>
+          </InfoCardsContainer>
 
-          <Divider sx={{ mb: 3 }} />
+          <Divider sx={{ mb: 3, opacity: 0.3 }} />
 
-          {/* Container for Semester Toggle and Requirements Button */}
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 2,
-          }}>
-            <ToggleButtonGroup
+          <ControlsContainer>
+            <ModernToggleGroup
               value={semester}
               exclusive
               onChange={handleSemesterChange}
               aria-label="semester selection"
-              sx={{
-                '& .MuiToggleButton-root': {
-                  color: isDarkMode ? '#fff' : '#000',
-                  borderColor: isDarkMode ? '#fff' : '#000',
-                  px: 4,
-                  py: 1,
-                  fontWeight: 500,
-                  '&.Mui-selected': {
-                    backgroundColor: isDarkMode ? '#fff' : '#000',
-                    color: isDarkMode ? '#000' : '#fff',
-                    '&:hover': {
-                      backgroundColor: isDarkMode ? '#e0e0e0' : '#333',
-                    },
-                  },
-                  '&:hover': {
-                    backgroundColor: theme.palette.action.hover,
-                  },
-                },
-              }}
             >
               <ToggleButton value="1" aria-label="semester 1">
                 Học kỳ 1
@@ -431,45 +1034,24 @@ const TeacherCurriculumm = () => {
               <ToggleButton value="2" aria-label="semester 2">
                 Học kỳ 2
               </ToggleButton>
-            </ToggleButtonGroup>
+            </ModernToggleGroup>
 
-            <Button 
-              variant="contained"
+            <ActionButton 
               startIcon={<AssignmentIcon />}
-              sx={{
-                bgcolor: isDarkMode ? '#fff' : '#000',
-                color: isDarkMode ? '#000' : '#fff',
-                '&:hover': { 
-                  bgcolor: isDarkMode ? '#e0e0e0' : '#333'
-                },
-              }}
               onClick={handleViewRequirements}
             >
               Xem yêu cầu cần đạt
-            </Button>
-          </Box>
-        </Paper>
+            </ActionButton>
+          </ControlsContainer>
+        </HeaderCard>
 
-        <TableContainer 
-          component={Paper} 
-          sx={{ 
-            boxShadow: theme.shadows[4],
-            borderRadius: 3,
-            overflow: 'hidden',
-            border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
-          }}
-        >
+        <ModernTableContainer component={Paper}>
           <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: isDarkMode ? '#000' : '#fff' }}>
-                <TableCell sx={{ width: '50px' }} />
+            <StyledTableHead>
+              <TableRow>
+                <TableCell sx={{ width: '60px' }} />
                 <TableCell 
-                  sx={{
-                    color: isDarkMode ? '#fff' : '#000',
-                    fontWeight: 'bold',
-                    fontSize: '1rem',
-                    cursor: 'pointer',
-                  }}
+                  sx={{ cursor: 'pointer' }}
                   onClick={() => handleSortClick('moduleId')}
                 >
                   <TableSortLabel
@@ -477,106 +1059,528 @@ const TeacherCurriculumm = () => {
                     direction={sortDir === 0 ? 'asc' : (sortDir === 1 ? 'desc' : undefined)}
                     sx={{
                       '& .MuiTableSortLabel-icon': {
-                        color: isDarkMode ? '#fff' : '#000' + ' !important',
+                        color: '#fff !important',
                       },
                     }}
                   >
                     Chủ đề
                   </TableSortLabel>
                 </TableCell>
-                <TableCell sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 'bold', fontSize: '1rem' }}>Mô tả</TableCell>
-                <TableCell sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 'bold', fontSize: '1rem' }}>Tổng số tiết</TableCell>
+                <TableCell>Mô tả</TableCell>
+                <TableCell>Tổng số tiết</TableCell>
               </TableRow>
-            </TableHead>
+            </StyledTableHead>
             <TableBody>
-              {filteredModules.map((module) => (
+              {filteredModules.map((module, index) => (
                 <React.Fragment key={module.moduleId}>
-                  <TableRow 
-                    hover 
+                  <StyledTableRow 
                     onClick={() => toggleRow(module.moduleId)}
+                    isExpanded={expandedRows[module.moduleId]}
                     sx={{
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: theme.palette.action.hover },
-                      bgcolor: expandedRows[module.moduleId] ? theme.palette.action.selected : theme.palette.background.paper,
-                      transition: 'background-color 0.2s',
-                      borderBottom: `1px solid ${isDarkMode ? theme.palette.divider : '#e0e0e0'}`,
+                      animation: `${slideInUp} ${0.8 + index * 0.1}s ease-out`,
                     }}
                   >
                     <TableCell>
-                      <IconButton size="small" sx={{ color: isDarkMode ? '#fff' : '#000' }}>
-                        {expandedRows[module.moduleId] ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                      </IconButton>
+                      <ExpandButton 
+                        size="small" 
+                        isExpanded={expandedRows[module.moduleId]}
+                      >
+                        <KeyboardArrowDownIcon />
+                      </ExpandButton>
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: isDarkMode ? '#fff' : '#000' }}>
+                    <TableCell sx={{ fontWeight: 700 }}>
                       Chủ đề {module.moduleId}: {module.name}
                     </TableCell>
-                    <TableCell sx={{ color: isDarkMode ? '#fff' : '#000' }}>{module.desciption}</TableCell>
-                    <TableCell sx={{ fontWeight: 500, color: isDarkMode ? '#fff' : '#000' }}>{module.totalPeriods}</TableCell>
-                  </TableRow>
+                    <TableCell>{module.desciption}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{module.totalPeriods}</TableCell>
+                  </StyledTableRow>
                   <TableRow>
                     <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
                       <Collapse in={expandedRows[module.moduleId]} timeout="auto" unmountOnExit>
-                        <Box sx={{ 
-                          margin: 2,
-                          p: 2,
-                          bgcolor: theme.palette.action.hover,
-                          borderRadius: 2,
-                          border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'flex-start',
-                        }}>
+                        <CollapsibleContent>
                           {lessonLoading[module.moduleId] ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                              <LinearProgress sx={{ width: '100%' }} />
+                              <LinearProgress 
+                                sx={{ 
+                                  width: '100%', 
+                                  borderRadius: '4px',
+                                  '& .MuiLinearProgress-bar': {
+                                    background: 'linear-gradient(90deg, #2196F3, #21CBF3)',
+                                  }
+                                }} 
+                              />
                             </Box>
                           ) : lessonError[module.moduleId] ? (
-                            <Alert severity="error">{lessonError[module.moduleId]}</Alert>
+                            <StyledAlert severity="error">{lessonError[module.moduleId]}</StyledAlert>
                           ) : lessons[module.moduleId] && lessons[module.moduleId].length > 0 ? (
                             <Box sx={{ width: '100%' }}>
-                              <Typography variant="subtitle1" sx={{ 
-                                fontWeight: 'bold', 
-                                mb: 1,
-                                color: isDarkMode ? '#fff' : '#000',
+                              <Typography variant="h6" sx={{ 
+                                fontWeight: 700, 
+                                mb: 3,
+                                color: theme.palette.mode === 'dark' ? '#fff' : '#1976d2',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
                               }}>
-                                Danh sách bài học:
+                                <BookmarkIcon />
+                                Danh sách bài học
                               </Typography>
-                              <Table size="small" sx={{ mb: 2 }}>
-                                <TableBody>
-                                  {lessons[module.moduleId].map((lesson) => (
-                                    <TableRow key={lesson.lessonId}>
-                                      <TableCell sx={{ fontWeight: 500, color: isDarkMode ? '#fff' : '#000', borderBottom: 'none' }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                          <SubjectIcon sx={{ color: isDarkMode ? '#fff' : '#000' }} />
-                                          {lesson.name}
-                                        </Box>
-                                      </TableCell>
-                                      <TableCell sx={{ color: isDarkMode ? '#fff' : '#000', borderBottom: 'none' }}>
-                                        Tổng số tiết: <Box component="span" sx={{ color: isDarkMode ? '#fff' : '#000', fontWeight: 'normal' }}>{lesson.totalPeriods}</Box>
-                                      </TableCell>
-                                      <TableCell sx={{ borderBottom: 'none' }}>
-                                        <IconButton 
-                                          size="small" 
+                              {lessons[module.moduleId].map((lesson, lessonIndex) => {
+                                const lessonKey = `${module.moduleId}-${lesson.lessonId}`;
+                                const isExpanded = expandedLessons[lessonKey];
+                                const details = lessonDetails[lessonKey];
+                                const isLoadingDetails = loadingLessonDetails[lessonKey];
+                                const detailsError = lessonDetailsError[lessonKey];
+                                
+                                return (
+                                  <React.Fragment key={lesson.lessonId}>
+                                    <LessonCard 
+                                      sx={{
+                                        animation: `${fadeIn} ${0.5 + lessonIndex * 0.1}s ease-out`,
+                                        cursor: 'pointer',
+                                      }}
+                                      onClick={() => handleViewLesson(lesson.lessonId, module.moduleId)}
+                                    >
+                                      <LessonInfo>
+                                        <LessonIcon>
+                                          <SubjectIcon />
+                                        </LessonIcon>
+                                        <LessonText>
+                                          <LessonTitle>
+                                            {lesson.name}
+                                          </LessonTitle>
+                                          <LessonSubtext>
+                                            Tổng số tiết: {lesson.totalPeriods}
+                                          </LessonSubtext>
+                                        </LessonText>
+                                      </LessonInfo>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Chip 
+                                          label={isExpanded ? 'Thu gọn' : 'Xem chi tiết'}
+                                          size="small"
+                                          sx={{
+                                            background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+                                            color: '#fff',
+                                            fontWeight: 600,
+                                          }}
+                                        />
+                                        <ExpandButton 
+                                          size="small"
+                                          isExpanded={isExpanded}
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            handleViewLesson(lesson.lessonId);
+                                            handleViewLesson(lesson.lessonId, module.moduleId);
                                           }}
-                                          sx={{ color: isDarkMode ? '#fff' : '#000' }}
                                         >
-                                          <VisibilityIcon />
-                                        </IconButton>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
+                                          <KeyboardArrowDownIcon />
+                                        </ExpandButton>
+                                      </Box>
+                                    </LessonCard>
+                                    
+                                    {/* Lesson Details Collapse */}
+                                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                                      <Box sx={{ 
+                                        ml: 4, 
+                                        mr: 2, 
+                                        mb: 2, 
+                                        p: 3, 
+                                        background: theme.palette.mode === 'dark'
+                                          ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)'
+                                          : 'linear-gradient(135deg, rgba(33, 150, 243, 0.02) 0%, rgba(33, 150, 243, 0.01) 100%)',
+                                        borderRadius: '16px',
+                                        border: theme.palette.mode === 'dark'
+                                          ? '1px solid rgba(255, 255, 255, 0.05)'
+                                          : '1px solid rgba(33, 150, 243, 0.1)',
+                                        backdropFilter: 'blur(10px)',
+                                        animation: `${fadeIn} 0.5s ease-out`,
+                                      }}>
+                                        {isLoadingDetails ? (
+                                          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                                            <LoadingSpinner size={40} />
+                                          </Box>
+                                        ) : detailsError ? (
+                                          <StyledAlert severity="error" sx={{ mt: 2 }}>
+                                            {detailsError}
+                                          </StyledAlert>
+                                        ) : details ? (
+                                          <Box>
+                                            <Box sx={{ mb: 3 }}>
+                                              <Typography variant="h5" sx={{ 
+                                                fontWeight: 'bold', 
+                                                color: theme.palette.mode === 'dark' ? '#fff' : '#1976d2',
+                                                mb: 1 
+                                              }}>
+                                                {details.name} 
+                                              </Typography>
+                                              <Typography variant="body1" sx={{ 
+                                                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(25, 118, 210, 0.8)',
+                                                mb: 2
+                                              }}>
+                                                {details.description}
+                                              </Typography>
+                                            </Box>
+
+                                            <Grid container spacing={2} sx={{ mb: 3 }}>
+                                              <Grid item xs={12}>
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                                  <Chip
+                                                    icon={<ScheduleIcon />}
+                                                    label={`Số tiết: ${details.totalPeriods}`}
+                                                    sx={{
+                                                      background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+                                                      color: '#fff',
+                                                      fontWeight: 600,
+                                                      '& .MuiChip-icon': { color: '#fff' }
+                                                    }}
+                                                  />
+                                                  {details.lessonType && (
+                                                    <Chip
+                                                      icon={<MenuBookIcon />} 
+                                                      label={`Loại: ${details.lessonType}`}
+                                                      sx={{
+                                                        background: 'linear-gradient(135deg, #9C27B0 0%, #E1BEE7 100%)',
+                                                        color: '#fff',
+                                                        fontWeight: 600,
+                                                        '& .MuiChip-icon': { color: '#fff' }
+                                                      }}
+                                                    />
+                                                  )}
+                                                  {details.gradeNumber && (
+                                                    <Chip
+                                                      icon={<ClassIcon />} 
+                                                      label={`Khối: ${details.gradeNumber}`}
+                                                      sx={{
+                                                        background: 'linear-gradient(135deg, #4CAF50 0%, #81C784 100%)',
+                                                        color: '#fff',
+                                                        fontWeight: 600,
+                                                        '& .MuiChip-icon': { color: '#fff' }
+                                                      }}
+                                                    />
+                                                  )}
+                                                  {details.module && (
+                                                    <Chip
+                                                      icon={<BookIcon />} 
+                                                      label={`Chủ đề: ${details.module}`}
+                                                      sx={{
+                                                        background: 'linear-gradient(135deg, #FF9800 0%, #FFB74D 100%)',
+                                                        color: '#fff',
+                                                        fontWeight: 600,
+                                                        '& .MuiChip-icon': { color: '#fff' }
+                                                      }}
+                                                    />
+                                                  )}
+                                                </Box>
+                                              </Grid>
+                                            </Grid>
+
+                                            {/* Năng lực đặc biệt */}
+                                            {details.specialAbility && (
+                                              <DetailCard sx={{ mt: 3, borderLeft: `4px solid #1976d2` }}>
+                                                <Typography variant="h6" sx={{ 
+                                                  color: '#1976d2',
+                                                  mb: 2,
+                                                  fontWeight: 600,
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  gap: 1
+                                                }}>
+                                                  🎯 Năng lực đặc biệt
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ 
+                                                  color: theme.palette.text.primary,
+                                                  lineHeight: 1.6,
+                                                  whiteSpace: 'pre-line'
+                                                }}>
+                                                  {details.specialAbility}
+                                                </Typography>
+                                              </DetailCard>
+                                            )}
+
+                                            {/* Năng lực chung */}
+                                            {details.generalCapacity && (
+                                              <DetailCard sx={{ mt: 3, borderLeft: `4px solid #9c27b0` }}>
+                                                <Typography variant="h6" sx={{ 
+                                                  color: '#9c27b0',
+                                                  mb: 2,
+                                                  fontWeight: 600,
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  gap: 1
+                                                }}>
+                                                  🧠 Năng lực chung
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ 
+                                                  color: theme.palette.text.primary,
+                                                  lineHeight: 1.6,
+                                                  whiteSpace: 'pre-line'
+                                                }}>
+                                                  {details.generalCapacity}
+                                                </Typography>
+                                              </DetailCard>
+                                            )}
+
+                                            {/* Phẩm chất */}
+                                            {details.quality && (
+                                              <DetailCard sx={{ mt: 3, borderLeft: `4px solid #2e7d32` }}>
+                                                <Typography variant="h6" sx={{ 
+                                                  color: '#2e7d32',
+                                                  mb: 2,
+                                                  fontWeight: 600,
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  gap: 1
+                                                }}>
+                                                  ⭐ Phẩm chất
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ 
+                                                  color: theme.palette.text.primary,
+                                                  lineHeight: 1.6,
+                                                  whiteSpace: 'pre-line'
+                                                }}>
+                                                  {details.quality}
+                                                </Typography>
+                                              </DetailCard>
+                                            )}
+
+                                            {/* Đồ dùng dạy học */}
+                                            {details.schoolSupply && (
+                                              <DetailCard sx={{ mt: 3, borderLeft: `4px solid #ed6c02` }}>
+                                                <Typography variant="h6" sx={{ 
+                                                  color: '#ed6c02',
+                                                  mb: 2,
+                                                  fontWeight: 600,
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  gap: 1
+                                                }}>
+                                                  📚 Đồ dùng dạy học
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ 
+                                                  color: theme.palette.text.primary,
+                                                  lineHeight: 1.6
+                                                }}>
+                                                  {details.schoolSupply}
+                                                </Typography>
+                                              </DetailCard>
+                                            )}
+
+                                            {/* Các hoạt động dạy học */}
+                                            {(details.startUp || details.knowLedge || details.practice || details.apply) && (
+                                              <>
+                                                <Typography variant="h6" sx={{ 
+                                                  color: theme.palette.text.primary,
+                                                  mt: 4,
+                                                  mb: 2,
+                                                  fontWeight: 600
+                                                }}>
+                                                  📋 Các hoạt động dạy học
+                                                </Typography>
+
+                                                {/* Khởi động */}
+                                                {details.startUp && (
+                                                  <DetailCard sx={{ mt: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                      <Typography variant="h6" sx={{ 
+                                                        color: '#2196F3',
+                                                        fontWeight: 600,
+                                                        mr: 2
+                                                      }}>
+                                                        🚀 Hoạt động Khởi động
+                                                      </Typography>
+                                                      <Chip 
+                                                        label={`${details.startUp.duration} phút`}
+                                                        size="small"
+                                                        sx={{ 
+                                                          bgcolor: 'rgba(33, 150, 243, 0.1)', 
+                                                          color: '#2196F3',
+                                                          fontWeight: 600
+                                                        }}
+                                                      />
+                                                    </Box>
+                                                    
+                                                    <DetailLabel>Mục tiêu:</DetailLabel>
+                                                    <DetailValue sx={{ mb: 2 }}>
+                                                      {details.startUp.goal}
+                                                    </DetailValue>
+
+                                                    <Grid container spacing={2}>
+                                                      <Grid item xs={12} md={6}>
+                                                        <DetailLabel>Hoạt động của giáo viên:</DetailLabel>
+                                                        <DetailValue sx={{ whiteSpace: 'pre-line' }}>
+                                                          {details.startUp.teacherActivities}
+                                                        </DetailValue>
+                                                      </Grid>
+                                                      <Grid item xs={12} md={6}>
+                                                        <DetailLabel>Hoạt động của học sinh:</DetailLabel>
+                                                        <DetailValue sx={{ whiteSpace: 'pre-line' }}>
+                                                          {details.startUp.studentActivities}
+                                                        </DetailValue>
+                                                      </Grid>
+                                                    </Grid>
+                                                  </DetailCard>
+                                                )}
+
+                                                {/* Hình thành kiến thức */}
+                                                {details.knowLedge && (
+                                                  <DetailCard sx={{ mt: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                      <Typography variant="h6" sx={{ 
+                                                        color: '#1976d2',
+                                                        fontWeight: 600,
+                                                        mr: 2
+                                                      }}>
+                                                        📚 Hoạt động Hình thành kiến thức
+                                                      </Typography>
+                                                      <Chip 
+                                                        label={`${details.knowLedge.duration} phút`}
+                                                        size="small"
+                                                        sx={{ 
+                                                          bgcolor: 'rgba(25, 118, 210, 0.1)', 
+                                                          color: '#1976d2',
+                                                          fontWeight: 600
+                                                        }}
+                                                      />
+                                                    </Box>
+                                                    
+                                                    <DetailLabel>Mục tiêu:</DetailLabel>
+                                                    <DetailValue sx={{ mb: 2 }}>
+                                                      {details.knowLedge.goal}
+                                                    </DetailValue>
+
+                                                    <Grid container spacing={2}>
+                                                      <Grid item xs={12} md={6}>
+                                                        <DetailLabel>Hoạt động của giáo viên:</DetailLabel>
+                                                        <DetailValue sx={{ whiteSpace: 'pre-line' }}>
+                                                          {details.knowLedge.teacherActivities}
+                                                        </DetailValue>
+                                                      </Grid>
+                                                      <Grid item xs={12} md={6}>
+                                                        <DetailLabel>Hoạt động của học sinh:</DetailLabel>
+                                                        <DetailValue sx={{ whiteSpace: 'pre-line' }}>
+                                                          {details.knowLedge.studentActivities}
+                                                        </DetailValue>
+                                                      </Grid>
+                                                    </Grid>
+                                                  </DetailCard>
+                                                )}
+
+                                                {/* Luyện tập */}
+                                                {details.practice && (
+                                                  <DetailCard sx={{ mt: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                      <Typography variant="h6" sx={{ 
+                                                        color: '#9c27b0',
+                                                        fontWeight: 600,
+                                                        mr: 2
+                                                      }}>
+                                                        💪 Hoạt động Luyện tập
+                                                      </Typography>
+                                                      <Chip 
+                                                        label={`${details.practice.duration} phút`}
+                                                        size="small"
+                                                        sx={{ 
+                                                          bgcolor: 'rgba(156, 39, 176, 0.1)', 
+                                                          color: '#9c27b0',
+                                                          fontWeight: 600
+                                                        }}
+                                                      />
+                                                    </Box>
+                                                    
+                                                    <DetailLabel>Mục tiêu:</DetailLabel>
+                                                    <DetailValue sx={{ mb: 2 }}>
+                                                      {details.practice.goal}
+                                                    </DetailValue>
+
+                                                    <Grid container spacing={2}>
+                                                      <Grid item xs={12} md={6}>
+                                                        <DetailLabel>Hoạt động của giáo viên:</DetailLabel>
+                                                        <DetailValue sx={{ whiteSpace: 'pre-line' }}>
+                                                          {details.practice.teacherActivities}
+                                                        </DetailValue>
+                                                      </Grid>
+                                                      <Grid item xs={12} md={6}>
+                                                        <DetailLabel>Hoạt động của học sinh:</DetailLabel>
+                                                        <DetailValue sx={{ whiteSpace: 'pre-line' }}>
+                                                          {details.practice.studentActivities}
+                                                        </DetailValue>
+                                                      </Grid>
+                                                    </Grid>
+                                                  </DetailCard>
+                                                )}
+
+                                                {/* Vận dụng */}
+                                                {details.apply && (
+                                                  <DetailCard sx={{ mt: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                      <Typography variant="h6" sx={{ 
+                                                        color: '#2e7d32',
+                                                        fontWeight: 600,
+                                                        mr: 2
+                                                      }}>
+                                                        🎯 Hoạt động Vận dụng
+                                                      </Typography>
+                                                      <Chip 
+                                                        label={`${details.apply.duration} phút`}
+                                                        size="small"
+                                                        sx={{ 
+                                                          bgcolor: 'rgba(46, 125, 50, 0.1)', 
+                                                          color: '#2e7d32',
+                                                          fontWeight: 600
+                                                        }}
+                                                      />
+                                                    </Box>
+                                                    
+                                                    <DetailLabel>Mục tiêu:</DetailLabel>
+                                                    <DetailValue sx={{ mb: 2 }}>
+                                                      {details.apply.goal}
+                                                    </DetailValue>
+
+                                                    <Grid container spacing={2}>
+                                                      <Grid item xs={12} md={6}>
+                                                        <DetailLabel>Hoạt động của giáo viên:</DetailLabel>
+                                                        <DetailValue sx={{ whiteSpace: 'pre-line' }}>
+                                                          {details.apply.teacherActivities}
+                                                        </DetailValue>
+                                                      </Grid>
+                                                      <Grid item xs={12} md={6}>
+                                                        <DetailLabel>Hoạt động của học sinh:</DetailLabel>
+                                                        <DetailValue sx={{ whiteSpace: 'pre-line' }}>
+                                                          {details.apply.studentActivities}
+                                                        </DetailValue>
+                                                      </Grid>
+                                                    </Grid>
+                                                  </DetailCard>
+                                                )}
+                                              </>
+                                            )}
+                                          </Box>
+                                        ) : (
+                                          <Typography variant="body2" sx={{ 
+                                            color: theme.palette.text.secondary,
+                                            textAlign: 'center',
+                                            fontStyle: 'italic',
+                                            py: 2,
+                                          }}>
+                                            Không có thông tin chi tiết cho bài học này.
+                                          </Typography>
+                                        )}
+                                      </Box>
+                                    </Collapse>
+                                  </React.Fragment>
+                                );
+                              })}
                             </Box>
                           ) : (
-                            <Typography variant="body2" sx={{ color: isDarkMode ? '#fff' : '#000', mb: 2 }}>
+                            <Typography variant="body1" sx={{ 
+                              color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(25, 118, 210, 0.7)',
+                              textAlign: 'center',
+                              fontStyle: 'italic',
+                              py: 2,
+                            }}>
                               Không có bài học nào cho chủ đề này.
                             </Typography>
                           )}
-                        </Box>
+                        </CollapsibleContent>
                       </Collapse>
                     </TableCell>
                   </TableRow>
@@ -584,110 +1588,100 @@ const TeacherCurriculumm = () => {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </ModernTableContainer>
 
         {filteredModules.length === 0 && (
-          <Paper
-            elevation={0}
-            sx={{
-              p: 4,
-              textAlign: 'center',
-              bgcolor: theme.palette.background.paper,
-              borderRadius: 3,
-              border: `1px solid ${isDarkMode ? theme.palette.divider : '#d0d0d0'}`,
-              mt: 2,
-              boxShadow: theme.shadows[3],
-            }}
-          >
-            <Typography 
-              variant="h6" 
-              sx={{
-                fontFamily: 'Times New Roman, serif',
-                color: isDarkMode ? '#fff' : '#000',
-                fontWeight: 500,
-              }}
-            >
-              Không tìm thấy chủ đề nào cho học kỳ {semester}.
+          <EmptyStateContainer elevation={0}>
+            <FloatingIcon sx={{ mb: 2 }}>
+              <SearchIcon />
+            </FloatingIcon>
+            <EmptyStateText>
+              Không tìm thấy chủ đề nào cho học kỳ {semester}
+            </EmptyStateText>
+            <Typography variant="body1" sx={{ 
+              color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(25, 118, 210, 0.7)',
+              fontStyle: 'italic'
+            }}>
+              Vui lòng thử chọn học kỳ khác hoặc kiểm tra lại dữ liệu.
             </Typography>
-          </Paper>
+          </EmptyStateContainer>
         )}
 
-        <Dialog 
+        <ModernDialog 
           open={selectedLesson !== null} 
           onClose={handleCloseLessonDetails}
-          maxWidth="md"
+          maxWidth="lg"
           fullWidth
         >
-          <DialogTitle sx={{ 
-            bgcolor: isDarkMode ? '#000' : '#fff',
-            color: isDarkMode ? '#fff' : '#000',
-            fontWeight: 'bold'
-          }}>
+          <DialogTitleStyled>
             Chi tiết bài học
-          </DialogTitle>
-          <DialogContent sx={{ mt: 2 }}>
+          </DialogTitleStyled>
+          <DialogContent sx={{ p: 4 }}>
             {loadingLessonDetails ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                <CircularProgress />
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <LoadingSpinner size={60} />
               </Box>
             ) : lessonDetailsError ? (
-              <Alert severity="error" sx={{ mt: 2 }}>{lessonDetailsError}</Alert>
+              <StyledAlert severity="error" sx={{ mt: 2 }}>
+                {lessonDetailsError}
+              </StyledAlert>
             ) : lessonDetails ? (
-              <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid container spacing={3} sx={{ mt: 1 }}>
                 <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ color: isDarkMode ? '#fff' : '#000', mb: 2 }}>
+                  <GradientTitle variant="h5" sx={{ 
+                    textAlign: 'left',
+                    fontSize: '1.5rem',
+                    mb: 3,
+                  }}>
                     {lessonDetails.name}
-                  </Typography>
+                  </GradientTitle>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
-                    <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#fff' : '#000' }}>Mô tả</Typography>
-                    <Typography sx={{ color: isDarkMode ? '#fff' : '#000' }}>{lessonDetails.description}</Typography>
-                  </Paper>
+                  <DetailCard>
+                    <DetailLabel>Mô tả bài học</DetailLabel>
+                    <DetailValue>{lessonDetails.description}</DetailValue>
+                  </DetailCard>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
-                    <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#fff' : '#000' }}>Loại bài học</Typography>
-                    <Typography sx={{ color: isDarkMode ? '#fff' : '#000' }}>{lessonDetails.lessonType}</Typography>
-                  </Paper>
+                  <DetailCard>
+                    <DetailLabel>Loại bài học</DetailLabel>
+                    <DetailValue>{lessonDetails.lessonType}</DetailValue>
+                  </DetailCard>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
-                    <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#fff' : '#000' }}>Tổng số tiết</Typography>
-                    <Typography sx={{ color: isDarkMode ? '#fff' : '#000' }}>{lessonDetails.totalPeriods}</Typography>
-                  </Paper>
+                  <DetailCard>
+                    <DetailLabel>Tổng số tiết</DetailLabel>
+                    <DetailValue>{lessonDetails.totalPeriods} tiết</DetailValue>
+                  </DetailCard>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
-                    <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#fff' : '#000' }}>Chủ đề</Typography>
-                    <Typography sx={{ color: isDarkMode ? '#fff' : '#000' }}>{lessonDetails.module}</Typography>
-                  </Paper>
+                  <DetailCard>
+                    <DetailLabel>Chủ đề</DetailLabel>
+                    <DetailValue>{lessonDetails.module}</DetailValue>
+                  </DetailCard>
                 </Grid>
                 <Grid item xs={12}>
-                  <Paper sx={{ p: 2, bgcolor: theme.palette.background.default }}>
-                    <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#fff' : '#000' }}>Ghi chú</Typography>
-                    <Typography sx={{ color: isDarkMode ? '#fff' : '#000' }}>{lessonDetails.note}</Typography>
-                  </Paper>
+                  <DetailCard>
+                    <DetailLabel>Ghi chú bổ sung</DetailLabel>
+                    <DetailValue>
+                      {lessonDetails.note || 'Không có ghi chú bổ sung'}
+                    </DetailValue>
+                  </DetailCard>
                 </Grid>
               </Grid>
             ) : null}
           </DialogContent>
-          <DialogActions>
-            <Button 
-              onClick={handleCloseLessonDetails} 
-              sx={{ 
-                color: isDarkMode ? '#fff' : '#000',
-                '&:hover': {
-                  backgroundColor: theme.palette.action.hover,
-                }
-              }}
+          <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
+            <ActionButton 
+              onClick={handleCloseLessonDetails}
+              sx={{ minWidth: 120 }}
             >
               Đóng
-            </Button>
+            </ActionButton>
           </DialogActions>
-        </Dialog>
-      </Container>
-    </Box>
+        </ModernDialog>
+      </StyledContainer>
+    </MainContainer>
   );
 };
 
