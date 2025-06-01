@@ -676,27 +676,27 @@ const ApprovedLessonDetail = () => {
       <StyledContainer maxWidth="lg">
         <Fade in timeout={800}>
           <BackButton
-            startIcon={<ArrowBack />}
-            onClick={() => navigate(-1)}
+          startIcon={<ArrowBack />}
+          onClick={() => navigate(-1)}
             isDarkMode={isDarkMode}
-          >
-            Quay lại danh sách
+        >
+          Quay lại danh sách
           </BackButton>
         </Fade>
 
         <Zoom in timeout={1000}>
           <HeaderCard elevation={0} isDarkMode={isDarkMode}>
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              justifyContent="space-between" 
-              alignItems={{ xs: 'flex-start', sm: 'center' }}
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          justifyContent="space-between" 
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
               spacing={3}
-            >
+        >
               <Stack direction="row" alignItems="center" spacing={2} mb={{ xs: 2, sm: 0 }}> 
                 <Verified sx={{ color: '#4CAF50', fontSize: '2.5rem' }} />
                 <Box>
                   <MainTitle isDarkMode={isDarkMode}>
-                    Chi Tiết Giáo án Đã Chấp Nhận
+              Chi Tiết Giáo án Đã Chấp Nhận
                   </MainTitle>
                   <StatusChip
                     icon={<CheckCircle />}
@@ -704,66 +704,66 @@ const ApprovedLessonDetail = () => {
                     isDarkMode={isDarkMode}
                   />
                 </Box>
-              </Stack>
-              <Stack direction="row" spacing={2}>
-                <Tooltip title="Xuất ra file Word (.docx)">
-                  <span>
+          </Stack>
+          <Stack direction="row" spacing={2}>
+            <Tooltip title="Xuất ra file Word (.docx)">
+              <span>
                     <PrimaryActionButton 
-                      startIcon={isExporting ? <CircularProgress size={20} color="inherit"/> : <Download />}
-                      onClick={handleExportToWord}
-                      disabled={!lessonDetail || isExporting}
-                    >
-                      {isExporting ? 'Đang xuất...' : 'Xuất ra Word'}
+                  startIcon={isExporting ? <CircularProgress size={20} color="inherit"/> : <Download />}
+                  onClick={handleExportToWord}
+                  disabled={!lessonDetail || isExporting}
+                >
+                  {isExporting ? 'Đang xuất...' : 'Xuất ra Word'}
                     </PrimaryActionButton>
-                  </span>
-                </Tooltip>
-                <Tooltip title="Đăng Giáo án">
-                  <span>
+              </span>
+            </Tooltip>
+            <Tooltip title="Đăng Giáo án">
+              <span>
                     <SecondaryActionButton 
-                      startIcon={<AddIcon />}
-                      onClick={() => navigate('/Đăng-Giáo-án', { state: { lessonData: lessonDetail } })}
-                    >
-                      Đăng Giáo án
+                  startIcon={<AddIcon />}
+                  onClick={() => navigate('/Đăng-Giáo-án', { state: { lessonData: lessonDetail } })}
+                >
+                  Đăng Giáo án
                     </SecondaryActionButton>
-                  </span>
-                </Tooltip>
-              </Stack>
-            </Stack>
+              </span>
+            </Tooltip>
+          </Stack>
+        </Stack>
           </HeaderCard>
         </Zoom>
 
         <Zoom in timeout={1200}>
           <DetailCard elevation={0} isDarkMode={isDarkMode}>
-            {loading ? (
-              renderSkeletonDetails()
-            ) : error ? (
+          {loading ? (
+            renderSkeletonDetails()
+          ) : error ? (
               <Alert severity="error" sx={{ my: 2, borderRadius: '12px', fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}>
                 {`Lỗi tải chi tiết: ${error}`}
               </Alert>
-            ) : lessonDetail ? (
+          ) : lessonDetail ? (
               <Box>
                 <TitleSection>
-                  <Stack 
-                    direction={{ xs: 'column', md: 'row' }} 
-                    alignItems={{ xs: 'flex-start', md: 'center' }} 
+              <Stack 
+                direction={{ xs: 'column', md: 'row' }} 
+                alignItems={{ xs: 'flex-start', md: 'center' }} 
                     spacing={2} 
                     mb={3}
-                  > 
-                    <Box flexGrow={1}>
+              > 
+                <Box flexGrow={1}>
                       <MainTitle isDarkMode={isDarkMode}>
                         <Verified sx={{ fontSize: '2rem', verticalAlign: 'middle', mr: 1, color: '#4CAF50' }} />
-                        {lessonDetail.lesson || 'Chi Tiết Giáo án Đã Chấp Nhận'}
+                    {lessonDetail.lesson || 'Chi Tiết Giáo án Đã Chấp Nhận'}
                       </MainTitle>
                       <StatusChip
                         icon={<CheckCircle />}
                         label="Đã chấp nhận"
                         isDarkMode={isDarkMode}
                       />
-                    </Box>
-                  </Stack>
-                  
+                </Box>
+              </Stack>
+              
                   <InfoGrid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={6}>
                       <InfoCard isDarkMode={isDarkMode}>
                         <Typography variant="body2" sx={{ 
                           color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
@@ -781,8 +781,8 @@ const ApprovedLessonDetail = () => {
                           {lessonDetail.module || 'N/A'}
                         </Typography>
                       </InfoCard>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
+                </Grid>
+                <Grid item xs={12} md={6}>
                       <InfoCard isDarkMode={isDarkMode}>
                         <Typography variant="body2" sx={{ 
                           color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
@@ -800,7 +800,7 @@ const ApprovedLessonDetail = () => {
                           {formatDate(lessonDetail.createdAt)}
                         </Typography>
                       </InfoCard>
-                    </Grid>
+                </Grid>
                   </InfoGrid>
                 </TitleSection>
                 
@@ -812,12 +812,12 @@ const ApprovedLessonDetail = () => {
                 {renderDetailSection("Hoạt động Hình thành Kiến thức", lessonDetail.knowledge, <Typography sx={{fontWeight: 'bold', color: '#4CAF50', fontSize: '1.8rem'}}>2.</Typography>)}
                 {renderDetailSection("Hoạt động Luyện tập", lessonDetail.practice, <Typography sx={{fontWeight: 'bold', color: '#4CAF50', fontSize: '1.8rem'}}>3.</Typography>)}
                 {renderDetailSection("Hoạt động Vận dụng", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: '#4CAF50', fontSize: '1.8rem'}}>4.</Typography>)}
-              </Box>
-            ) : (
+            </Box>
+          ) : (
                <Alert severity="warning" sx={{ borderRadius: '12px', fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}>
                  Không tìm thấy chi tiết giáo án.
                </Alert>
-            )}
+          )}
           </DetailCard>
         </Zoom>
       </StyledContainer>

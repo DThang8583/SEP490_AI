@@ -742,11 +742,11 @@ const BlogLessonDetail = () => {
       <StyledContainer maxWidth="lg">
         <Fade in timeout={800}>
           <BackButton
-            startIcon={<ArrowBack />}
-            onClick={() => navigate(-1)}
+          startIcon={<ArrowBack />}
+          onClick={() => navigate(-1)}
             isDarkMode={isDarkMode}
-          >
-            Quay lại
+        >
+          Quay lại
           </BackButton>
         </Fade>
 
@@ -754,13 +754,13 @@ const BlogLessonDetail = () => {
           <MainCard elevation={0} isDarkMode={isDarkMode}>
             <Stack spacing={5}>
               {/* Header Section */}
-              <Box>
+            <Box>
                 <Stack direction="row" alignItems="center" spacing={2} mb={3}>
                   <ArticleIcon sx={{ fontSize: 40, color: '#2196F3' }} />
                   <MainTitle variant="h4" component="h1" isDarkMode={isDarkMode}>
-                    {blogDetails?.title}
+                  {blogDetails?.title}
                   </MainTitle>
-                </Stack>
+              </Stack>
                 <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
                   <Typography 
                     variant="body2" 
@@ -773,9 +773,9 @@ const BlogLessonDetail = () => {
                     }}
                   >
                     <EventIcon sx={{ fontSize: 16 }} />
-                    {blogDetails?.publicationDate}
-                  </Typography>
-                  {blogDetails && (
+                  {blogDetails?.publicationDate}
+                </Typography>
+              {blogDetails && (
                     <>
                       <Typography 
                         variant="body2" 
@@ -785,7 +785,7 @@ const BlogLessonDetail = () => {
                         }}
                       >
                         Tác giả: {blogDetails.name}
-                      </Typography>
+                  </Typography>
                       <Chip 
                         label={blogDetails.category}
                         size="small"
@@ -799,58 +799,58 @@ const BlogLessonDetail = () => {
                     </>
                   )}
                 </Stack>
-              </Box>
+            </Box>
 
               <Divider sx={{ borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(33, 150, 243, 0.2)' }} />
 
               {/* Main Content */}
-              <Grid container spacing={4}>
-                <Grid item xs={12} md={8}>
+            <Grid container spacing={4}>
+              <Grid item xs={12} md={8}>
                   <Stack spacing={5}>
                     {/* Blog Content */}
                     <Fade in timeout={1200}>
-                      <Box>
+                  <Box>
                         <SectionTitle isDarkMode={isDarkMode}>
                           <Description />
-                          Nội dung bài viết
+                      Nội dung bài viết
                         </SectionTitle>
                         {blogDetails?.body?.split('\n').map((line, index) => (
                           <ContentText key={index} isDarkMode={isDarkMode}>
                             {line}
                           </ContentText>
                         ))}
-                      </Box>
+                  </Box>
                     </Fade>
 
                     {/* Lesson Plan Details */}
-                    {lesson && (
+                  {lesson && (
                       <Fade in timeout={1400}>
-                        <Stack spacing={4}>
+                    <Stack spacing={4}>
                           {/* Goal Section */}
-                          <Box>
+                      <Box>
                             <SectionTitle isDarkMode={isDarkMode}>
                               <Assignment />
-                              Mục tiêu
+                            Mục tiêu
                             </SectionTitle>
                             {lesson?.goal?.split('\n').map((line, index) => (
                               <ContentText key={index} isDarkMode={isDarkMode}>
                                 {line}
                               </ContentText>
                             ))}
-                          </Box>
+                      </Box>
 
                           {/* School Supply Section */}
-                          <Box>
+                      <Box>
                             <SectionTitle isDarkMode={isDarkMode}>
                               <Description />
-                              Giáo viên chuẩn bị
+                            Giáo viên chuẩn bị
                             </SectionTitle>
                             {lesson?.schoolSupply?.split('\n').map((line, index) => (
                               <ContentText key={index} isDarkMode={isDarkMode}>
                                 {line}
                               </ContentText>
                             ))}
-                          </Box>
+                      </Box>
 
                           {/* Activity Sections */}
                           {[
@@ -868,84 +868,84 @@ const BlogLessonDetail = () => {
                                   {line}
                                 </ContentText>
                               ))}
-                            </Box>
+                      </Box>
                           ))}
-                        </Stack>
+                    </Stack>
                       </Fade>
-                    )}
+                  )}
 
-                    {/* Comments Section */}
+                  {/* Comments Section */}
                     <Fade in timeout={1600}>
-                      <Box>
+                  <Box>
                         <SectionTitle isDarkMode={isDarkMode}>
                           <CommentIcon />
-                          Bình luận
+                      Bình luận
                         </SectionTitle>
-                        
-                        {/* Comment Input */}
+                    
+                    {/* Comment Input */}
                         <Box sx={{ mb: 4 }}>
                           <StyledTextField
-                            fullWidth
-                            multiline
-                            rows={3}
-                            placeholder="Viết bình luận của bạn..."
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            variant="outlined"
+                        fullWidth
+                        multiline
+                        rows={3}
+                        placeholder="Viết bình luận của bạn..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        variant="outlined"
                             isDarkMode={isDarkMode}
                             sx={{ mb: 2 }}
-                          />
-                          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      />
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <SubmitButton
-                              variant="contained"
-                              endIcon={<SendIcon />}
-                              onClick={handleSubmitComment}
-                              disabled={!newComment.trim() || submittingComment}
+                          variant="contained"
+                          endIcon={<SendIcon />}
+                          onClick={handleSubmitComment}
+                          disabled={!newComment.trim() || submittingComment}
                               isDarkMode={isDarkMode}
-                            >
-                              {submittingComment ? 'Đang gửi...' : 'Gửi bình luận'}
+                        >
+                          {submittingComment ? 'Đang gửi...' : 'Gửi bình luận'}
                             </SubmitButton>
-                          </Box>
-                        </Box>
+                      </Box>
+                    </Box>
 
                         {/* Display Comments */}
                         {!loadingBlog && !error && blogDetails && blogDetails.comments && (
-                          <RecentUsersList
-                            comments={comments}
-                            handleDeleteComment={handleDeleteComment}
-                            handleEditClick={handleEditClick}
-                            editingCommentId={editingCommentId}
-                            editedCommentBody={editedCommentBody}
-                            setEditedCommentBody={setEditedCommentBody}
-                            handleSaveComment={handleSaveComment}
-                            handleCancelClick={handleCancelClick}
-                            currentUser={currentUser}
-                          />
-                        )}
-                        {!loadingBlog && !error && (!blogDetails || !blogDetails.comments || blogDetails.comments.length === 0) && (
+                      <RecentUsersList
+                        comments={comments}
+                        handleDeleteComment={handleDeleteComment}
+                        handleEditClick={handleEditClick}
+                        editingCommentId={editingCommentId}
+                        editedCommentBody={editedCommentBody}
+                        setEditedCommentBody={setEditedCommentBody}
+                        handleSaveComment={handleSaveComment}
+                        handleCancelClick={handleCancelClick}
+                        currentUser={currentUser}
+                      />
+                    )}
+                     {!loadingBlog && !error && (!blogDetails || !blogDetails.comments || blogDetails.comments.length === 0) && (
                           <ContentText isDarkMode={isDarkMode} sx={{ textAlign: 'center', fontStyle: 'italic' }}>
-                            Chưa có bình luận nào.
+                        Chưa có bình luận nào.
                           </ContentText>
-                        )}
-                      </Box>
+                    )}
+                  </Box>
                     </Fade>
-                  </Stack>
-                </Grid>
+                </Stack>
+              </Grid>
 
                 {/* Sidebar */}
-                {lesson && (
-                  <Grid item xs={12} md={4}>
+              {lesson && (
+                <Grid item xs={12} md={4}>
                     <Fade in timeout={1800}>
                       <SidebarCard elevation={0} isDarkMode={isDarkMode}>
                         <Stack spacing={3}>
                           <SectionTitle isDarkMode={isDarkMode}>
                             <SchoolIcon />
-                            Thông tin Giáo án
+                        Thông tin Giáo án
                           </SectionTitle>
                           <Divider sx={{ borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(33, 150, 243, 0.1)' }} />
                           
-                          {/* Module */}
-                          <Box>
+                      {/* Module */}
+                      <Box>
                             <Typography 
                               variant="body2" 
                               sx={{ 
@@ -954,8 +954,8 @@ const BlogLessonDetail = () => {
                                 mb: 1,
                               }}
                             >
-                              Chủ đề
-                            </Typography>
+                          Chủ đề
+                        </Typography>
                             <Typography 
                               variant="body1"
                               sx={{ 
@@ -963,12 +963,12 @@ const BlogLessonDetail = () => {
                                 fontWeight: 600,
                               }}
                             >
-                              {lesson?.module || 'N/A'}
-                            </Typography>
-                          </Box>
+                          {lesson?.module || 'N/A'}
+                        </Typography>
+                      </Box>
                           
                           {/* Created Date */}
-                          <Box>
+                      <Box>
                             <Typography 
                               variant="body2" 
                               sx={{ 
@@ -977,8 +977,8 @@ const BlogLessonDetail = () => {
                                 mb: 1,
                               }}
                             >
-                              Ngày tạo
-                            </Typography>
+                          Ngày tạo
+                        </Typography>
                             <Typography 
                               variant="body1"
                               sx={{ 
@@ -986,13 +986,13 @@ const BlogLessonDetail = () => {
                                 fontWeight: 600,
                               }}
                             >
-                              {lesson.createdAt}
-                            </Typography>
-                          </Box>
+                          {lesson.createdAt}
+                        </Typography>
+                      </Box>
                           
                           {/* Grade and Periods */}
-                          {(lesson?.grade || lesson?.totalPeriods) && (
-                            <Box>
+                      {(lesson?.grade || lesson?.totalPeriods) && (
+                          <Box>
                               <Typography 
                                 variant="body2" 
                                 sx={{ 
@@ -1001,8 +1001,8 @@ const BlogLessonDetail = () => {
                                   mb: 1,
                                 }}
                               >
-                                Lớp / Số tiết
-                              </Typography>
+                               Lớp / Số tiết
+                             </Typography>
                               <Typography 
                                 variant="body1"
                                 sx={{ 
@@ -1010,17 +1010,17 @@ const BlogLessonDetail = () => {
                                   fontWeight: 600,
                                 }}
                               >
-                                {`${lesson?.grade || 'N/A'} / ${lesson?.totalPeriods || 'N/A'}`}
-                              </Typography>
-                            </Box>
-                          )}
-                        </Stack>
+                               {`${lesson?.grade || 'N/A'} / ${lesson?.totalPeriods || 'N/A'}`}
+                             </Typography>
+                          </Box>
+                      )}
+                    </Stack>
                       </SidebarCard>
                     </Fade>
-                  </Grid>
-                )}
-              </Grid>
-            </Stack>
+                </Grid>
+              )}
+            </Grid>
+          </Stack>
           </MainCard>
         </Zoom>
       </StyledContainer>

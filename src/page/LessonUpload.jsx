@@ -341,36 +341,19 @@ const LessonUpload = () => {
   console.log("Các thuộc tính của lessonData:", Object.keys(lessonData));
   
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('1'); // Mặc định là "Học tập" với ID = 1
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(false);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(false); // Không cần loading categories nữa
   const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Lấy danh sách danh mục khi component được mount
+  // Không cần fetch categories nữa - chỉ sử dụng category "Học tập"
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get('https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/categories');
-        if (response.data && response.data.code === 0) {
-          setCategories(response.data.data || []);
-          if (response.data.data && response.data.data.length > 0) {
-            setSelectedCategory(response.data.data[0].categoryId);
-          }
-        } else {
-          setError('Không thể tải danh sách danh mục');
-        }
-      } catch (err) {
-        console.error('Lỗi khi tải danh sách danh mục:', err);
-        setError('Lỗi khi tải danh sách danh mục');
-      } finally {
-        setCategoriesLoading(false);
-      }
-    };
-
-    fetchCategories();
+    // Set category cố định là "Học tập" 
+    setSelectedCategory('1'); // Giả sử ID của "Học tập" là 1
+    setCategoriesLoading(false);
   }, []);
 
   // Thiết lập tiêu đề và nội dung mặc định dựa trên dữ liệu Giáo án
@@ -506,11 +489,11 @@ const LessonUpload = () => {
       <StyledContainer maxWidth="lg">
         <Fade in timeout={800}>
           <BackButton
-            startIcon={<ArrowBack />}
-            onClick={() => navigate(-1)}
+          startIcon={<ArrowBack />}
+          onClick={() => navigate(-1)}
             isDarkMode={isDarkMode}
-          >
-            Quay lại
+        >
+          Quay lại
           </BackButton>
         </Fade>
 
@@ -525,21 +508,21 @@ const LessonUpload = () => {
                     <Typography 
                       variant="h6" 
                       component="h2" 
-                      sx={{ 
+              sx={{ 
                         fontWeight: 700,
                         fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
                         color: isDarkMode ? '#4CAF50' : '#2E7D32',
-                      }}
-                    >
-                      Thông tin Giáo án
-                    </Typography>
-                  </Stack>
+              }}
+            >
+                    Thông tin Giáo án
+                  </Typography>
+                </Stack>
                   <Divider sx={{ mb: 3, borderColor: 'rgba(76, 175, 80, 0.3)' }} />
-                  
-                  {hasLessonData ? (
+                
+                {hasLessonData ? (
                     <Stack spacing={3}>
                       <LessonTitle variant="subtitle1" isDarkMode={isDarkMode}>
-                        {lessonData.lesson || 'Không có tiêu đề'}
+                      {lessonData.lesson || 'Không có tiêu đề'}
                       </LessonTitle>
                       <Typography 
                         variant="body2" 
@@ -549,17 +532,17 @@ const LessonUpload = () => {
                           mb: 2 
                         }}
                       >
-                        Chủ đề: {lessonData.module || 'N/A'}
-                      </Typography>
+                      Chủ đề: {lessonData.module || 'N/A'}
+                    </Typography>
                       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                         <SuccessChip 
                           icon={<CheckCircleIcon />}
-                          label="Đã chấp nhận" 
-                          size="small"
-                        />
+                      label="Đã chấp nhận" 
+                      size="small" 
+                    />
                       </Box>
                     </Stack>
-                  ) : (
+                ) : (
                     <Alert 
                       severity="warning"
                       sx={{ 
@@ -567,10 +550,10 @@ const LessonUpload = () => {
                         fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
                       }}
                     >
-                      Không tìm thấy thông tin Giáo án. Vui lòng quay lại trang chi tiết Giáo án.
-                    </Alert>
-                  )}
-                </CardContent>
+                    Không tìm thấy thông tin Giáo án. Vui lòng quay lại trang chi tiết Giáo án.
+                  </Alert>
+                )}
+              </CardContent>
               </LessonInfoCard>
             </Zoom>
           </Grid>
@@ -590,101 +573,89 @@ const LessonUpload = () => {
                   <Fade in timeout={500}>
                     <Alert 
                       severity="error" 
-                      sx={{ 
+              sx={{
                         mb: 3,
                         borderRadius: '12px',
                         fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
                       }}
                     >
-                      {error}
-                    </Alert>
+                  {error}
+                </Alert>
                   </Fade>
-                )}
+              )}
 
-                <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit}>
                   <Stack spacing={4}>
-                    {/* Category Selection */}
+                    {/* Category Selection - Hiển thị cố định "Học tập" */}
                     <Fade in timeout={1400}>
-                      <StyledFormControl fullWidth isDarkMode={isDarkMode}>
-                        <InputLabel id="category-label">Danh mục</InputLabel>
-                        <Select
-                          labelId="category-label"
-                          id="category-select"
-                          value={selectedCategory}
-                          label="Danh mục"
-                          onChange={(e) => setSelectedCategory(e.target.value)}
-                          disabled={categoriesLoading}
-                          startAdornment={
-                            categoriesLoading ? (
-                              <CircularProgress size={20} sx={{ mr: 1 }} />
-                            ) : (
-                              <CategoryIcon sx={{ mr: 1, color: '#2196F3' }} />
-                            )
-                          }
-                        >
-                          {categories.map((category) => (
-                            <MenuItem 
-                              key={category.categoryId} 
-                              value={category.categoryId}
-                              sx={{ fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}
-                            >
-                              {category.categoryName}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </StyledFormControl>
+                      <StyledTextField
+                        label="Danh mục"
+                        variant="outlined"
+                        fullWidth
+                        value="Học tập"
+                        disabled
+                        isDarkMode={isDarkMode}
+                        InputProps={{
+                          startAdornment: <CategoryIcon sx={{ mr: 1, color: '#2196F3' }} />,
+                        }}
+                        sx={{
+                          '& .MuiInputBase-input.Mui-disabled': {
+                            WebkitTextFillColor: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
+                          },
+                        }}
+                      />
                     </Fade>
 
                     {/* Title Input */}
                     <Fade in timeout={1600}>
                       <StyledTextField
-                        label="Tiêu đề"
-                        variant="outlined"
-                        fullWidth
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
+                    label="Tiêu đề"
+                    variant="outlined"
+                    fullWidth
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
                         isDarkMode={isDarkMode}
-                        InputProps={{
+                    InputProps={{
                           startAdornment: <TitleIcon sx={{ mr: 1, color: '#2196F3' }} />,
-                        }}
-                      />
+                    }}
+                  />
                     </Fade>
 
                     {/* Content Input */}
                     <Fade in timeout={1800}>
                       <StyledTextField
-                        label="Nội dung bài viết"
-                        variant="outlined"
-                        fullWidth
-                        multiline
-                        rows={10}
-                        value={body}
-                        onChange={(e) => setBody(e.target.value)}
-                        required
+                    label="Nội dung bài viết"
+                    variant="outlined"
+                    fullWidth
+                    multiline
+                    rows={10}
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    required
                         isDarkMode={isDarkMode}
-                        InputProps={{
+                    InputProps={{
                           startAdornment: <DescriptionIcon sx={{ mr: 1, color: '#2196F3', alignSelf: 'flex-start', mt: 1 }} />,
-                        }}
-                      />
+                    }}
+                  />
                     </Fade>
 
                     {/* Submit Button */}
                     <Fade in timeout={2000}>
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
                         <SubmitButton
-                          type="submit"
-                          variant="contained"
+                      type="submit"
+                      variant="contained"
                           disabled={loading || !hasLessonData}
                           isDarkMode={isDarkMode}
-                          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                        >
-                          {loading ? 'Đang đăng...' : 'Đăng bài viết'}
+                      startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                    >
+                      {loading ? 'Đang đăng...' : 'Đăng bài viết'}
                         </SubmitButton>
-                      </Box>
+                  </Box>
                     </Fade>
-                  </Stack>
-                </form>
+                </Stack>
+              </form>
               </FormCard>
             </Zoom>
           </Grid>
