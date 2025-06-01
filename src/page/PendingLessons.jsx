@@ -635,7 +635,7 @@ const PendingLessons = () => {
               <SubTitle isDarkMode={isDarkMode}>
                 Danh sách các giáo án đang chờ phê duyệt từ ban quản lý
               </SubTitle>
-              {userInfo?.grade && (
+          {userInfo?.grade && (
                 <GradeChip
                   icon={<SchoolIcon />}
                   label={userInfo.grade.replace('Lớp ', '')}
@@ -648,54 +648,54 @@ const PendingLessons = () => {
 
         <Zoom in timeout={1400}>
           <ControlsCard elevation={0} isDarkMode={isDarkMode}>
-            {error && (
+          {error && (
               <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }}>
                 {error}
               </Alert>
-            )}
+          )}
 
             <Grid container spacing={3}>
-              {(modules.length > 0 || loadingFilterOptions) && gradeIdFilter && (
+             {(modules.length > 0 || loadingFilterOptions) && gradeIdFilter && (
                 <Grid item xs={12} md={4}>
                   <StyledFormControl fullWidth size="small" disabled={loadingFilterOptions} isDarkMode={isDarkMode}>
-                    <InputLabel>Lọc theo Chủ đề</InputLabel>
-                    {loadingFilterOptions ? (
+                     <InputLabel>Lọc theo Chủ đề</InputLabel>
+                     {loadingFilterOptions ? (
                       <Skeleton variant="rectangular" height={40} sx={{ borderRadius: '12px' }} />
-                    ) : (
-                      <Select
-                        value={moduleIdFilter}
-                        label="Lọc theo Chủ đề"
-                        onChange={(e) => {
-                          setModuleIdFilter(e.target.value);
+                     ) : (
+                        <Select
+                           value={moduleIdFilter}
+                           label="Lọc theo Chủ đề"
+                           onChange={(e) => {
+                               setModuleIdFilter(e.target.value);
                           setCurrentPage(1);
-                        }}
+                            }}
                         startAdornment={<MenuBookIcon sx={{ mr: 1, color: '#FF9800' }} />}
-                      >
-                        <MenuItem value=""><em>Tất cả Chủ đề</em></MenuItem>
-                        {modules.map((module) => (
+                        >
+                           <MenuItem value=""><em>Tất cả Chủ đề</em></MenuItem>
+                           {modules.map((module) => (
                           <MenuItem key={module.moduleId} value={module.moduleId}>
                             {module.name}
                           </MenuItem>
-                        ))}
-                      </Select>
-                    )}
+                           ))}
+                        </Select>
+                     )}
                   </StyledFormControl>
-                </Grid>
-              )}
-              
+               </Grid>
+             )}
+
               <Grid item xs={12} md={((modules.length > 0 || loadingFilterOptions) && gradeIdFilter) ? 8 : 12}>
                 <StyledTextField
-                  fullWidth
-                  size="small"
-                  label="Tìm kiếm Giáo án"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      setCurrentPage(1);
-                    }
-                  }}
-                  disabled={!gradeIdFilter && !loadingFilterOptions}
+                   fullWidth
+                   size="small"
+                   label="Tìm kiếm Giáo án"
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
+                   onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                         setCurrentPage(1);
+                      }
+                   }}
+                   disabled={!gradeIdFilter && !loadingFilterOptions}
                   isDarkMode={isDarkMode}
                   InputProps={{
                     startAdornment: (
@@ -705,8 +705,8 @@ const PendingLessons = () => {
                     ),
                   }}
                 />
-              </Grid>
-            </Grid>
+             </Grid>
+          </Grid>
           </ControlsCard>
         </Zoom>
 
@@ -728,7 +728,7 @@ const PendingLessons = () => {
           }}
         >
           {loading || (loadingFilterOptions && !gradeIdFilter) ? (
-            renderSkeletons()
+             renderSkeletons()
           ) : !error && lessons.length === 0 ? (
             <EmptyStateContainer elevation={0} isDarkMode={isDarkMode}>
               <EmptyIcon />
@@ -739,8 +739,8 @@ const PendingLessons = () => {
                 Các giáo án đã gửi sẽ xuất hiện ở đây
               </EmptyStateSubText>
             </EmptyStateContainer>
-          ) : !error && lessons.length > 0 ? (
-            <>
+            ) : !error && lessons.length > 0 ? (
+              <>
               <Box sx={{ mb: 3 }}>
                 {lessons.map((lesson, index) => (
                   <Fade in timeout={800 + index * 100} key={lesson.lessonPlanId}>
@@ -783,7 +783,7 @@ const PendingLessons = () => {
                                 <AccessTimeIcon sx={{ fontSize: '1rem', color: '#FF9800' }} />
                                 <Typography
                                   variant="body2"
-                                  sx={{
+                         sx={{
                                     fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
                                     color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(44, 62, 80, 0.7)',
                                     fontWeight: 500,
@@ -809,32 +809,32 @@ const PendingLessons = () => {
                   </Fade>
                 ))}
               </Box>
-              
-              {totalPages > 1 && (
+
+                {totalPages > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                  <Pagination 
-                    count={totalPages} 
-                    page={currentPage} 
-                    onChange={handlePageChange} 
-                    color="primary"
-                    sx={{
-                      '& .MuiPaginationItem-root': {
+                    <Pagination
+                      count={totalPages}
+                      page={currentPage}
+                      onChange={handlePageChange}
+                      color="primary"
+                      sx={{
+                         '& .MuiPaginationItem-root': {
                         color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
                         fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
-                      },
-                      '& .Mui-selected': {
+                         },
+                         '& .Mui-selected': {
                         backgroundColor: 'rgba(255, 152, 0, 0.2) !important',
                         color: '#FF9800 !important',
                         fontWeight: 600,
                         '&:hover': {
                           backgroundColor: 'rgba(255, 152, 0, 0.3) !important',
                         }
-                      }
-                    }}
-                  />
-                </Box>
-              )}
-            </>
+                         }
+                      }}
+                    />
+                  </Box>
+                )}
+              </>
           ) : null}
         </Paper>
       </StyledContainer>

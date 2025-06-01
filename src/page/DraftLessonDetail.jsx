@@ -370,11 +370,11 @@ const DraftLessonDetail = () => {
         method: 'put',
         url: `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/lesson-plans/${lessonId}/pending`,
         data: apiBody,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 15000
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 15000
       });
 
       // Check for success conditions
@@ -524,8 +524,8 @@ const DraftLessonDetail = () => {
 
     return (
       <Box mb={4} sx={{ animation: `${slideInUp} 0.8s ease-out` }}> 
-        <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-          {icon} 
+           <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+             {icon} 
           <Typography 
             variant="h6" 
             sx={{ 
@@ -535,13 +535,13 @@ const DraftLessonDetail = () => {
               fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
             }}
           >
-            {title}
-          </Typography>
-        </Stack>
+               {title}
+             </Typography>
+           </Stack>
         <Divider sx={{ mb: 2, borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(158, 158, 158, 0.2)' }} /> 
         <Box sx={{ pl: 4.5 }}>
-          {formatDisplayContent(mainContent)}
-          {qualityContent && (
+             {formatDisplayContent(mainContent)}
+             {qualityContent && (
             <Box 
               sx={{
                 marginTop: '24px',
@@ -556,10 +556,10 @@ const DraftLessonDetail = () => {
                 padding: '16px',
               }}
             >
-              <Chip 
-                icon={<CheckCircle fontSize="small"/>} 
-                label="Phẩm chất" 
-                size="small"
+                    <Chip 
+                        icon={<CheckCircle fontSize="small"/>} 
+                        label="Phẩm chất" 
+                        size="small"
                 sx={{
                   background: 'linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 100%)',
                   color: '#fff',
@@ -570,13 +570,13 @@ const DraftLessonDetail = () => {
                     color: '#fff',
                   },
                 }}
-              />
-              {formatDisplayContent(qualityContent)}
-            </Box>
-          )}
+                    />
+                     {formatDisplayContent(qualityContent)}
+                </Box>
+             )}
+          </Box>
         </Box>
-      </Box>
-    );
+      );
   }
 
   const renderEditableSection = (title, field, icon) => {
@@ -664,12 +664,12 @@ const DraftLessonDetail = () => {
 
       <StyledContainer maxWidth="lg">
         <Fade in timeout={800}>
-          <Button
-            startIcon={<ArrowBack />}
-            onClick={() => navigate(-1)}
-            sx={{
-              mb: 3,
-              color: isDarkMode ? '#ffffff' : '#2D3436',
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate(-1)}
+          sx={{
+            mb: 3,
+            color: isDarkMode ? '#ffffff' : '#2D3436',
               fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
               fontWeight: 600,
               borderRadius: '12px',
@@ -683,15 +683,15 @@ const DraftLessonDetail = () => {
                 : '1px solid rgba(158, 158, 158, 0.2)',
               boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              '&:hover': {
+            '&:hover': {
                 backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(158, 158, 158, 0.1)',
                 transform: 'translateY(-2px)',
                 boxShadow: '0 12px 35px rgba(0, 0, 0, 0.15)',
-              },
-            }}
-          >
-            Quay lại danh sách
-          </Button>
+            },
+          }}
+        >
+          Quay lại danh sách
+        </Button>
         </Fade>
 
         <Zoom in timeout={1000}>
@@ -726,12 +726,12 @@ const DraftLessonDetail = () => {
               },
             }}
           >
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              justifyContent="space-between" 
-              alignItems={{ xs: 'flex-start', sm: 'center' }}
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          justifyContent="space-between" 
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
               spacing={3}
-            >
+        >
               <Stack direction="row" alignItems="center" spacing={2} mb={{ xs: 2, sm: 0 }}>
                 <Edit sx={{ color: '#9E9E9E', fontSize: '2.5rem' }} />
                 <Box>
@@ -752,8 +752,8 @@ const DraftLessonDetail = () => {
                       letterSpacing: '0.5px',
                     }}
                   >
-                    Chi Tiết Giáo án Nháp
-                  </Typography>
+              Chi Tiết Giáo án Nháp
+            </Typography>
                   <Chip
                     icon={<Edit />}
                     label="Nháp"
@@ -772,14 +772,14 @@ const DraftLessonDetail = () => {
                     }}
                   />
                 </Box>
-              </Stack>
-              <Tooltip title="Xuất ra file Word (.docx)">
-                <span>
-                  <Button 
-                    variant="contained"
-                    startIcon={isExporting ? <CircularProgress size={20} color="inherit"/> : <Download />}
-                    onClick={handleExportToWord}
-                    disabled={!lessonDetail || isExporting}
+          </Stack>
+          <Tooltip title="Xuất ra file Word (.docx)">
+            <span>
+              <Button 
+                variant="contained"
+                startIcon={isExporting ? <CircularProgress size={20} color="inherit"/> : <Download />}
+                onClick={handleExportToWord}
+                disabled={!lessonDetail || isExporting}
                     sx={{
                       background: 'linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 100%)',
                       color: '#fff',
@@ -795,20 +795,20 @@ const DraftLessonDetail = () => {
                         boxShadow: '0 12px 35px rgba(158, 158, 158, 0.4)',
                       },
                     }}
-                  >
-                    {isExporting ? 'Đang xuất...' : 'Xuất ra Word'}
-                  </Button>
-                </span>
-              </Tooltip>
-            </Stack>
+              >
+                {isExporting ? 'Đang xuất...' : 'Xuất ra Word'}
+              </Button>
+            </span>
+          </Tooltip>
+        </Stack>
           </Paper>
         </Zoom>
 
         <Zoom in timeout={1200}>
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              p: { xs: 2, sm: 3, md: 4 }, 
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: { xs: 2, sm: 3, md: 4 }, 
               borderRadius: '20px',
               background: isDarkMode
                 ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
@@ -823,23 +823,23 @@ const DraftLessonDetail = () => {
               position: 'relative',
               overflow: 'hidden',
               animation: `${fadeIn} 0.8s ease-out`,
-            }}
-          >
-            {loading ? (
-              renderSkeletonDetails()
-            ) : error ? (
+          }}
+        >
+          {loading ? (
+            renderSkeletonDetails()
+          ) : error ? (
               <Alert severity="error" sx={{ my: 2, borderRadius: '12px', fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}>
                 {`Lỗi tải chi tiết: ${error}`}
               </Alert>
-            ) : lessonDetail ? (
-              <Box p={1}>
-                <Stack 
-                  direction={{ xs: 'column', md: 'row' }} 
-                  alignItems={{ xs: 'flex-start', md: 'center' }} 
-                  spacing={1.5} 
-                  mb={4}
-                > 
-                  <Box flexGrow={1}>
+          ) : lessonDetail ? (
+            <Box p={1}>
+              <Stack 
+                direction={{ xs: 'column', md: 'row' }} 
+                alignItems={{ xs: 'flex-start', md: 'center' }} 
+                spacing={1.5} 
+                mb={4}
+              > 
+                <Box flexGrow={1}>
                     <Typography 
                       variant="h4" 
                       component="h1" 
@@ -850,8 +850,8 @@ const DraftLessonDetail = () => {
                       }}
                     >
                       <Edit sx={{ color: '#9E9E9E', fontSize: '1.8rem', verticalAlign: 'middle', mr: 1 }} />
-                      {lessonDetail.lesson || 'Chi Tiết Giáo án Nháp'}
-                    </Typography>
+                    {lessonDetail.lesson || 'Chi Tiết Giáo án Nháp'}
+                  </Typography>
                     <Typography 
                       variant="body1" 
                       sx={{ 
@@ -862,11 +862,11 @@ const DraftLessonDetail = () => {
                     >
                       Trạng thái: Nháp
                     </Typography>
-                  </Box>
-                </Stack>
-                
-                <Grid container spacing={3} mb={3}>
-                  <Grid item xs={12} md={6}>
+                </Box>
+              </Stack>
+              
+              <Grid container spacing={3} mb={3}>
+                <Grid item xs={12} md={6}>
                     <Box
                       sx={{
                         padding: '20px',
@@ -906,8 +906,8 @@ const DraftLessonDetail = () => {
                         {lessonDetail.module || 'N/A'}
                       </Typography>
                     </Box>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
+                </Grid>
+                <Grid item xs={12} md={6}>
                     <Box
                       sx={{
                         padding: '20px',
@@ -947,9 +947,9 @@ const DraftLessonDetail = () => {
                         {formatDate(lessonDetail.createdAt)}
                       </Typography>
                     </Box>
-                  </Grid>
                 </Grid>
-                
+              </Grid>
+              
                 <Divider 
                   sx={{ 
                     my: 4, 
@@ -961,77 +961,77 @@ const DraftLessonDetail = () => {
                   }} 
                 />
 
-                <Stack direction="row" spacing={2} mb={3}>
-                  {!isEditing ? (
-                    <Button
-                      variant="contained"
-                      startIcon={<Edit />}
-                      onClick={handleEdit}
+              <Stack direction="row" spacing={2} mb={3}>
+                {!isEditing ? (
+                  <Button
+                    variant="contained"
+                    startIcon={<Edit />}
+                    onClick={handleEdit}
                       sx={{ 
                         borderRadius: '8px',
                         background: 'linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 100%)',
                         fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
                         fontWeight: 600,
                       }}
-                    >
-                      Chỉnh sửa
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<CheckCircle />}
-                        onClick={handleSave}
-                        sx={{ 
-                          borderRadius: '8px',
-                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
-                          fontWeight: 600,
-                        }}
-                      >
-                        Lưu
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={<Cancel />}
-                        onClick={handleCancel}
-                        sx={{ 
-                          borderRadius: '8px',
-                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
-                          fontWeight: 600,
-                        }}
-                      >
-                        Hủy
-                      </Button>
-                    </>
-                  )}
-                </Stack>
-
-                {isEditing ? (
+                  >
+                    Chỉnh sửa
+                  </Button>
+                ) : (
                   <>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      startIcon={<CheckCircle />}
+                      onClick={handleSave}
+                        sx={{ 
+                          borderRadius: '8px',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 600,
+                        }}
+                    >
+                      Lưu
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<Cancel />}
+                      onClick={handleCancel}
+                        sx={{ 
+                          borderRadius: '8px',
+                          fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+                          fontWeight: 600,
+                        }}
+                    >
+                      Hủy
+                    </Button>
+                  </>
+                )}
+              </Stack>
+
+              {isEditing ? (
+                <>
                     {renderEditableSection("Mục tiêu", "goal", <Assignment sx={{ color: '#9E9E9E', fontSize: '1.8rem' }} />)}
                     {renderEditableSection("Giáo viên chuẩn bị", "schoolSupply", <Build sx={{ color: '#9E9E9E', fontSize: '1.8rem' }} />)}
                     {renderEditableSection("Hoạt động Khởi động(5 phút)", "startUp", <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>1.</Typography>)}
                     {renderEditableSection("Hoạt động Hình thành Kiến thức(12 phút)", "knowledge", <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>2.</Typography>)}
                     {renderEditableSection("Hoạt động Luyện tập(15 phút)", "practice", <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>3.</Typography>)}
                     {renderEditableSection("Hoạt động Vận dụng(3 phút)", "apply", <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>4.</Typography>)}
-                  </>
-                ) : (
-                  <>
+                </>
+              ) : (
+                <>
                     {renderDetailSection("Mục tiêu", lessonDetail.goal, <Assignment sx={{ color: '#9E9E9E', fontSize: '1.8rem' }} />)}
                     {renderDetailSection("Giáo viên chuẩn bị", lessonDetail.schoolSupply, <Build sx={{ color: '#9E9E9E', fontSize: '1.8rem' }} />)}
                     {renderDetailSection("Hoạt động Khởi động(5 phút)", lessonDetail.startUp, <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>1.</Typography>)}
                     {renderDetailSection("Hoạt động Hình thành Kiến thức(12 phút)", lessonDetail.knowledge, <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>2.</Typography>)}
                     {renderDetailSection("Hoạt động Luyện tập(15 phút)", lessonDetail.practice, <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>3.</Typography>)}
                     {renderDetailSection("Hoạt động Vận dụng(3 phút)", lessonDetail.apply, <Typography sx={{fontWeight: 'bold', color: '#9E9E9E', fontSize: '1.8rem'}}>4.</Typography>)}
-                  </>
-                )}
-                
-                {lessonDetail.disapprovedReason && (
-                  <Box mb={4}>
-                    <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                      <Cancel color="error" />
+                </>
+              )}
+              
+              {lessonDetail.disapprovedReason && (
+                <Box mb={4}>
+                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                    <Cancel color="error" />
                       <Typography 
                         variant="h6" 
                         sx={{ 
@@ -1040,46 +1040,46 @@ const DraftLessonDetail = () => {
                           fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
                         }}
                       >
-                        Lý do từ chối
-                      </Typography>
-                    </Stack>
-                    <Divider sx={{ mb: 2 }} />
-                    <Box sx={{ pl: 4.5 }}>
+                      Lý do từ chối
+                    </Typography>
+                  </Stack>
+                  <Divider sx={{ mb: 2 }} />
+                  <Box sx={{ pl: 4.5 }}>
                       <Typography sx={{ fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}>
                         {lessonDetail.disapprovedReason}
                       </Typography>
-                    </Box>
                   </Box>
-                )}
-                
-                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-                  <Tooltip title="Gửi cho người quản lý chuyên môn">
-                    <Button 
-                      variant="contained"
-                      color="success"
-                      size="large"
-                      startIcon={isSendingToPending ? <CircularProgress size={20} color="inherit"/> : <SendIcon />}
-                      onClick={handleSendToPending}
-                      disabled={isSendingToPending}
-                      sx={{ 
-                        minWidth: '300px',
-                        py: 1.5,
+                </Box>
+              )}
+              
+              <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+                <Tooltip title="Gửi cho người quản lý chuyên môn">
+                  <Button 
+                    variant="contained"
+                    color="success"
+                    size="large"
+                    startIcon={isSendingToPending ? <CircularProgress size={20} color="inherit"/> : <SendIcon />}
+                    onClick={handleSendToPending}
+                    disabled={isSendingToPending}
+                    sx={{ 
+                      minWidth: '300px',
+                      py: 1.5,
                         boxShadow: 3,
                         fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
                         fontWeight: 700,
-                      }}
-                    >
-                      {isSendingToPending ? 'Đang xử lý...' : 'Gửi cho người quản lý chuyên môn'}
-                    </Button>
-                  </Tooltip>
-                </Box>
+                    }}
+                  >
+                    {isSendingToPending ? 'Đang xử lý...' : 'Gửi cho người quản lý chuyên môn'}
+                  </Button>
+                </Tooltip>
               </Box>
-            ) : (
+            </Box>
+          ) : (
                <Alert severity="warning" sx={{ borderRadius: '12px', fontFamily: '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif' }}>
                  Không tìm thấy chi tiết Giáo án.
                </Alert>
-            )}
-          </Paper>
+          )}
+        </Paper>
         </Zoom>
       </StyledContainer>
 

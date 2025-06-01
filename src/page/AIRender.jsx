@@ -606,20 +606,20 @@ const AIRender = () => {
 
             {isEditing ? (
               <>
-                <Button
-                  variant="contained"
-                  startIcon={<Save />}
-                  onClick={() => setIsEditing(false)}
-                  sx={{
-                    backgroundColor: '#4CAF50',
-                    color: '#ffffff',
-                    '&:hover': {
-                      backgroundColor: '#388E3C',
-                    },
-                  }}
-                >
-                  Lưu
-                </Button>
+              <Button
+                variant="contained"
+                startIcon={<Save />}
+                onClick={() => setIsEditing(false)}
+                sx={{
+                  backgroundColor: '#4CAF50',
+                  color: '#ffffff',
+                  '&:hover': {
+                    backgroundColor: '#388E3C',
+                  },
+                }}
+              >
+                Lưu
+              </Button>
                 <Button
                   variant="contained"
                   onClick={handleCancelEdit}

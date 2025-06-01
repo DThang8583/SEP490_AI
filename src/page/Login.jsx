@@ -513,10 +513,10 @@ const Login = () => {
         // Chuyển hướng dựa trên role
         switch (userInfo.role) {
           case "Tổ trưởng chuyên môn":
-            navigate("/manager/dashboard", { replace: true });
+            navigate("/quanly/dashboard", { replace: true });
             break;
             case "Tổ phó":
-            navigate("/manager/dashboard", { replace: true });
+            navigate("/quanly/dashboard", { replace: true });
             break;
           case "Administrator":
             navigate("/admin", { replace: true });
@@ -737,8 +737,8 @@ const Login = () => {
                       disabled={loading}
                       sx={{ color: '#FF6B6B' }}
                     >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
                   </InputAdornment>
                 ),
               }}

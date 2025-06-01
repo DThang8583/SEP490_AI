@@ -25,6 +25,7 @@ import {
 import { Edit, Lock, Person, Email, Phone, Cake, School, LocationOn, SupervisorAccount, Badge, Class, CameraAlt, Save, Cancel } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '@mui/material/styles';
+import { format } from 'date-fns';
 
 const Profile = ({ sidebarOpen }) => {
     const { userInfo, updateUserInfo } = useAuth();
@@ -40,13 +41,120 @@ const Profile = ({ sidebarOpen }) => {
         phoneNumber: '',
         dateOfBirth: '',
         gender: 1,
-        address: ''
+        address: '',
+        wardId: 0,
     });
     const [updateLoading, setUpdateLoading] = useState(false);
+    const [validationErrors, setValidationErrors] = useState({
+        fullname: '',
+        email: '',
+        phoneNumber: '',
+        address: '',
+        dateOfBirth: '',
+    });
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
     const sidebarWidth = sidebarOpen ? 60 : 240;
+
+    // Validation functions from TeacherProfile.jsx
+    const validateFullName = (name) => {
+        if (!name || name.trim().length === 0) {
+            return 'Họ và tên là bắt buộc';
+        }
+        if (name.trim().length < 2) {
+            return 'Họ và tên phải có ít nhất 2 ký tự';
+        }
+        if (name.trim().length > 50) {
+            return 'Họ và tên không được vượt quá 50 ký tự';
+        }
+        return '';
+    };
+
+    const validateEmail = (email) => {
+        if (!email || email.trim().length === 0) {
+            return 'Email là bắt buộc';
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+            return 'Email không đúng định dạng';
+        }
+        if (email.length > 100) {
+            return 'Email không được vượt quá 100 ký tự';
+        }
+        return '';
+    };
+
+    const validatePhoneNumber = (phone) => {
+        if (!phone || phone.trim().length === 0) {
+            return 'Số điện thoại là bắt buộc';
+        }
+        const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
+        if (!phoneRegex.test(phone.trim())) {
+            return 'Số điện thoại không đúng định dạng (VD: 0987654321)';
+        }
+        return '';
+    };
+
+    const validateAddress = (address) => {
+        if (!address || address.trim().length === 0) {
+            return 'Địa chỉ là bắt buộc';
+        }
+        if (address.trim().length < 5) {
+            return 'Địa chỉ phải có ít nhất 5 ký tự';
+        }
+        if (address.length > 200) {
+            return 'Địa chỉ không được vượt quá 200 ký tự';
+        }
+        return '';
+    };
+
+    const validateDateOfBirth = (date) => {
+        if (!date || date.trim().length === 0) {
+            return 'Ngày sinh là bắt buộc';
+        }
+        
+        const dateObj = new Date(date);
+        if (isNaN(dateObj.getTime())) {
+            return 'Ngày sinh không đúng định dạng';
+        }
+        
+        const today = new Date();
+        const minAge = new Date();
+        minAge.setFullYear(today.getFullYear() - 18);
+        
+        const maxAge = new Date();
+        maxAge.setFullYear(today.getFullYear() - 100);
+        
+        if (dateObj > today) {
+            return 'Ngày sinh không được là ngày trong tương lai';
+        }
+        
+        if (dateObj > minAge) {
+            return 'Bạn phải đủ 18 tuổi';
+        }
+        
+        if (dateObj < maxAge) {
+            return 'Ngày sinh không hợp lệ';
+        }
+        
+        return '';
+    };
+
+    const validateAllFields = () => {
+        const errors = {
+            fullname: validateFullName(editData.fullname),
+            email: validateEmail(editData.email),
+            phoneNumber: validatePhoneNumber(editData.phoneNumber),
+            address: validateAddress(editData.address),
+            dateOfBirth: validateDateOfBirth(editData.dateOfBirth),
+        };
+        
+        setValidationErrors(errors);
+        
+        // Return true if no errors
+        return !Object.values(errors).some(error => error !== '');
+    };
 
     // Convert DD/MM/YYYY to YYYY-MM-DD
     const convertDateToAPI = (dateStr) => {
@@ -88,36 +196,74 @@ const Profile = ({ sidebarOpen }) => {
                 }
 
                 const response = await axios.get(
-                    `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/${userInfo.id}`,
+                    `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/${userInfo.id}/update`,
                     {
                         headers: { Authorization: `Bearer ${accessToken}` },
                     }
                 );
 
-                const userData = response.data.data;
-                setProfile(userData);
+                if (response.data && response.data.code === 0 && response.data.data) {
+                    const userData = response.data.data;
+                    
+                    // Kiểm tra và cập nhật dateOfBirth
+                    const validDateOfBirth = userData.dateOfBirth === '01/01/0001' ? '2025-04-10' : userData.dateOfBirth;
+                    
+                    // Save gradeId to localStorage
+                    if (userData.grade) {
+                        localStorage.setItem('Grade', userData.grade);
+                    }
 
-                // Initialize edit data
-                setEditData({
-                    fullname: userData.fullname || '',
-                    email: userData.email || '',
-                    phoneNumber: userData.phoneNumber || '',
-                    dateOfBirth: convertDateToAPI(userData.dateOfBirth) || '',
-                    gender: convertGenderToAPI(userData.gender),
-                    address: userData.address || ''
-                });
+                    setProfile({
+                        id: userData.userId,
+                        fullname: userData.fullname,
+                        email: userData.email,
+                        phoneNumber: userData.phoneNumber,
+                        address: userData.address,
+                        dateOfBirth: validDateOfBirth,
+                        gender: userData.gender === 1 ? 'Male' : 'Female',
+                        role: userData.role,
+                        school: userData.school,
+                        grade: userData.grade,
+                        imgURL: userData.imgURL,
+                        username: userData.username,
+                        manager: userData.manager,
+                        wardId: userData.wardId,
+                    });
 
-                if (userData.grade && !isNaN(userData.grade)) {
-                    const gradeResponse = await axios.get(
-                        'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades'
-                    );
-                    const grades = gradeResponse.data.data;
-                    const userGrade = grades.find((g) => g.gradeId === userData.grade)?.gradeNumber || userData.grade;
-                    userData.gradeNumber = userGrade;
+                    // Update AuthContext with the full user data including imgURL
+                    if (updateUserInfo) {
+                        updateUserInfo(userData);
+                    }
+
+                    // Initialize edit data
+                    setEditData({
+                        fullname: userData.fullname || '',
+                        email: userData.email || '',
+                        phoneNumber: userData.phoneNumber || '',
+                        dateOfBirth: convertDateToAPI(validDateOfBirth) || '',
+                        gender: convertGenderToAPI(userData.gender),
+                        address: userData.address || '',
+                        wardId: userData.wardId || 0,
+                    });
+
+                    if (userData.grade && !isNaN(userData.grade)) {
+                        try {
+                            const gradeResponse = await axios.get(
+                                'https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/grades'
+                            );
+                            const grades = gradeResponse.data.data;
+                            const userGrade = grades.find((g) => g.gradeId === userData.grade)?.gradeNumber || userData.grade;
+                            setProfile(prev => ({ ...prev, gradeNumber: userGrade }));
+                        } catch (gradeError) {
+                            console.error('Error fetching grades:', gradeError);
+                        }
+                    }
+                } else {
+                    throw new Error(response.data?.message || 'Có lỗi xảy ra');
                 }
             } catch (err) {
                 console.error('Lỗi khi lấy thông tin hồ sơ:', err);
-                setError('Không thể tải thông tin. Vui lòng thử lại sau.');
+                setError(err.response?.data?.message || 'Không thể tải thông tin người dùng');
             } finally {
                 setLoading(false);
             }
@@ -127,22 +273,29 @@ const Profile = ({ sidebarOpen }) => {
     }, []);
 
     const handleEditToggle = () => {
-        console.log('Edit button clicked, current isEditing:', isEditing);
         if (isEditing) {
             // Reset form data when canceling
             setEditData({
-                fullname: profile.fullname || '',
-                email: profile.email || '',
-                phoneNumber: profile.phoneNumber || '',
-                dateOfBirth: convertDateToAPI(profile.dateOfBirth) || '',
-                gender: convertGenderToAPI(profile.gender),
-                address: profile.address || ''
+                fullname: profile?.fullname || '',
+                email: profile?.email || '',
+                phoneNumber: profile?.phoneNumber || '',
+                dateOfBirth: convertDateToAPI(profile?.dateOfBirth) || '',
+                gender: convertGenderToAPI(profile?.gender),
+                address: profile?.address || '',
+                wardId: profile?.wardId || 0,
+            });
+            // Clear validation errors
+            setValidationErrors({
+                fullname: '',
+                email: '',
+                phoneNumber: '',
+                address: '',
+                dateOfBirth: '',
             });
         }
         setIsEditing(!isEditing);
         setError('');
         setSuccess('');
-        console.log('Set isEditing to:', !isEditing);
     };
 
     const handleInputChange = (field, value) => {
@@ -150,9 +303,43 @@ const Profile = ({ sidebarOpen }) => {
             ...prev,
             [field]: value
         }));
+        
+        // Real-time validation
+        if (isEditing) {
+            let error = '';
+            switch (field) {
+                case 'fullname':
+                    error = validateFullName(value);
+                    break;
+                case 'email':
+                    error = validateEmail(value);
+                    break;
+                case 'phoneNumber':
+                    error = validatePhoneNumber(value);
+                    break;
+                case 'address':
+                    error = validateAddress(value);
+                    break;
+                case 'dateOfBirth':
+                    error = validateDateOfBirth(value);
+                    break;
+                default:
+                    break;
+            }
+            setValidationErrors(prev => ({
+                ...prev,
+                [field]: error
+            }));
+        }
     };
 
     const handleSaveProfile = async () => {
+        // Validate all fields before submitting
+        if (!validateAllFields()) {
+            setError('Vui lòng kiểm tra lại thông tin nhập vào');
+            return;
+        }
+
         try {
             setUpdateLoading(true);
             setError('');
@@ -166,37 +353,62 @@ const Profile = ({ sidebarOpen }) => {
                 return;
             }
 
+            // Chuyển đổi định dạng dateOfBirth
+            const dateObj = new Date(editData.dateOfBirth);
+            if (isNaN(dateObj.getTime())) {
+                setError('Ngày sinh không hợp lệ. Vui lòng nhập đúng định dạng.');
+                return;
+            }
+
+            const formattedDateOfBirth = format(dateObj, 'yyyy-MM-dd');
+
             const updatePayload = {
                 fullname: editData.fullname,
                 email: editData.email,
                 phoneNumber: editData.phoneNumber,
-                dateOfBirth: editData.dateOfBirth, // Already in YYYY-MM-DD format
-                gender: editData.gender, // 1 or 2
-                address: editData.address
+                dateOfBirth: formattedDateOfBirth,
+                gender: editData.gender,
+                address: editData.address,
+                wardId: editData.wardId,
             };
 
             console.log('Update payload:', updatePayload);
 
             const response = await axios.put(
-                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/${userInfo.id}/update`,
+                `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/${userInfo.id}`,
                 updatePayload,
                 {
-                    headers: { Authorization: `Bearer ${accessToken}` },
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
                 }
             );
 
             console.log('Update response:', response);
 
-            if (response.status === 200 && response.data.code === 0) {
+            if (response.status === 200 && (response.data.code === 0 || response.data.code === 22)) {
+                setSuccess('Cập nhật thông tin thành công');
+                setIsEditing(false);
+                
+                // Clear validation errors after successful save
+                setValidationErrors({
+                    fullname: '',
+                    email: '',
+                    phoneNumber: '',
+                    address: '',
+                    dateOfBirth: '',
+                });
+
                 // Update local profile state
                 const updatedProfile = {
                     ...profile,
                     fullname: editData.fullname,
                     email: editData.email,
                     phoneNumber: editData.phoneNumber,
-                    dateOfBirth: convertDateFromAPI(editData.dateOfBirth),
+                    dateOfBirth: formattedDateOfBirth,
                     gender: editData.gender === 1 ? 'Male' : 'Female',
-                    address: editData.address
+                    address: editData.address,
                 };
                 setProfile(updatedProfile);
 
@@ -208,9 +420,6 @@ const Profile = ({ sidebarOpen }) => {
                         email: editData.email
                     });
                 }
-
-                setSuccess('Cập nhật thông tin thành công!');
-                setIsEditing(false);
             } else {
                 setError(response.data?.message || 'Không thể cập nhật thông tin.');
             }
@@ -248,7 +457,6 @@ const Profile = ({ sidebarOpen }) => {
             // Hiển thị preview ngay lập tức
             const reader = new FileReader();
             reader.onloadend = () => {
-                // setImagePreview(reader.result); // Profile.jsx không có state imagePreview, cập nhật trực tiếp profile
                 // Cập nhật profile state tạm thời với ảnh mới để hiển thị ngay
                 setProfile(prev => ({
                     ...prev,
@@ -266,7 +474,6 @@ const Profile = ({ sidebarOpen }) => {
             formData.append('file', file);
 
             const accessToken = localStorage.getItem('accessToken');
-            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
 
             const uploadResponse = await axios.post(
                 `https://teacheraitools-cza4cbf8gha8ddgc.southeastasia-01.azurewebsites.net/api/v1/users/profile-img`,
@@ -280,14 +487,10 @@ const Profile = ({ sidebarOpen }) => {
             );
 
             console.log('Upload API Response:', uploadResponse);
-            console.log('Upload API Response Code:', uploadResponse.data?.code);
 
-            // Check for success response (adjust based on actual API response structure)
             if (uploadResponse.status === 200 && (uploadResponse.data.code === 0 || uploadResponse.data.code === 22)) {
-                console.log('Image upload successful.');
                 setSuccess('Cập nhật ảnh đại diện thành công');
-                setError(''); // Clear error message
-                // Nếu API trả về URL ảnh mới, bạn có thể cập nhật lại state profile và AuthContext tại đây
+                setError('');
                 if (uploadResponse.data.data?.imgURL) {
                     setProfile(prev => ({ ...prev, imgURL: uploadResponse.data.data.imgURL }));
                     if (updateUserInfo && userInfo) {
@@ -295,18 +498,14 @@ const Profile = ({ sidebarOpen }) => {
                     }
                 }
             } else {
-                // Xử lý phản hồi lỗi từ API
-                console.log('Image upload API returned error code/status.', uploadResponse.data);
                 setError(uploadResponse.data?.message || 'Không thể tải ảnh lên.');
-                setSuccess(''); // Clear success message
-                // Có thể rollback ảnh preview về ảnh cũ nếu upload lỗi nặng
-                // Để rollback, bạn cần lưu ảnh cũ trước khi set preview
+                setSuccess('');
             }
 
         } catch (err) {
             console.error('Lỗi khi tải ảnh lên:', err);
             setError(err.response?.data?.message || 'Đã xảy ra lỗi khi tải ảnh lên.');
-            setSuccess(''); // Clear success message
+            setSuccess('');
         }
     };
 
@@ -331,7 +530,13 @@ const Profile = ({ sidebarOpen }) => {
                 </Typography>
                 {isEditing && field ? (
                     type === 'select' ? (
-                        <FormControl fullWidth variant="outlined" size="small" sx={{ mt: 0.5 }}>
+                        <FormControl 
+                            fullWidth 
+                            variant="outlined" 
+                            size="small" 
+                            sx={{ mt: 0.5 }}
+                            error={!!validationErrors[field]}
+                        >
                             <Select
                                 value={editData[field]}
                                 onChange={(e) => handleInputChange(field, e.target.value)}
@@ -348,27 +553,37 @@ const Profile = ({ sidebarOpen }) => {
                                     </MenuItem>
                                 ))}
                             </Select>
+                            {validationErrors[field] && (
+                                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                                    {validationErrors[field]}
+                                </Typography>
+                            )}
                         </FormControl>
                     ) : (
-                        <TextField
-                            value={editData[field]}
-                            onChange={(e) => handleInputChange(field, e.target.value)}
-                            type={type}
-                            fullWidth
-                            variant="outlined"
-                            size="small"
-                            sx={{ 
-                                mt: 0.5,
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1
-                                }
-                            }}
-                        />
+                        <Box>
+                            <TextField
+                                value={editData[field]}
+                                onChange={(e) => handleInputChange(field, e.target.value)}
+                                type={type}
+                                fullWidth
+                                variant="outlined"
+                                size="small"
+                                error={!!validationErrors[field]}
+                                helperText={validationErrors[field]}
+                                sx={{ 
+                                    mt: 0.5,
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1
+                                    }
+                                }}
+                                InputLabelProps={type === 'date' ? { shrink: true } : undefined}
+                            />
+                        </Box>
                     )
                 ) : (
-                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {value || 'N/A'}
-                    </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {value || 'N/A'}
+                </Typography>
                 )}
             </Box>
         </Box>
@@ -378,7 +593,7 @@ const Profile = ({ sidebarOpen }) => {
         <Box
             sx={{
                 minHeight: '100vh',
-                background: theme.palette.mode === 'dark'
+                background: theme.palette.mode === 'dark' 
                     ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)'
                     : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
                 position: 'fixed',
@@ -425,7 +640,7 @@ const Profile = ({ sidebarOpen }) => {
                                 sx={{
                                     borderRadius: '16px',
                                     overflow: 'hidden',
-                                    background: theme.palette.mode === 'dark'
+                                    background: theme.palette.mode === 'dark' 
                                         ? 'rgba(33, 33, 33, 0.95)'
                                         : 'rgba(255, 255, 255, 0.95)',
                                     backdropFilter: 'blur(10px)',
@@ -579,10 +794,10 @@ const Profile = ({ sidebarOpen }) => {
                                     pb: 2
                                 }}>
                                     <Box sx={{ mt: { xs: 2, sm: 1 }, mb: 3, textAlign: 'center' }}>
-                                        <Typography variant="h4" sx={{
-                                            fontWeight: 700,
-                                            mb: 0.5,
-                                            color: theme.palette.mode === 'dark' ? '#fff' : '#1a1a1a'
+                                        <Typography variant="h4" sx={{ 
+                                            fontWeight: 700, 
+                                            mb: 0.5, 
+                                            color: theme.palette.mode === 'dark' ? '#fff' : '#1a1a1a' 
                                         }}>
                                             {profile.fullname}
                                         </Typography>
@@ -751,54 +966,51 @@ const Profile = ({ sidebarOpen }) => {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Button
-                                                        variant="contained"
-                                                        startIcon={<Edit />}
-                                                        onClick={(e) => {
-                                                            console.log('Edit button click event:', e);
-                                                            handleEditToggle();
-                                                        }}
+                                            <Button
+                                                variant="contained"
+                                                startIcon={<Edit />}
+                                                        onClick={handleEditToggle}
                                                         disabled={loading || !profile}
-                                                        sx={{
-                                                            py: 1.2,
-                                                            fontWeight: 500,
-                                                            minWidth: { xs: '100%', sm: '160px' },
-                                                            borderRadius: '8px',
-                                                            backgroundColor: '#06A9AE',
-                                                            boxShadow: theme.palette.mode === 'dark'
-                                                                ? '0 4px 12px rgba(6, 169, 174, 0.4)'
-                                                                : '0 4px 12px rgba(6, 169, 174, 0.2)',
-                                                            transition: 'all 0.3s ease',
-                                                            '&:hover': {
-                                                                backgroundColor: '#048b8f',
-                                                                boxShadow: theme.palette.mode === 'dark'
-                                                                    ? '0 6px 15px rgba(6, 169, 174, 0.5)'
-                                                                    : '0 6px 15px rgba(6, 169, 174, 0.3)',
-                                                            },
-                                                        }}
-                                                    >
+                                                sx={{
+                                                    py: 1.2,
+                                                    fontWeight: 500,
+                                                    minWidth: { xs: '100%', sm: '160px' },
+                                                    borderRadius: '8px',
+                                                    backgroundColor: '#06A9AE',
+                                                    boxShadow: theme.palette.mode === 'dark'
+                                                        ? '0 4px 12px rgba(6, 169, 174, 0.4)'
+                                                        : '0 4px 12px rgba(6, 169, 174, 0.2)',
+                                                    transition: 'all 0.3s ease',
+                                                    '&:hover': {
+                                                        backgroundColor: '#048b8f',
+                                                        boxShadow: theme.palette.mode === 'dark'
+                                                            ? '0 6px 15px rgba(6, 169, 174, 0.5)'
+                                                            : '0 6px 15px rgba(6, 169, 174, 0.3)',
+                                                    },
+                                                }}
+                                            >
                                                         {loading ? 'Đang tải...' : 'Chỉnh sửa thông tin'}
-                                                    </Button>
-                                                    <Button
-                                                        variant="outlined"
-                                                        startIcon={<Lock />}
-                                                        onClick={() => navigate('/manager/change-password')}
-                                                        sx={{
-                                                            py: 1.2,
-                                                            fontWeight: 500,
-                                                            minWidth: { xs: '100%', sm: '160px' },
-                                                            borderRadius: '8px',
-                                                            borderColor: '#06A9AE',
-                                                            color: '#06A9AE',
-                                                            transition: 'all 0.3s ease',
-                                                            '&:hover': {
-                                                                borderColor: '#048b8f',
-                                                                backgroundColor: 'rgba(6, 169, 174, 0.04)',
-                                                            },
-                                                        }}
-                                                    >
-                                                        Đổi mật khẩu
-                                                    </Button>
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                startIcon={<Lock />}
+                                                onClick={() => navigate('/manager/change-password')}
+                                                sx={{
+                                                    py: 1.2,
+                                                    fontWeight: 500,
+                                                    minWidth: { xs: '100%', sm: '160px' },
+                                                    borderRadius: '8px',
+                                                    borderColor: '#06A9AE',
+                                                    color: '#06A9AE',
+                                                    transition: 'all 0.3s ease',
+                                                    '&:hover': {
+                                                        borderColor: '#048b8f',
+                                                        backgroundColor: 'rgba(6, 169, 174, 0.04)',
+                                                    },
+                                                }}
+                                            >
+                                                Đổi mật khẩu
+                                            </Button>
                                                 </>
                                             )}
                                         </Box>

@@ -231,7 +231,7 @@ const CurriculumDetail = () => {
     };
 
     const handleBackClick = () => {
-        navigate('/manager/curriculum-framework');
+        navigate('/quanly/khungchuongtrinh');
     };
 
     if (loading) {

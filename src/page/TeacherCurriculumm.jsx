@@ -934,7 +934,7 @@ const TeacherCurriculumm = () => {
           <LoadingContainer>
             <LoadingSpinner size={80} />
             <LoadingText>
-              Đang tải chương trình giảng dạy...
+            Đang tải chương trình giảng dạy...
             </LoadingText>
           </LoadingContainer>
         </StyledContainer>
@@ -949,7 +949,7 @@ const TeacherCurriculumm = () => {
           <ErrorContainer>
             <StyledAlert severity="error">
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Lỗi:</Typography>
-              <Typography>{error}</Typography>
+          <Typography>{error}</Typography>
             </StyledAlert>
           </ErrorContainer>
         </StyledContainer>
@@ -968,7 +968,7 @@ const TeacherCurriculumm = () => {
               <AutoStoriesIcon />
             </FloatingIcon>
             <GradientTitle>
-              Sách Giáo Khoa Toán Lớp {userInfo?.gradeId}
+            Sách Giáo Khoa Toán Lớp {userInfo?.gradeId}
             </GradientTitle>
             <SubTitle>
               Chương trình giảng dạy hiện đại
@@ -985,8 +985,8 @@ const TeacherCurriculumm = () => {
                   <InfoText>Lớp {commonInfo.gradeNumber}</InfoText>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     Cấp học
-                  </Typography>
-                </Box>
+              </Typography>
+            </Box>
               </InfoCardContent>
             </InfoCard>
             
@@ -999,8 +999,8 @@ const TeacherCurriculumm = () => {
                   <InfoText>{commonInfo.curriculum}</InfoText>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     Chương trình
-                  </Typography>
-                </Box>
+              </Typography>
+            </Box>
               </InfoCardContent>
             </InfoCard>
             
@@ -1013,8 +1013,8 @@ const TeacherCurriculumm = () => {
                   <InfoText>{commonInfo.book}</InfoText>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     Sách giáo khoa
-                  </Typography>
-                </Box>
+              </Typography>
+            </Box>
               </InfoCardContent>
             </InfoCard>
           </InfoCardsContainer>
@@ -1147,7 +1147,7 @@ const TeacherCurriculumm = () => {
                                         </LessonIcon>
                                         <LessonText>
                                           <LessonTitle>
-                                            {lesson.name}
+                                          {lesson.name}
                                           </LessonTitle>
                                           <LessonSubtext>
                                             Tổng số tiết: {lesson.totalPeriods}
@@ -1157,7 +1157,7 @@ const TeacherCurriculumm = () => {
                                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Chip 
                                           label={isExpanded ? 'Thu gọn' : 'Xem chi tiết'}
-                                          size="small"
+                                          size="small" 
                                           sx={{
                                             background: 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
                                             color: '#fff',
@@ -1553,8 +1553,8 @@ const TeacherCurriculumm = () => {
                                                 )}
                                               </>
                                             )}
-                                          </Box>
-                                        ) : (
+                            </Box>
+                          ) : (
                                           <Typography variant="body2" sx={{ 
                                             color: theme.palette.text.secondary,
                                             textAlign: 'center',
@@ -1562,9 +1562,9 @@ const TeacherCurriculumm = () => {
                                             py: 2,
                                           }}>
                                             Không có thông tin chi tiết cho bài học này.
-                                          </Typography>
-                                        )}
-                                      </Box>
+                            </Typography>
+                          )}
+                        </Box>
                                     </Collapse>
                                   </React.Fragment>
                                 );
@@ -1673,7 +1673,7 @@ const TeacherCurriculumm = () => {
           </DialogContent>
           <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
             <ActionButton 
-              onClick={handleCloseLessonDetails}
+              onClick={handleCloseLessonDetails} 
               sx={{ minWidth: 120 }}
             >
               Đóng
