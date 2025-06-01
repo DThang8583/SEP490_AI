@@ -14,13 +14,13 @@ const PrivateRoute = ({ children }) => {
   if (userInfo) {
     switch (userInfo.role) {
       case "Tổ trưởng chuyên môn":
-        if (!location.pathname.startsWith('/manager')) {
-          return <Navigate to="/manager/dashboard" replace />;
+        if (!location.pathname.startsWith('/quanly')) {
+          return <Navigate to="/quanly/dashboard" replace />;
         }
         break;
       case "Tổ phó":
-        if (!location.pathname.startsWith('/manager')) {
-          return <Navigate to="/manager/dashboard" replace />;
+        if (!location.pathname.startsWith('/quanly')) {
+          return <Navigate to="/quanly/dashboard" replace />;
         }
         break;
       case "Administrator":
@@ -29,12 +29,12 @@ const PrivateRoute = ({ children }) => {
         }
         break;
       case "Teacher":
-        if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
+        if (location.pathname.startsWith('/quanly') || location.pathname.startsWith('/admin')) {
           return <Navigate to="/" replace />;
         }
         break;
       default:
-        if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
+        if (location.pathname.startsWith('/quanly') || location.pathname.startsWith('/admin')) {
           return <Navigate to="/" replace />;
         }
     }
